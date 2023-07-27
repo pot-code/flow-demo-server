@@ -1,0 +1,43 @@
+# https://taskfile.dev
+
+version: "3"
+
+tasks:
+  build:
+    cmds:
+      - task: generate
+      - go build -v -o ./dist/app ./cmd/serve
+    sources:
+      - ./**/*.go
+      - ./.env
+  build-dev:
+    cmds:
+      - task: generate
+      - go build -o ./tmp/main{{.EXT}} ./cmd/serve
+    sources:
+      - ./features/**/*.go
+      - ./internal/**/*.go
+      - ./cmd/**/*.go
+      - ./.env
+    generates:
+      - ./tmp/main{{.EXT}}
+  migrate:
+    cmds:
+      - go run ./cmd/migrate
+  generate:
+    cmds:
+      - go generate ./ent
+    sources:
+      - ./ent/schema/*.go
+  dev-win:
+    cmds:
+      - task: build-dev
+        vars:
+          EXT: .exe
+      - ./tmp/main.exe
+  dev-unix:
+    cmds:
+      - task: build-dev
+        vars:
+          EXT: ""
+      - ./tmp/main
