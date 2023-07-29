@@ -1,13 +1,10 @@
 package hello
 
 import (
-	"gobit-demo/internal/api"
-	"net/http"
-
-	"github.com/go-chi/chi/v5"
+	"github.com/labstack/echo/v4"
 )
 
-func RegisterRoute(m chi.Router) {
-	m.Method(http.MethodGet, "/", api.Handler(hello))
-	m.Method(http.MethodPost, "/", api.Handler(post))
+func RegisterRoute(g *echo.Group) {
+	g.GET("/", hello)
+	g.POST("/", post)
 }

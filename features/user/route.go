@@ -2,13 +2,11 @@ package user
 
 import (
 	"gobit-demo/ent"
-	"gobit-demo/internal/api"
-	"net/http"
 
-	"github.com/go-chi/chi/v5"
+	"github.com/labstack/echo/v4"
 )
 
-func RegisterRoute(m chi.Router, e *ent.Client) {
+func RegisterRoute(g *echo.Group, e *ent.Client) {
 	c := newController(NewService(e))
-	m.Method(http.MethodGet, "/", api.Handler(c.list))
+	g.GET("/", c.list)
 }

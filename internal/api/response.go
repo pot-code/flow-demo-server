@@ -1,58 +1,52 @@
 package api
 
 import (
-	"encoding/json"
-	"fmt"
 	"net/http"
+
+	"github.com/labstack/echo/v4"
 )
 
-func Json(w http.ResponseWriter, code int, data any) error {
-	w.Header().Set("Content-Type", "application/json; charset=utf-8")
-	w.WriteHeader(code)
-
-	if err := json.NewEncoder(w).Encode(data); err != nil {
-		panic(fmt.Errorf("error encoding json: %w", err))
-	}
-	return nil
+func Json(c echo.Context, code int, data any) error {
+	return c.JSON(code, data)
 }
 
-func JsonData(w http.ResponseWriter, data any) error {
-	return Json(w, http.StatusOK, map[string]any{
+func JsonData(c echo.Context, data any) error {
+	return Json(c, http.StatusOK, map[string]any{
 		"code": http.StatusOK,
 		"data": data,
 	})
 }
 
-func JsonBusinessError(w http.ResponseWriter, msg string) error {
-	return Json(w, http.StatusOK, map[string]any{
+func JsonBusinessError(c echo.Context, msg string) error {
+	return Json(c, http.StatusOK, map[string]any{
 		"code": http.StatusBadRequest,
 		"msg":  msg,
 	})
 }
 
-func JsonBadRequest(w http.ResponseWriter, msg string) error {
-	return Json(w, http.StatusBadRequest, map[string]any{
+func JsonBadRequest(c echo.Context, msg string) error {
+	return Json(c, http.StatusBadRequest, map[string]any{
 		"code": http.StatusBadRequest,
 		"msg":  msg,
 	})
 }
 
-func JsonServerError(w http.ResponseWriter, msg string) error {
-	return Json(w, http.StatusInternalServerError, map[string]any{
+func JsonServerError(c echo.Context, msg string) error {
+	return Json(c, http.StatusInternalServerError, map[string]any{
 		"code": http.StatusInternalServerError,
 		"msg":  msg,
 	})
 }
 
-func JsonUnauthorized(w http.ResponseWriter, msg string) error {
-	return Json(w, http.StatusForbidden, map[string]any{
+func JsonUnauthorized(c echo.Context, msg string) error {
+	return Json(c, http.StatusForbidden, map[string]any{
 		"code": http.StatusForbidden,
 		"msg":  msg,
 	})
 }
 
-func JsonUnauthenticated(w http.ResponseWriter, msg string) error {
-	return Json(w, http.StatusUnauthorized, map[string]any{
+func JsonUnauthenticated(c echo.Context, msg string) error {
+	return Json(c, http.StatusUnauthorized, map[string]any{
 		"code": http.StatusUnauthorized,
 		"msg":  msg,
 	})

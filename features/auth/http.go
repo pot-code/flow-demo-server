@@ -5,7 +5,8 @@ import (
 	"errors"
 	"gobit-demo/internal/api"
 	"gobit-demo/internal/validate"
-	"net/http"
+
+	"github.com/labstack/echo/v4"
 )
 
 type AuthService interface {
@@ -24,48 +25,48 @@ func newController(s AuthService) *controller {
 	return &controller{s: s}
 }
 
-func (c *controller) login(r *http.Request, w http.ResponseWriter) error {
-	req := new(LoginRequest)
-	if err := api.DecodeFromRequestBody(req, r.Body); err != nil {
-		return err
-	}
-	if err := validate.Validator.Struct(req); err != nil {
-		return err
-	}
-
-	user, err := c.s.FindUserByCredential(r.Context(), req)
-	if errors.Is(err, ErrUserNotFound) {
-		return api.JsonUnauthenticated(w, err.Error())
-	}
-	if errors.Is(err, ErrIncorrectCredentials) {
-		return api.JsonUnauthenticated(w, err.Error())
-	}
-	if err != nil {
-		return err
-	}
-
-	token, err := c.s.CreateToken(r.Context(), user)
-	if err != nil {
-		return err
-	}
-
-	return api.JsonData(w, map[string]any{
-		"token": token,
-	})
-}
-
-func (c *controller) register(r *http.Request, w http.ResponseWriter) error {
-	data := new(CreateUserRequest)
-	if err := api.DecodeFromRequestBody(data, r.Body); err != nil {
+func (c *controller) login(e echo.Context) error {
+	data := new(LoginRequest)
+	if err := api.Bind(e, data); err != nil {
 		return err
 	}
 	if err := validate.Validator.Struct(data); err != nil {
 		return err
 	}
 
-	err := c.s.CreateUser(r.Context(), data)
+	user, err := c.s.FindUserByCredential(e.Request().Context(), data)
+	if errors.Is(err, ErrUserNotFound) {
+		return api.JsonUnauthenticated(e, err.Error())
+	}
+	if errors.Is(err, ErrIncorrectCredentials) {
+		return api.JsonUnauthenticated(e, err.Error())
+	}
+	if err != nil {
+		return err
+	}
+
+	token, err := c.s.CreateToken(e.Request().Context(), user)
+	if err != nil {
+		return err
+	}
+
+	return api.JsonData(e, map[string]any{
+		"token": token,
+	})
+}
+
+func (c *controller) register(e echo.Context) error {
+	data := new(CreateUserRequest)
+	if err := api.Bind(e, data); err != nil {
+		return err
+	}
+	if err := validate.Validator.Struct(data); err != nil {
+		return err
+	}
+
+	err := c.s.CreateUser(e.Request().Context(), data)
 	if errors.Is(err, ErrDuplicatedUser) {
-		return api.JsonBusinessError(w, err.Error())
+		return api.JsonBusinessError(e, err.Error())
 	}
 	return err
 }

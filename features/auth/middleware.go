@@ -3,38 +3,35 @@ package auth
 import (
 	"gobit-demo/internal/api"
 	"gobit-demo/internal/token"
-	"net/http"
 	"strings"
+
+	"github.com/labstack/echo/v4"
 )
 
-func getJwtTokenFromRequest(r *http.Request) string {
-	value := r.Header.Get("Authorization")
+func getJwtTokenFromRequest(c echo.Context) string {
+	value := c.Request().Header.Get("Authorization")
 	if strings.HasPrefix(value, "Bearer ") {
 		return value[7:]
 	}
 	return ""
 }
 
-func AuthMiddleware(jwt *token.JwtIssuer) func(http.Handler) http.Handler {
-	return func(next http.Handler) http.Handler {
-		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			token := getJwtTokenFromRequest(r)
+func AuthMiddleware(jwt *token.JwtIssuer) func(next echo.HandlerFunc) echo.HandlerFunc {
+	return func(next echo.HandlerFunc) echo.HandlerFunc {
+		return func(c echo.Context) error {
+			token := getJwtTokenFromRequest(c)
 			if token == "" {
-				api.JsonUnauthenticated(w, "没有登录")
-				return
+				return api.JsonUnauthenticated(c, "没有登录")
 			}
 
-			c, err := jwt.Verify(token)
+			claim, err := jwt.Verify(token)
 			if err != nil {
-				api.JsonUnauthorized(w, "token 无效")
-				return
+				return api.JsonUnauthorized(c, "token 无效")
 			}
 
-			u := new(LoginUser).fromClaim(c)
-			next.ServeHTTP(
-				w,
-				r.WithContext(u.setContextValue(r.Context())),
-			)
-		})
+			u := new(LoginUser).fromClaim(claim)
+			c.SetRequest(c.Request().WithContext(u.setContextValue(c.Request().Context())))
+			return next(c)
+		}
 	}
 }

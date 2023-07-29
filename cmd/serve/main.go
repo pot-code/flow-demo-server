@@ -13,7 +13,7 @@ import (
 	"gobit-demo/internal/validate"
 	"net/http"
 
-	"github.com/go-chi/chi/v5"
+	"github.com/labstack/echo/v4"
 	"github.com/rs/zerolog/log"
 )
 
@@ -22,27 +22,27 @@ func main() {
 	cfg := config.LoadConfig()
 	logging.Init(cfg)
 
-	d := db.NewDB(cfg.Database.DSN)
-	e := db.NewEntClient(d)
-	j := token.NewJwtIssuer(cfg.Token.Secret)
+	conn := db.NewDB(cfg.Database.DSN)
+	ent := db.NewEntClient(conn)
+	jwt := token.NewJwtIssuer(cfg.Token.Secret)
 
-	mux := chi.NewRouter()
-	mux.Use(api.LoggingMiddleware)
+	e := echo.New()
+	e.HTTPErrorHandler = api.ErrorHandler
+	e.Use(api.LoggingMiddleware)
 
-	mux.Route("/auth", func(r chi.Router) {
-		auth.RegisterRoute(r, e, j, cfg.Token.Exp)
+	api.GroupRoute(e, "/auth", func(g *echo.Group) {
+		auth.RegisterRoute(g, ent, jwt, cfg.Token.Exp)
 	})
-	mux.Route("/hello", func(r chi.Router) {
-		r.Use(auth.AuthMiddleware(j))
-		hello.RegisterRoute(r)
+	api.GroupRoute(e, "/hello", func(g *echo.Group) {
+		g.Use(auth.AuthMiddleware(jwt))
+		hello.RegisterRoute(g)
 	})
-	mux.Route("/user", func(r chi.Router) {
-		r.Use(auth.AuthMiddleware(j))
-		user.RegisterRoute(r, e)
+	api.GroupRoute(e, "/user", func(g *echo.Group) {
+		g.Use(auth.AuthMiddleware(jwt))
+		user.RegisterRoute(g, ent)
 	})
 
-	log.Info().Int("port", cfg.Port).Msg("starting server")
-	if err := http.ListenAndServe(fmt.Sprintf(":%d", cfg.Port), mux); err != nil {
+	if err := e.Start(fmt.Sprintf(":%d", cfg.Port)); err != http.ErrServerClosed {
 		log.Err(err).Msg("error starting server")
 	}
 }
