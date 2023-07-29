@@ -14,6 +14,11 @@ func ErrorHandler(err error, c echo.Context) {
 		JsonBadRequest(c, e.Error())
 	case *BindError:
 		JsonBadRequest(c, e.Error())
+	case *echo.HTTPError:
+		Json(c, e.Code, map[string]any{
+			"code": e.Code,
+			"msg":  e.Message,
+		})
 	default:
 		log.Err(err).Msg("")
 		JsonServerError(c, e.Error())
