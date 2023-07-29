@@ -30,7 +30,7 @@ func AuthMiddleware(jwt *token.JwtIssuer) func(next echo.HandlerFunc) echo.Handl
 			}
 
 			u := new(LoginUser).fromClaim(claim)
-			c.SetRequest(c.Request().WithContext(u.setContextValue(c.Request().Context())))
+			c.SetRequest(c.Request().WithContext(setUserContextValue(c.Request().Context(), u)))
 			return next(c)
 		}
 	}

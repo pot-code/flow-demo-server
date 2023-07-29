@@ -8,15 +8,15 @@ import (
 	"github.com/labstack/echo/v4"
 )
 
-type UserService interface {
-	ListUser(ctx context.Context, p *pagination.Pagination) ([]*ListUserDto, uint, error)
+type service interface {
+	ListUser(ctx context.Context, p *pagination.Pagination) ([]*listUserDto, uint, error)
 }
 
 type controller struct {
-	s UserService
+	s service
 }
 
-func newController(s UserService) *controller {
+func newController(s service) *controller {
 	return &controller{s: s}
 }
 

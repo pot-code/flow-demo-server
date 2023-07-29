@@ -1,22 +1,19 @@
 package auth
 
 import (
-	"context"
 	"gobit-demo/ent"
 
 	"github.com/golang-jwt/jwt/v5"
 )
 
-type userKey string
-
-type CreateUserRequest struct {
+type createUserRequest struct {
 	Name     string `json:"name" validate:"required"`
 	Username string `json:"username" validate:"required"`
 	Mobile   string `json:"mobile" validate:"required"`
 	Password string `json:"password" validate:"required"`
 }
 
-type LoginRequest struct {
+type loginRequest struct {
 	Username string `json:"username" validate:"required_without=Mobile"`
 	Mobile   string `json:"mobile" validate:"required_without=Username"`
 	Password string `json:"password" validate:"required"`
@@ -27,14 +24,6 @@ type LoginUser struct {
 	Name     string
 	Username string
 	Mobile   string
-}
-
-func (u *LoginUser) FromContext(ctx context.Context) *LoginUser {
-	return ctx.Value(userKey("user")).(*LoginUser)
-}
-
-func (u *LoginUser) setContextValue(ctx context.Context) context.Context {
-	return context.WithValue(ctx, userKey("user"), u)
 }
 
 func (u *LoginUser) fromUser(user *ent.User) *LoginUser {
@@ -56,14 +45,4 @@ func (u *LoginUser) fromClaim(claims jwt.Claims) *LoginUser {
 	u.Name = c["name"].(string)
 	u.Mobile = c["mobile"].(string)
 	return u
-}
-
-func (u *LoginUser) toClaim(exp float64) jwt.Claims {
-	return jwt.MapClaims{
-		"id":       u.Id,
-		"username": u.Username,
-		"name":     u.Name,
-		"mobile":   u.Mobile,
-		"exp":      exp,
-	}
 }

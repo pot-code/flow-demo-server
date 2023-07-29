@@ -7,6 +7,6 @@ import (
 )
 
 func RegisterRoute(g *echo.Group, e *ent.Client) {
-	c := newController(NewService(e))
+	c := newController(NewUserService(e))
 	g.GET("/", c.list)
 }

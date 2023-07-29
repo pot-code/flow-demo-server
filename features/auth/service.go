@@ -9,6 +9,7 @@ import (
 	"gobit-demo/internal/token"
 	"time"
 
+	"github.com/golang-jwt/jwt/v5"
 	"golang.org/x/crypto/bcrypt"
 )
 
@@ -18,17 +19,15 @@ var (
 	ErrIncorrectCredentials = errors.New("用户名或密码错误")
 )
 
-type Service struct {
-	jwt *token.JwtIssuer
-	e   *ent.Client
-	exp time.Duration
+type AuthService struct {
+	e *ent.Client
 }
 
-func NewService(client *ent.Client, jwt *token.JwtIssuer, exp time.Duration) *Service {
-	return &Service{e: client, jwt: jwt, exp: exp}
+func NewAuthService(client *ent.Client) *AuthService {
+	return &AuthService{e: client}
 }
 
-func (s *Service) FindUserByUserName(ctx context.Context, name string) (*LoginUser, error) {
+func (s *AuthService) FindUserByUserName(ctx context.Context, name string) (*LoginUser, error) {
 	user, err := s.e.User.Query().
 		Where(user.Name(name)).Only(ctx)
 	if ent.IsNotFound(err) {
@@ -40,7 +39,7 @@ func (s *Service) FindUserByUserName(ctx context.Context, name string) (*LoginUs
 	return new(LoginUser).fromUser(user), err
 }
 
-func (s *Service) FindUserByMobile(ctx context.Context, mobile string) (*LoginUser, error) {
+func (s *AuthService) FindUserByMobile(ctx context.Context, mobile string) (*LoginUser, error) {
 	user, err := s.e.User.Query().
 		Where(user.Mobile(mobile)).Only(ctx)
 	if ent.IsNotFound(err) {
@@ -52,7 +51,7 @@ func (s *Service) FindUserByMobile(ctx context.Context, mobile string) (*LoginUs
 	return new(LoginUser).fromUser(user), err
 }
 
-func (s *Service) CreateUser(ctx context.Context, dto *CreateUserRequest) error {
+func (s *AuthService) CreateUser(ctx context.Context, payload *createUserRequest) error {
 	tx, err := s.e.BeginTx(ctx, nil)
 	if err != nil {
 		return fmt.Errorf("begin transaction: %w", err)
@@ -60,7 +59,7 @@ func (s *Service) CreateUser(ctx context.Context, dto *CreateUserRequest) error 
 	defer tx.Commit()
 
 	ok, err := tx.User.Query().
-		Where(user.Or(user.Username(dto.Username), user.Mobile(dto.Mobile))).
+		Where(user.Or(user.Username(payload.Username), user.Mobile(payload.Mobile))).
 		Exist(ctx)
 	if err != nil {
 		return fmt.Errorf("check duplicate user: %w", err)
@@ -69,15 +68,15 @@ func (s *Service) CreateUser(ctx context.Context, dto *CreateUserRequest) error 
 		return ErrDuplicatedUser
 	}
 
-	h, err := bcrypt.GenerateFromPassword([]byte(dto.Password), bcrypt.DefaultCost)
+	h, err := bcrypt.GenerateFromPassword([]byte(payload.Password), bcrypt.DefaultCost)
 	if err != nil {
 		return fmt.Errorf("hash password: %w", err)
 	}
 
 	if _, err = tx.User.Create().
-		SetUsername(dto.Username).
-		SetName(dto.Name).
-		SetMobile(dto.Mobile).
+		SetUsername(payload.Username).
+		SetName(payload.Name).
+		SetMobile(payload.Mobile).
 		SetPassword(string(h)).
 		Save(ctx); err != nil {
 		return fmt.Errorf("create user: %w", err)
@@ -86,7 +85,7 @@ func (s *Service) CreateUser(ctx context.Context, dto *CreateUserRequest) error 
 	return nil
 }
 
-func (s *Service) FindUserByCredential(ctx context.Context, req *LoginRequest) (*LoginUser, error) {
+func (s *AuthService) FindUserByCredential(ctx context.Context, req *loginRequest) (*LoginUser, error) {
 	user, err := s.e.User.Query().
 		Where(user.Or(user.Username(req.Username), user.Mobile(req.Mobile))).
 		Only(ctx)
@@ -104,6 +103,25 @@ func (s *Service) FindUserByCredential(ctx context.Context, req *LoginRequest) (
 	return new(LoginUser).fromUser(user), err
 }
 
-func (s *Service) CreateToken(ctx context.Context, user *LoginUser) (string, error) {
-	return s.jwt.Sign(user.toClaim(float64(time.Now().Add(s.exp).Unix())))
+type JwtService struct {
+	jwt *token.JwtIssuer
+	exp time.Duration
+}
+
+func NewJwtService(jwt *token.JwtIssuer, exp time.Duration) *JwtService {
+	return &JwtService{jwt: jwt}
+}
+
+func (s *JwtService) GenerateToken(u *LoginUser) (string, error) {
+	return s.jwt.Sign(s.userToClaim(u))
+}
+
+func (j *JwtService) userToClaim(u *LoginUser) jwt.Claims {
+	return jwt.MapClaims{
+		"id":       u.Id,
+		"username": u.Username,
+		"name":     u.Name,
+		"mobile":   u.Mobile,
+		"exp":      float64(time.Now().Add(j.exp).Unix()),
+	}
 }

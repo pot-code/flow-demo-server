@@ -9,24 +9,28 @@ import (
 	"github.com/labstack/echo/v4"
 )
 
-type AuthService interface {
-	CreateUser(ctx context.Context, dto *CreateUserRequest) error
+type authService interface {
+	CreateUser(ctx context.Context, dto *createUserRequest) error
 	FindUserByUserName(ctx context.Context, name string) (*LoginUser, error)
 	FindUserByMobile(ctx context.Context, mobile string) (*LoginUser, error)
-	FindUserByCredential(ctx context.Context, req *LoginRequest) (*LoginUser, error)
-	CreateToken(ctx context.Context, user *LoginUser) (string, error)
+	FindUserByCredential(ctx context.Context, req *loginRequest) (*LoginUser, error)
+}
+
+type tokenService interface {
+	GenerateToken(user *LoginUser) (string, error)
 }
 
 type controller struct {
-	s AuthService
+	us authService
+	ts tokenService
 }
 
-func newController(s AuthService) *controller {
-	return &controller{s: s}
+func newController(us authService, ts tokenService) *controller {
+	return &controller{us: us, ts: ts}
 }
 
 func (c *controller) login(e echo.Context) error {
-	data := new(LoginRequest)
+	data := new(loginRequest)
 	if err := api.Bind(e, data); err != nil {
 		return err
 	}
@@ -34,7 +38,7 @@ func (c *controller) login(e echo.Context) error {
 		return err
 	}
 
-	user, err := c.s.FindUserByCredential(e.Request().Context(), data)
+	user, err := c.us.FindUserByCredential(e.Request().Context(), data)
 	if errors.Is(err, ErrUserNotFound) {
 		return api.JsonUnauthenticated(e, err.Error())
 	}
@@ -45,7 +49,7 @@ func (c *controller) login(e echo.Context) error {
 		return err
 	}
 
-	token, err := c.s.CreateToken(e.Request().Context(), user)
+	token, err := c.ts.GenerateToken(user)
 	if err != nil {
 		return err
 	}
@@ -56,7 +60,7 @@ func (c *controller) login(e echo.Context) error {
 }
 
 func (c *controller) register(e echo.Context) error {
-	data := new(CreateUserRequest)
+	data := new(createUserRequest)
 	if err := api.Bind(e, data); err != nil {
 		return err
 	}
@@ -64,7 +68,7 @@ func (c *controller) register(e echo.Context) error {
 		return err
 	}
 
-	err := c.s.CreateUser(e.Request().Context(), data)
+	err := c.us.CreateUser(e.Request().Context(), data)
 	if errors.Is(err, ErrDuplicatedUser) {
 		return api.JsonBusinessError(e, err.Error())
 	}
