@@ -21,7 +21,7 @@ func AuthMiddleware(jwt *token.JwtIssuer) func(next echo.HandlerFunc) echo.Handl
 		return func(c echo.Context) error {
 			token := getJwtTokenFromRequest(c)
 			if token == "" {
-				return api.JsonUnauthenticated(c, "没有登录")
+				return api.JsonUnauthenticated(c, "未登录")
 			}
 
 			claim, err := jwt.Verify(token)

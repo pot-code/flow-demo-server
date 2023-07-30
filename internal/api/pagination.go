@@ -27,7 +27,7 @@ func ParsePaginationFromRequest(e echo.Context) (*pagination.Pagination, error) 
 			return nil, validate.NewValidationResult("page", "格式错误")
 		}
 		if page <= 0 {
-			return nil, validate.ValidationError{validate.NewValidationResult("page", "必须大于0")}
+			return nil, validate.NewValidationResult("page", "必须大于0")
 		}
 		pagination.Page = page
 	}
@@ -39,7 +39,7 @@ func ParsePaginationFromRequest(e echo.Context) (*pagination.Pagination, error) 
 			return nil, validate.NewValidationResult("page_size", "格式错误")
 		}
 		if pageSize <= 0 {
-			return nil, validate.ValidationError{validate.NewValidationResult("page_size", "必须大于0")}
+			return nil, validate.NewValidationResult("page_size", "必须大于0")
 		}
 		pagination.PageSize = pageSize
 	}
@@ -47,7 +47,7 @@ func ParsePaginationFromRequest(e echo.Context) (*pagination.Pagination, error) 
 	return pagination, nil
 }
 
-func JsonPaginationResult(c echo.Context, p *pagination.Pagination, total uint, data any) error {
+func JsonPaginationData(c echo.Context, p *pagination.Pagination, total uint, data any) error {
 	return Json(c, http.StatusOK, map[string]any{
 		"page":      p.Page,
 		"page_size": p.PageSize,

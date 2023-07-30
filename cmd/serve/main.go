@@ -22,6 +22,8 @@ func main() {
 	cfg := config.LoadConfig()
 	logging.Init(cfg)
 
+	log.Debug().Any("config", cfg).Msg("config")
+
 	conn := db.NewDB(cfg.Database.DSN)
 	ent := db.NewEntClient(conn)
 	jwt := token.NewJwtIssuer(cfg.Token.Secret)

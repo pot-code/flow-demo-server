@@ -106,7 +106,7 @@ type JwtService struct {
 }
 
 func NewJwtService(jwt *token.JwtIssuer, exp time.Duration) *JwtService {
-	return &JwtService{jwt: jwt}
+	return &JwtService{jwt: jwt, exp: exp}
 }
 
 func (s *JwtService) GenerateToken(u *LoginUser) (string, error) {

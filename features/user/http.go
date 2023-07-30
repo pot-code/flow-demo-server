@@ -31,5 +31,5 @@ func (c *controller) list(e echo.Context) error {
 		return err
 	}
 
-	return api.JsonPaginationResult(e, p, count, users)
+	return api.JsonPaginationData(e, p, count, users)
 }
