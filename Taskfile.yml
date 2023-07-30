@@ -2,6 +2,9 @@
 
 version: "3"
 
+env:
+  EXT: '{{if eq OS "windows"}}.exe{{else}}{{end}}'
+
 tasks:
   build:
     cmds:
@@ -13,14 +16,14 @@ tasks:
   build-dev:
     cmds:
       - task: generate
-      - go build -o ./tmp/main{{.EXT}} ./cmd/serve
+      - go build -o ./tmp/main$EXT ./cmd/serve
     sources:
       - ./features/**/*.go
       - ./internal/**/*.go
       - ./cmd/**/*.go
       - ./.env
     generates:
-      - ./tmp/main{{.EXT}}
+      - ./tmp/main$EXT
   migrate:
     cmds:
       - go run ./cmd/migrate
@@ -29,15 +32,7 @@ tasks:
       - go generate ./ent
     sources:
       - ./ent/schema/*.go
-  dev-win:
+  dev:
     cmds:
       - task: build-dev
-        vars:
-          EXT: .exe
-      - ./tmp/main.exe
-  dev-unix:
-    cmds:
-      - task: build-dev
-        vars:
-          EXT: ""
-      - ./tmp/main
+      - ./tmp/main$EXT
