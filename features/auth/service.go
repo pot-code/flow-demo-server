@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"gobit-demo/ent"
 	"gobit-demo/ent/user"
+	"gobit-demo/internal/db"
 	"gobit-demo/internal/token"
 	"time"
 
@@ -52,37 +53,33 @@ func (s *AuthService) FindUserByMobile(ctx context.Context, mobile string) (*Log
 }
 
 func (s *AuthService) CreateUser(ctx context.Context, payload *createUserRequest) error {
-	tx, err := s.e.BeginTx(ctx, nil)
-	if err != nil {
-		return fmt.Errorf("begin transaction: %w", err)
-	}
-	defer tx.Commit()
+	return db.WithEntTx(ctx, s.e, func(tx *ent.Tx) error {
+		ok, err := tx.User.Query().
+			Where(user.Or(user.Username(payload.Username), user.Mobile(payload.Mobile))).
+			Exist(ctx)
+		if err != nil {
+			return fmt.Errorf("check duplicate user: %w", err)
+		}
+		if ok {
+			return ErrDuplicatedUser
+		}
 
-	ok, err := tx.User.Query().
-		Where(user.Or(user.Username(payload.Username), user.Mobile(payload.Mobile))).
-		Exist(ctx)
-	if err != nil {
-		return fmt.Errorf("check duplicate user: %w", err)
-	}
-	if ok {
-		return ErrDuplicatedUser
-	}
+		h, err := bcrypt.GenerateFromPassword([]byte(payload.Password), bcrypt.DefaultCost)
+		if err != nil {
+			return fmt.Errorf("hash password: %w", err)
+		}
 
-	h, err := bcrypt.GenerateFromPassword([]byte(payload.Password), bcrypt.DefaultCost)
-	if err != nil {
-		return fmt.Errorf("hash password: %w", err)
-	}
+		if _, err = tx.User.Create().
+			SetUsername(payload.Username).
+			SetName(payload.Name).
+			SetMobile(payload.Mobile).
+			SetPassword(string(h)).
+			Save(ctx); err != nil {
+			return fmt.Errorf("create user: %w", err)
+		}
 
-	if _, err = tx.User.Create().
-		SetUsername(payload.Username).
-		SetName(payload.Name).
-		SetMobile(payload.Mobile).
-		SetPassword(string(h)).
-		Save(ctx); err != nil {
-		return fmt.Errorf("create user: %w", err)
-	}
-
-	return nil
+		return nil
+	})
 }
 
 func (s *AuthService) FindUserByCredential(ctx context.Context, req *loginRequest) (*LoginUser, error) {
