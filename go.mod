@@ -2,7 +2,7 @@ module gobit-demo
 
 go 1.20
 
-replace github.com/pot-code/gobit => ../gobit
+// replace github.com/pot-code/gobit => ../gobit
 
 require (
 	entgo.io/ent v0.12.3
@@ -12,7 +12,7 @@ require (
 	github.com/go-sql-driver/mysql v1.7.1
 	github.com/golang-jwt/jwt/v5 v5.0.0
 	github.com/labstack/echo/v4 v4.11.1
-	github.com/pot-code/gobit v0.1.1
+	github.com/pot-code/gobit v0.1.0
 	github.com/rs/zerolog v1.29.1
 	github.com/spf13/viper v1.16.0
 	golang.org/x/crypto v0.11.0
