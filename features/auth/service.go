@@ -4,14 +4,13 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"gobit-demo/ent"
-	"gobit-demo/ent/user"
-	"gobit-demo/internal/db"
 	"gobit-demo/internal/token"
+	"gobit-demo/model"
 	"time"
 
 	"github.com/golang-jwt/jwt/v5"
 	"golang.org/x/crypto/bcrypt"
+	"gorm.io/gorm"
 )
 
 var (
@@ -21,17 +20,17 @@ var (
 )
 
 type AuthService struct {
-	e *ent.Client
+	g *gorm.DB
 }
 
-func NewAuthService(client *ent.Client) *AuthService {
-	return &AuthService{e: client}
+func NewAuthService(g *gorm.DB) *AuthService {
+	return &AuthService{g: g}
 }
 
-func (s *AuthService) FindUserByUserName(ctx context.Context, name string) (*LoginUser, error) {
-	user, err := s.e.User.Query().
-		Where(user.Name(name)).Only(ctx)
-	if ent.IsNotFound(err) {
+func (s *AuthService) FindUserByUserName(ctx context.Context, username string) (*LoginUser, error) {
+	user := new(model.User)
+	err := s.g.WithContext(ctx).Where(&model.User{Username: username}).First(user).Error
+	if errors.Is(err, gorm.ErrRecordNotFound) {
 		return nil, ErrUserNotFound
 	}
 	if err != nil {
@@ -41,9 +40,9 @@ func (s *AuthService) FindUserByUserName(ctx context.Context, name string) (*Log
 }
 
 func (s *AuthService) FindUserByMobile(ctx context.Context, mobile string) (*LoginUser, error) {
-	user, err := s.e.User.Query().
-		Where(user.Mobile(mobile)).Only(ctx)
-	if ent.IsNotFound(err) {
+	user := new(model.User)
+	err := s.g.WithContext(ctx).Where(&model.User{Mobile: mobile}).First(user).Error
+	if errors.Is(err, gorm.ErrRecordNotFound) {
 		return nil, ErrUserNotFound
 	}
 	if err != nil {
@@ -53,14 +52,17 @@ func (s *AuthService) FindUserByMobile(ctx context.Context, mobile string) (*Log
 }
 
 func (s *AuthService) CreateUser(ctx context.Context, payload *createUserRequest) error {
-	return db.WithEntTx(ctx, s.e, func(tx *ent.Tx) error {
-		ok, err := tx.User.Query().
-			Where(user.Or(user.Username(payload.Username), user.Mobile(payload.Mobile))).
-			Exist(ctx)
-		if err != nil {
+	return s.g.Transaction(func(tx *gorm.DB) error {
+		var count int64
+		if err := s.g.WithContext(ctx).
+			Model(&model.User{}).
+			Where(&model.User{Mobile: payload.Mobile}).
+			Or(&model.User{Username: payload.Username}).
+			Count(&count).
+			Error; err != nil {
 			return fmt.Errorf("check duplicate user: %w", err)
 		}
-		if ok {
+		if count > 0 {
 			return ErrDuplicatedUser
 		}
 
@@ -69,12 +71,12 @@ func (s *AuthService) CreateUser(ctx context.Context, payload *createUserRequest
 			return fmt.Errorf("hash password: %w", err)
 		}
 
-		if _, err = tx.User.Create().
-			SetUsername(payload.Username).
-			SetName(payload.Name).
-			SetMobile(payload.Mobile).
-			SetPassword(string(h)).
-			Save(ctx); err != nil {
+		if err = s.g.Create(&model.User{
+			Name:     payload.Name,
+			Username: payload.Username,
+			Password: string(h),
+			Mobile:   payload.Mobile,
+		}).Error; err != nil {
 			return fmt.Errorf("create user: %w", err)
 		}
 
@@ -83,10 +85,13 @@ func (s *AuthService) CreateUser(ctx context.Context, payload *createUserRequest
 }
 
 func (s *AuthService) FindUserByCredential(ctx context.Context, req *loginRequest) (*LoginUser, error) {
-	user, err := s.e.User.Query().
-		Where(user.Or(user.Username(req.Username), user.Mobile(req.Mobile))).
-		Only(ctx)
-	if ent.IsNotFound(err) {
+	user := new(model.User)
+	err := s.g.WithContext(ctx).
+		Where(&model.User{Mobile: req.Mobile}).
+		Or(&model.User{Username: req.Username}).
+		First(user).
+		Error
+	if errors.Is(err, gorm.ErrRecordNotFound) {
 		return nil, ErrUserNotFound
 	}
 	if err != nil {

@@ -8,14 +8,12 @@ env:
 tasks:
   build:
     cmds:
-      - task: generate
       - go build -v -o ./dist/app ./cmd/serve
     sources:
       - ./**/*.go
       - ./.env
   build-dev:
     cmds:
-      - task: generate
       - go build -o ./tmp/main$EXT ./cmd/serve
     sources:
       - ./features/**/*.go
@@ -27,11 +25,6 @@ tasks:
   migrate:
     cmds:
       - go run ./cmd/migrate
-  generate:
-    cmds:
-      - go generate ./ent
-    sources:
-      - ./ent/schema/*.go
   dev:
     cmds:
       - task: build-dev

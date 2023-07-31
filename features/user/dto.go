@@ -1,15 +1,17 @@
 package user
 
-import "gobit-demo/ent"
+import (
+	"gobit-demo/model"
+)
 
 type listUserDto struct {
-	Id       int    `json:"id"`
+	Id       uint   `json:"id"`
 	Name     string `json:"name"`
 	UserName string `json:"user_name"`
 	Mobile   string `json:"mobile"`
 }
 
-func (d *listUserDto) fromUser(u *ent.User) *listUserDto {
+func (d *listUserDto) fromUser(u *model.User) *listUserDto {
 	d.Id = u.ID
 	d.Name = u.Name
 	d.UserName = u.Username

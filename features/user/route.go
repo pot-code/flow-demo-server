@@ -1,12 +1,11 @@
 package user
 
 import (
-	"gobit-demo/ent"
-
 	"github.com/labstack/echo/v4"
+	"gorm.io/gorm"
 )
 
-func RegisterRoute(g *echo.Group, e *ent.Client) {
-	c := newController(NewUserService(e))
+func RegisterRoute(g *echo.Group, gc *gorm.DB) {
+	c := newController(NewUserService(gc))
 	g.GET("", c.list)
 }

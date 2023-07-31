@@ -1,12 +1,11 @@
 package main
 
 import (
-	"context"
-	"gobit-demo/ent/migrate"
 	"gobit-demo/internal/config"
 	"gobit-demo/internal/db"
 	"gobit-demo/internal/logging"
 	"gobit-demo/internal/validate"
+	"gobit-demo/model"
 
 	"github.com/rs/zerolog/log"
 )
@@ -17,12 +16,12 @@ func main() {
 	logging.Init(cfg)
 
 	d := db.NewDB(cfg.Database.DSN)
-	e := db.NewEntClient(d)
+	g, err := db.NewGormClient(d)
+	if err != nil {
+		log.Fatal().Err(err).Msg("error creating gorm client")
+	}
 
-	if err := e.Schema.Create(context.Background(),
-		migrate.WithDropColumn(true),
-		migrate.WithDropIndex(true),
-	); err != nil {
-		log.Err(err).Msg("error migrating schema")
+	if err := g.AutoMigrate(&model.User{}); err != nil {
+		log.Fatal().Err(err).Msg("error migrating schema")
 	}
 }

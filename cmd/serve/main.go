@@ -25,7 +25,10 @@ func main() {
 	log.Debug().Any("config", cfg).Msg("config")
 
 	conn := db.NewDB(cfg.Database.DSN)
-	ent := db.NewEntClient(conn)
+	gc, err := db.NewGormClient(conn)
+	if err != nil {
+		log.Fatal().Err(err).Msg("error creating gorm client")
+	}
 	jwt := token.NewJwtIssuer(cfg.Token.Secret)
 
 	e := echo.New()
@@ -33,7 +36,7 @@ func main() {
 	e.Use(api.LoggingMiddleware)
 
 	api.GroupRoute(e, "/auth", func(g *echo.Group) {
-		auth.RegisterRoute(g, ent, jwt, cfg.Token.Exp)
+		auth.RegisterRoute(g, gc, jwt, cfg.Token.Exp)
 	})
 	api.GroupRoute(e, "/hello", func(g *echo.Group) {
 		g.Use(auth.AuthMiddleware(jwt))
@@ -41,7 +44,7 @@ func main() {
 	})
 	api.GroupRoute(e, "/user", func(g *echo.Group) {
 		g.Use(auth.AuthMiddleware(jwt))
-		user.RegisterRoute(g, ent)
+		user.RegisterRoute(g, gc)
 	})
 
 	if err := e.Start(fmt.Sprintf(":%d", cfg.Port)); err != http.ErrServerClosed {
