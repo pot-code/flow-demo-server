@@ -28,27 +28,27 @@ func NewAuthService(g *gorm.DB) *AuthService {
 }
 
 func (s *AuthService) FindUserByUserName(ctx context.Context, username string) (*LoginUser, error) {
-	user := new(model.User)
-	err := s.g.WithContext(ctx).Where(&model.User{Username: username}).First(user).Error
+	user := new(LoginUser)
+	err := s.g.WithContext(ctx).Model(&model.User{}).Where(&model.User{Username: username}).Take(user).Error
 	if errors.Is(err, gorm.ErrRecordNotFound) {
 		return nil, ErrUserNotFound
 	}
 	if err != nil {
 		return nil, fmt.Errorf("find user by name: %w", err)
 	}
-	return new(LoginUser).fromUser(user), err
+	return user, err
 }
 
 func (s *AuthService) FindUserByMobile(ctx context.Context, mobile string) (*LoginUser, error) {
-	user := new(model.User)
-	err := s.g.WithContext(ctx).Where(&model.User{Mobile: mobile}).First(user).Error
+	user := new(LoginUser)
+	err := s.g.WithContext(ctx).Model(&model.User{}).Where(&model.User{Mobile: mobile}).Take(user).Error
 	if errors.Is(err, gorm.ErrRecordNotFound) {
 		return nil, ErrUserNotFound
 	}
 	if err != nil {
 		return nil, fmt.Errorf("find user by mobile: %w", err)
 	}
-	return new(LoginUser).fromUser(user), err
+	return user, err
 }
 
 func (s *AuthService) CreateUser(ctx context.Context, payload *createUserRequest) error {
@@ -89,7 +89,7 @@ func (s *AuthService) FindUserByCredential(ctx context.Context, req *loginReques
 	err := s.g.WithContext(ctx).
 		Where(&model.User{Mobile: req.Mobile}).
 		Or(&model.User{Username: req.Username}).
-		First(user).
+		Take(user).
 		Error
 	if errors.Is(err, gorm.ErrRecordNotFound) {
 		return nil, ErrUserNotFound
