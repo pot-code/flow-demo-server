@@ -71,7 +71,7 @@ func (s *AuthService) CreateUser(ctx context.Context, payload *CreateUserRequest
 			return fmt.Errorf("hash password: %w", err)
 		}
 
-		if err = s.g.Create(&model.User{
+		if err = s.g.WithContext(ctx).Create(&model.User{
 			Name:     payload.Name,
 			Username: payload.Username,
 			Password: string(h),

@@ -3,6 +3,7 @@ package flow
 import (
 	"context"
 	"errors"
+	"fmt"
 	"gobit-demo/internal/api"
 	"gobit-demo/internal/pagination"
 	"gobit-demo/internal/validate"
@@ -13,6 +14,8 @@ import (
 type service interface {
 	CreateFlow(ctx context.Context, data *CreateFlowRequest) error
 	ListFlow(ctx context.Context, p *pagination.Pagination) ([]*ListFlowDto, uint, error)
+	CreateFlowNode(ctx context.Context, data *CreateFlowNodeRequest) error
+	ListFlowNodeByFlowID(ctx context.Context, flowID uint) ([]*ListFlowNodeDto, error)
 }
 
 type controller struct {
@@ -51,4 +54,39 @@ func (c *controller) listFlow(e echo.Context) error {
 	}
 
 	return api.JsonPaginationData(e, p, count, data)
+}
+
+func (c *controller) createFlowNode(e echo.Context) error {
+	data := new(CreateFlowNodeRequest)
+	if err := api.Bind(e, data); err != nil {
+		return err
+	}
+	if err := validate.Validator.Struct(data); err != nil {
+		return err
+	}
+
+	err := c.s.CreateFlowNode(e.Request().Context(), data)
+	if errors.Is(err, ErrDuplicatedFlowNode) {
+		return api.JsonBusinessError(e, err.Error())
+	}
+	if err != nil {
+		return fmt.Errorf("create flow node: %w", err)
+	}
+	return err
+}
+
+func (c *controller) listFlowNode(e echo.Context) error {
+	req := new(ListFlowNodeParams)
+	if err := api.Bind(e, req); err != nil {
+		return err
+	}
+	if err := validate.Validator.Struct(req); err != nil {
+		return err
+	}
+
+	list, err := c.s.ListFlowNodeByFlowID(e.Request().Context(), *req.FlowID)
+	if err != nil {
+		return fmt.Errorf("query flow node by flow id: %w", err)
+	}
+	return api.JsonData(e, list)
 }

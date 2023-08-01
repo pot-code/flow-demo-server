@@ -11,7 +11,8 @@ import (
 )
 
 var (
-	ErrDuplicatedFlow = errors.New("流程已存在")
+	ErrDuplicatedFlow     = errors.New("流程已存在")
+	ErrDuplicatedFlowNode = errors.New("流程结点已存在")
 )
 
 type FlowService struct {
@@ -38,7 +39,7 @@ func (s *FlowService) CreateFlow(ctx context.Context, req *CreateFlowRequest) er
 		Name:        req.Name,
 		Description: req.Description,
 	}
-	if err := s.g.Create(save).Error; err != nil {
+	if err := s.g.WithContext(ctx).Create(save).Error; err != nil {
 		return fmt.Errorf("create flow: %w", err)
 	}
 	return nil
@@ -59,4 +60,41 @@ func (s *FlowService) ListFlow(ctx context.Context, p *pagination.Pagination) ([
 		return nil, 0, fmt.Errorf("query flow list: %w", err)
 	}
 	return flows, uint(count), nil
+}
+
+func (s *FlowService) CreateFlowNode(ctx context.Context, req *CreateFlowNodeRequest) error {
+	var nodes []*model.FlowNode
+	if err := s.g.WithContext(ctx).Model(&model.FlowNode{}).
+		Where(&model.FlowNode{FlowID: *req.FlowID}).
+		Find(&nodes).
+		Error; err != nil {
+		return fmt.Errorf("query flow node: %w", err)
+	}
+	for _, node := range nodes {
+		if node.Name == req.Name {
+			return ErrDuplicatedFlowNode
+		}
+	}
+
+	if err := s.g.WithContext(ctx).Create(&model.FlowNode{
+		FlowID:      *req.FlowID,
+		Name:        req.Name,
+		Description: req.Description,
+		PrevID:      req.PrevID,
+		NextID:      req.NextID,
+	}).Error; err != nil {
+		return fmt.Errorf("create flow node: %w", err)
+	}
+	return nil
+}
+
+func (s *FlowService) ListFlowNodeByFlowID(ctx context.Context, flowID uint) ([]*ListFlowNodeDto, error) {
+	var nodes []*ListFlowNodeDto
+	if err := s.g.WithContext(ctx).Model(&model.FlowNode{}).
+		Where(&model.FlowNode{FlowID: flowID}).
+		Find(&nodes).
+		Error; err != nil {
+		return nil, fmt.Errorf("query flow node: %w", err)
+	}
+	return nodes, nil
 }
