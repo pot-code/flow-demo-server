@@ -21,7 +21,11 @@ func main() {
 		log.Fatal().Err(err).Msg("error creating gorm client")
 	}
 
-	if err := g.AutoMigrate(&model.User{}); err != nil {
+	if err := g.AutoMigrate(
+		&model.User{},
+		&model.Flow{},
+		&model.FlowNode{},
+	); err != nil {
 		log.Fatal().Err(err).Msg("error migrating schema")
 	}
 }

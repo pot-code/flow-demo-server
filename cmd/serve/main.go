@@ -3,7 +3,7 @@ package main
 import (
 	"fmt"
 	"gobit-demo/features/auth"
-	"gobit-demo/features/hello"
+	"gobit-demo/features/flow"
 	"gobit-demo/features/user"
 	"gobit-demo/internal/api"
 	"gobit-demo/internal/config"
@@ -38,9 +38,9 @@ func main() {
 	api.GroupRoute(e, "/auth", func(g *echo.Group) {
 		auth.RegisterRoute(g, gc, jwt, cfg.Token.Exp)
 	})
-	api.GroupRoute(e, "/hello", func(g *echo.Group) {
+	api.GroupRoute(e, "/flow", func(g *echo.Group) {
 		g.Use(auth.AuthMiddleware(jwt))
-		hello.RegisterRoute(g)
+		flow.RegisterRoute(g, gc)
 	})
 	api.GroupRoute(e, "/user", func(g *echo.Group) {
 		g.Use(auth.AuthMiddleware(jwt))

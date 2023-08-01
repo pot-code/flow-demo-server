@@ -51,7 +51,7 @@ func (s *AuthService) FindUserByMobile(ctx context.Context, mobile string) (*Log
 	return user, err
 }
 
-func (s *AuthService) CreateUser(ctx context.Context, payload *createUserRequest) error {
+func (s *AuthService) CreateUser(ctx context.Context, payload *CreateUserRequest) error {
 	return s.g.Transaction(func(tx *gorm.DB) error {
 		var count int64
 		if err := s.g.WithContext(ctx).
@@ -84,7 +84,7 @@ func (s *AuthService) CreateUser(ctx context.Context, payload *createUserRequest
 	})
 }
 
-func (s *AuthService) FindUserByCredential(ctx context.Context, req *loginRequest) (*LoginUser, error) {
+func (s *AuthService) FindUserByCredential(ctx context.Context, req *LoginRequest) (*LoginUser, error) {
 	user := new(model.User)
 	err := s.g.WithContext(ctx).
 		Where(&model.User{Mobile: req.Mobile}).

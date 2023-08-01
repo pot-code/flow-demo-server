@@ -10,10 +10,10 @@ import (
 )
 
 type authService interface {
-	CreateUser(ctx context.Context, dto *createUserRequest) error
+	CreateUser(ctx context.Context, dto *CreateUserRequest) error
 	FindUserByUserName(ctx context.Context, name string) (*LoginUser, error)
 	FindUserByMobile(ctx context.Context, mobile string) (*LoginUser, error)
-	FindUserByCredential(ctx context.Context, req *loginRequest) (*LoginUser, error)
+	FindUserByCredential(ctx context.Context, req *LoginRequest) (*LoginUser, error)
 }
 
 type tokenService interface {
@@ -30,7 +30,7 @@ func newController(us authService, ts tokenService) *controller {
 }
 
 func (c *controller) login(e echo.Context) error {
-	data := new(loginRequest)
+	data := new(LoginRequest)
 	if err := api.Bind(e, data); err != nil {
 		return err
 	}
@@ -60,7 +60,7 @@ func (c *controller) login(e echo.Context) error {
 }
 
 func (c *controller) register(e echo.Context) error {
-	data := new(createUserRequest)
+	data := new(CreateUserRequest)
 	if err := api.Bind(e, data); err != nil {
 		return err
 	}
