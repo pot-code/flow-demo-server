@@ -3,7 +3,6 @@ package flow
 import (
 	"context"
 	"errors"
-	"fmt"
 	"gobit-demo/internal/api"
 	"gobit-demo/internal/pagination"
 	"gobit-demo/internal/validate"
@@ -52,7 +51,6 @@ func (c *controller) listFlow(e echo.Context) error {
 	if err != nil {
 		return err
 	}
-
 	return api.JsonPaginationData(e, p, count, data)
 }
 
@@ -69,9 +67,6 @@ func (c *controller) createFlowNode(e echo.Context) error {
 	if errors.Is(err, ErrDuplicatedFlowNode) {
 		return api.JsonBusinessError(e, err.Error())
 	}
-	if err != nil {
-		return fmt.Errorf("create flow node: %w", err)
-	}
 	return err
 }
 
@@ -86,7 +81,7 @@ func (c *controller) listFlowNode(e echo.Context) error {
 
 	list, err := c.s.ListFlowNodeByFlowID(e.Request().Context(), *req.FlowID)
 	if err != nil {
-		return fmt.Errorf("query flow node by flow id: %w", err)
+		return err
 	}
 	return api.JsonData(e, list)
 }

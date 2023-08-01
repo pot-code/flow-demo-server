@@ -9,7 +9,7 @@ import (
 	"github.com/pot-code/gobit/pkg/validate"
 )
 
-var (
+const (
 	defaultPage     = 1
 	defaultPageSize = 10
 )
@@ -20,28 +20,28 @@ func ParsePaginationFromRequest(e echo.Context) (*pagination.Pagination, error) 
 		PageSize: defaultPageSize,
 	}
 
-	p := e.Param("page")
+	p := e.QueryParam("page")
 	if p != "" {
-		page, err := strconv.Atoi(p)
+		v, err := strconv.Atoi(p)
 		if err != nil {
 			return nil, validate.NewValidationResult("page", "格式错误")
 		}
-		if page <= 0 {
+		if v <= 0 {
 			return nil, validate.NewValidationResult("page", "必须大于0")
 		}
-		pagination.Page = page
+		pagination.Page = v
 	}
 
-	ps := e.Param("page_size")
+	ps := e.QueryParam("page_size")
 	if ps != "" {
-		pageSize, err := strconv.Atoi(ps)
+		v, err := strconv.Atoi(ps)
 		if err != nil {
 			return nil, validate.NewValidationResult("page_size", "格式错误")
 		}
-		if pageSize <= 0 {
+		if v <= 0 {
 			return nil, validate.NewValidationResult("page_size", "必须大于0")
 		}
-		pagination.PageSize = pageSize
+		pagination.PageSize = v
 	}
 
 	return pagination, nil
