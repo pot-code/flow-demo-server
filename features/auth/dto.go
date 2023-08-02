@@ -1,11 +1,5 @@
 package auth
 
-import (
-	"gobit-demo/model"
-
-	"github.com/golang-jwt/jwt/v5"
-)
-
 type CreateUserRequest struct {
 	Name     string `json:"name" validate:"required"`
 	Username string `json:"username" validate:"required"`
@@ -24,25 +18,4 @@ type LoginUser struct {
 	Name     string
 	Username string
 	Mobile   string
-}
-
-func (u *LoginUser) fromUser(user *model.User) *LoginUser {
-	u.Id = user.ID
-	u.Name = user.Name
-	u.Username = user.Username
-	u.Mobile = user.Mobile
-	return u
-}
-
-func (u *LoginUser) fromClaim(claims jwt.Claims) *LoginUser {
-	c, ok := claims.(jwt.MapClaims)
-	if !ok {
-		panic("claims is not a jwt.MapClaims")
-	}
-
-	u.Id = uint(c["id"].(float64))
-	u.Username = c["username"].(string)
-	u.Name = c["name"].(string)
-	u.Mobile = c["mobile"].(string)
-	return u
 }

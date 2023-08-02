@@ -106,6 +106,14 @@ func (s *AuthService) FindUserByCredential(ctx context.Context, req *LoginReques
 	return new(LoginUser).fromUser(user), err
 }
 
+func (u *LoginUser) fromUser(user *model.User) *LoginUser {
+	u.Id = user.ID
+	u.Name = user.Name
+	u.Username = user.Username
+	u.Mobile = user.Mobile
+	return u
+}
+
 type jwtBlacklist interface {
 	Add(ctx context.Context, token string) error
 	Has(ctx context.Context, token string) (bool, error)
@@ -122,7 +130,7 @@ func NewJwtService(jwt *token.JwtIssuer, bl jwtBlacklist, exp time.Duration) *Jw
 }
 
 func (s *JwtService) GenerateToken(u *LoginUser) (string, error) {
-	return s.jwt.Sign(s.userToClaim(u))
+	return s.jwt.Sign(u.toClaim(s.exp))
 }
 
 func (s *JwtService) AddToBlacklist(ctx context.Context, token string) error {
@@ -133,14 +141,25 @@ func (s *JwtService) IsInBlacklist(ctx context.Context, token string) (bool, err
 	return s.bl.Has(ctx, token)
 }
 
-func (j *JwtService) userToClaim(u *LoginUser) jwt.Claims {
+func (u *LoginUser) toClaim(exp time.Duration) jwt.Claims {
 	return jwt.MapClaims{
 		"id":       u.Id,
 		"username": u.Username,
 		"name":     u.Name,
-		"mobile":   u.Mobile,
-		"exp":      float64(time.Now().Add(j.exp).Unix()),
+		"exp":      float64(time.Now().Add(exp).Unix()),
 	}
+}
+
+func (u *LoginUser) fromClaim(claims jwt.Claims) *LoginUser {
+	c, ok := claims.(jwt.MapClaims)
+	if !ok {
+		panic("claims is not a jwt.MapClaims")
+	}
+
+	u.Id = uint(c["id"].(float64))
+	u.Username = c["username"].(string)
+	u.Name = c["name"].(string)
+	return u
 }
 
 type redisBlacklist struct {
