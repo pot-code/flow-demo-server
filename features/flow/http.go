@@ -42,7 +42,7 @@ func (c *controller) createFlow(e echo.Context) error {
 }
 
 func (c *controller) listFlow(e echo.Context) error {
-	p, err := api.ParsePaginationFromRequest(e)
+	p, err := api.GetPaginationFromRequest(e)
 	if err != nil {
 		return err
 	}

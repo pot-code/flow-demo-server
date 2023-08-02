@@ -31,7 +31,7 @@ func main() {
 	if err != nil {
 		log.Fatal().Err(err).Msg("error creating gorm client")
 	}
-	jwt := token.NewJwtIssuer(cfg.Token.Secret)
+	jwt := auth.NewJwtService(token.NewJwtIssuer(cfg.Token.Secret), cfg.Token.Exp)
 
 	e := echo.New()
 	e.HTTPErrorHandler = api.ErrorHandler

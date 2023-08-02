@@ -21,7 +21,7 @@ const (
 	defaultPageSize = 10
 )
 
-func ParsePaginationFromRequest(e echo.Context) (*pagination.Pagination, error) {
+func GetPaginationFromRequest(e echo.Context) (*pagination.Pagination, error) {
 	pagination := &pagination.Pagination{
 		Page:     defaultPage,
 		PageSize: defaultPageSize,

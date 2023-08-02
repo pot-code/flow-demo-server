@@ -6,10 +6,10 @@ import (
 
 type authKey string
 
-func UserFromContext(ctx context.Context) *LoginUser {
+func GetLoginUserFromContext(ctx context.Context) *LoginUser {
 	return ctx.Value(authKey("user")).(*LoginUser)
 }
 
-func setUserContextValue(ctx context.Context, u *LoginUser) context.Context {
+func setLoginUserContextValue(ctx context.Context, u *LoginUser) context.Context {
 	return context.WithValue(ctx, authKey("user"), u)
 }

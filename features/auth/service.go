@@ -133,14 +133,6 @@ func (s *JwtService) GenerateToken(u *LoginUser) (string, error) {
 	return s.jwt.Sign(u.toClaim(s.exp))
 }
 
-func (s *JwtService) AddToBlacklist(ctx context.Context, token string) error {
-	return s.bl.Add(ctx, token)
-}
-
-func (s *JwtService) IsInBlacklist(ctx context.Context, token string) (bool, error) {
-	return s.bl.Has(ctx, token)
-}
-
 func (u *LoginUser) toClaim(exp time.Duration) jwt.Claims {
 	return jwt.MapClaims{
 		"id":       u.Id,
@@ -150,12 +142,21 @@ func (u *LoginUser) toClaim(exp time.Duration) jwt.Claims {
 	}
 }
 
-func (u *LoginUser) fromClaim(claims jwt.Claims) *LoginUser {
+func (s *JwtService) Verify(token string) (jwt.Claims, error) {
+	return s.jwt.Verify(token)
+}
+
+func (s *JwtService) AddToBlacklist(ctx context.Context, token string) error {
+	return s.bl.Add(ctx, token)
+}
+
+func (s *JwtService) ClaimToUser(claims jwt.Claims) *LoginUser {
 	c, ok := claims.(jwt.MapClaims)
 	if !ok {
-		panic("claims is not a jwt.MapClaims")
+		panic("claims is not jwt.MapClaims")
 	}
 
+	u := new(LoginUser)
 	u.Id = uint(c["id"].(float64))
 	u.Username = c["username"].(string)
 	u.Name = c["name"].(string)

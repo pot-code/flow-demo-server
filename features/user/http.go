@@ -21,7 +21,7 @@ func newController(s service) *controller {
 }
 
 func (c *controller) list(e echo.Context) error {
-	p, err := api.ParsePaginationFromRequest(e)
+	p, err := api.GetPaginationFromRequest(e)
 	if err != nil {
 		return err
 	}
