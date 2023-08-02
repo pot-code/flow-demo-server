@@ -5,7 +5,7 @@ type CreateFlowRequest struct {
 	Description *string `json:"description"`
 }
 
-type ListFlowDto struct {
+type ListFlowResponse struct {
 	ID          uint   `json:"id"`
 	Name        string `json:"name"`
 	Description string `json:"description"`
@@ -23,7 +23,7 @@ type ListFlowNodeParams struct {
 	FlowID *uint `json:"flow_id" query:"flow_id" validate:"required"`
 }
 
-type ListFlowNodeDto struct {
+type ListFlowNodeResponse struct {
 	ID          uint    `json:"id"`
 	Name        string  `json:"name"`
 	Description *string `json:"description"`

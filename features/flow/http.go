@@ -12,9 +12,9 @@ import (
 
 type service interface {
 	CreateFlow(ctx context.Context, data *CreateFlowRequest) error
-	ListFlow(ctx context.Context, p *pagination.Pagination) ([]*ListFlowDto, uint, error)
+	ListFlow(ctx context.Context, p *pagination.Pagination) ([]*ListFlowResponse, uint, error)
 	CreateFlowNode(ctx context.Context, data *CreateFlowNodeRequest) error
-	ListFlowNodeByFlowID(ctx context.Context, flowID uint) ([]*ListFlowNodeDto, error)
+	ListFlowNodeByFlowID(ctx context.Context, flowID uint) ([]*ListFlowNodeResponse, error)
 }
 
 type controller struct {

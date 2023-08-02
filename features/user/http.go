@@ -9,7 +9,7 @@ import (
 )
 
 type service interface {
-	ListUser(ctx context.Context, p *pagination.Pagination) ([]*listUserDto, uint, error)
+	ListUser(ctx context.Context, p *pagination.Pagination) ([]*ListUserResponse, uint, error)
 }
 
 type controller struct {

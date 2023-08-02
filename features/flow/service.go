@@ -45,9 +45,9 @@ func (s *FlowService) CreateFlow(ctx context.Context, req *CreateFlowRequest) er
 	return nil
 }
 
-func (s *FlowService) ListFlow(ctx context.Context, p *pagination.Pagination) ([]*ListFlowDto, uint, error) {
+func (s *FlowService) ListFlow(ctx context.Context, p *pagination.Pagination) ([]*ListFlowResponse, uint, error) {
 	var (
-		flows []*ListFlowDto
+		flows []*ListFlowResponse
 		count int64
 	)
 
@@ -88,8 +88,8 @@ func (s *FlowService) CreateFlowNode(ctx context.Context, req *CreateFlowNodeReq
 	return nil
 }
 
-func (s *FlowService) ListFlowNodeByFlowID(ctx context.Context, flowID uint) ([]*ListFlowNodeDto, error) {
-	var nodes []*ListFlowNodeDto
+func (s *FlowService) ListFlowNodeByFlowID(ctx context.Context, flowID uint) ([]*ListFlowNodeResponse, error) {
+	var nodes []*ListFlowNodeResponse
 	if err := s.g.WithContext(ctx).Model(&model.FlowNode{}).
 		Where(&model.FlowNode{FlowID: flowID}).
 		Find(&nodes).

@@ -17,9 +17,9 @@ func NewUserService(g *gorm.DB) *UserService {
 	return &UserService{g: g}
 }
 
-func (s *UserService) ListUser(ctx context.Context, p *pagination.Pagination) ([]*listUserDto, uint, error) {
+func (s *UserService) ListUser(ctx context.Context, p *pagination.Pagination) ([]*ListUserResponse, uint, error) {
 	var (
-		users []*listUserDto
+		users []*ListUserResponse
 		count int64
 	)
 
