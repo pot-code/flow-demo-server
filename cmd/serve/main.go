@@ -2,12 +2,12 @@ package main
 
 import (
 	"fmt"
+	"gobit-demo/config"
 	"gobit-demo/features/auth"
 	"gobit-demo/features/flow"
 	"gobit-demo/features/user"
 	"gobit-demo/internal/api"
 	"gobit-demo/internal/cache"
-	"gobit-demo/internal/config"
 	"gobit-demo/internal/db"
 	"gobit-demo/internal/logging"
 	"gobit-demo/internal/token"
@@ -21,7 +21,7 @@ import (
 func main() {
 	validate.Init()
 	cfg := config.LoadConfig()
-	logging.Init(cfg)
+	logging.Init(cfg.Logging.Level)
 
 	log.Debug().Any("config", cfg).Msg("config")
 

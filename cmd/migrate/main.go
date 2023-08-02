@@ -1,7 +1,7 @@
 package main
 
 import (
-	"gobit-demo/internal/config"
+	"gobit-demo/config"
 	"gobit-demo/internal/db"
 	"gobit-demo/internal/logging"
 	"gobit-demo/internal/validate"
@@ -13,7 +13,7 @@ import (
 func main() {
 	validate.Init()
 	cfg := config.LoadConfig()
-	logging.Init(cfg)
+	logging.Init(cfg.Logging.Level)
 
 	d := db.NewDB(cfg.Database.DSN)
 	g, err := db.NewGormClient(d)

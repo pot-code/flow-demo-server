@@ -17,6 +17,5 @@ func NewDB(dsn string) *sql.DB {
 	db.SetMaxIdleConns(10)
 	db.SetMaxOpenConns(100)
 	db.SetConnMaxLifetime(time.Hour)
-
 	return db
 }

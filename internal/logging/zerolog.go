@@ -2,18 +2,17 @@ package logging
 
 import (
 	"fmt"
-	"gobit-demo/internal/config"
 	"os"
 
 	"github.com/rs/zerolog"
 	"github.com/rs/zerolog/log"
 )
 
-func Init(cfg *config.AppConfig) {
-	level, err := zerolog.ParseLevel(cfg.Logging.Level)
+func Init(level string) {
+	l, err := zerolog.ParseLevel(level)
 	if err != nil {
 		panic(fmt.Errorf("invalid log level: %w", err))
 	}
-	zerolog.SetGlobalLevel(level)
+	zerolog.SetGlobalLevel(l)
 	log.Logger = log.Output(zerolog.ConsoleWriter{Out: os.Stderr})
 }

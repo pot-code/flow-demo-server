@@ -11,8 +11,8 @@ type AppConfig struct {
 	Port     int
 	Logging  *Logging
 	Database *Database
-	Token    *Token
 	Cache    *Cache
+	Token    *Token
 }
 
 type Logging struct {
