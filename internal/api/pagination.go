@@ -9,6 +9,13 @@ import (
 	"github.com/pot-code/gobit/pkg/validate"
 )
 
+type paginationResponse struct {
+	Page     int `json:"page"`
+	PageSize int `json:"page_size"`
+	Total    int `json:"total"`
+	response
+}
+
 const (
 	defaultPage     = 1
 	defaultPageSize = 10
@@ -47,11 +54,16 @@ func ParsePaginationFromRequest(e echo.Context) (*pagination.Pagination, error) 
 	return pagination, nil
 }
 
-func JsonPaginationData(c echo.Context, p *pagination.Pagination, total uint, data any) error {
-	return Json(c, http.StatusOK, map[string]any{
-		"page":      p.Page,
-		"page_size": p.PageSize,
-		"total":     total,
-		"data":      data,
-	})
+func JsonPaginationData(c echo.Context, p *pagination.Pagination, total int, data any) error {
+	return Json(c, http.StatusOK,
+		paginationResponse{
+			Page:     p.Page,
+			PageSize: p.PageSize,
+			Total:    total,
+			response: response{
+				Code: http.StatusOK,
+				Data: data,
+			},
+		},
+	)
 }

@@ -12,7 +12,7 @@ import (
 
 type service interface {
 	CreateFlow(ctx context.Context, data *CreateFlowRequest) error
-	ListFlow(ctx context.Context, p *pagination.Pagination) ([]*ListFlowResponse, uint, error)
+	ListFlow(ctx context.Context, p *pagination.Pagination) ([]*ListFlowResponse, int, error)
 	CreateFlowNode(ctx context.Context, data *CreateFlowNodeRequest) error
 	ListFlowNodeByFlowID(ctx context.Context, flowID uint) ([]*ListFlowNodeResponse, error)
 }

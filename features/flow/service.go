@@ -45,7 +45,7 @@ func (s *FlowService) CreateFlow(ctx context.Context, req *CreateFlowRequest) er
 	return nil
 }
 
-func (s *FlowService) ListFlow(ctx context.Context, p *pagination.Pagination) ([]*ListFlowResponse, uint, error) {
+func (s *FlowService) ListFlow(ctx context.Context, p *pagination.Pagination) ([]*ListFlowResponse, int, error) {
 	var (
 		flows []*ListFlowResponse
 		count int64
@@ -59,7 +59,7 @@ func (s *FlowService) ListFlow(ctx context.Context, p *pagination.Pagination) ([
 		Error; err != nil {
 		return nil, 0, fmt.Errorf("query flow list: %w", err)
 	}
-	return flows, uint(count), nil
+	return flows, int(count), nil
 }
 
 func (s *FlowService) CreateFlowNode(ctx context.Context, req *CreateFlowNodeRequest) error {

@@ -17,7 +17,7 @@ func NewUserService(g *gorm.DB) *UserService {
 	return &UserService{g: g}
 }
 
-func (s *UserService) ListUser(ctx context.Context, p *pagination.Pagination) ([]*ListUserResponse, uint, error) {
+func (s *UserService) ListUser(ctx context.Context, p *pagination.Pagination) ([]*ListUserResponse, int, error) {
 	var (
 		users []*ListUserResponse
 		count int64
@@ -32,5 +32,5 @@ func (s *UserService) ListUser(ctx context.Context, p *pagination.Pagination) ([
 		return nil, 0, fmt.Errorf("query user list: %w", err)
 	}
 
-	return users, uint(count), nil
+	return users, int(count), nil
 }
