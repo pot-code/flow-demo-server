@@ -4,12 +4,12 @@ import (
 	"context"
 )
 
-type userKey string
+type authKey string
 
 func UserFromContext(ctx context.Context) *LoginUser {
-	return ctx.Value(userKey("user")).(*LoginUser)
+	return ctx.Value(authKey("user")).(*LoginUser)
 }
 
 func setUserContextValue(ctx context.Context, u *LoginUser) context.Context {
-	return context.WithValue(ctx, userKey("user"), u)
+	return context.WithValue(ctx, authKey("user"), u)
 }
