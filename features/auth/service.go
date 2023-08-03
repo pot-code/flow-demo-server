@@ -133,6 +133,18 @@ func (s *JwtService) GenerateToken(u *LoginUser) (string, error) {
 	return s.jwt.Sign(u.toClaim(s.exp))
 }
 
+func (s *JwtService) Verify(token string) (jwt.Claims, error) {
+	return s.jwt.Verify(token)
+}
+
+func (s *JwtService) AddToBlacklist(ctx context.Context, token string) error {
+	return s.bl.Add(ctx, token)
+}
+
+func (s *JwtService) IsInBlacklist(ctx context.Context, token string) (bool, error) {
+	return s.bl.Has(ctx, token)
+}
+
 func (u *LoginUser) toClaim(exp time.Duration) jwt.Claims {
 	return jwt.MapClaims{
 		"id":       u.Id,
@@ -142,21 +154,12 @@ func (u *LoginUser) toClaim(exp time.Duration) jwt.Claims {
 	}
 }
 
-func (s *JwtService) Verify(token string) (jwt.Claims, error) {
-	return s.jwt.Verify(token)
-}
-
-func (s *JwtService) AddToBlacklist(ctx context.Context, token string) error {
-	return s.bl.Add(ctx, token)
-}
-
-func (s *JwtService) ClaimToUser(claims jwt.Claims) *LoginUser {
+func (u *LoginUser) fromClaim(claims jwt.Claims) *LoginUser {
 	c, ok := claims.(jwt.MapClaims)
 	if !ok {
 		panic("claims is not jwt.MapClaims")
 	}
 
-	u := new(LoginUser)
 	u.Id = uint(c["id"].(float64))
 	u.Username = c["username"].(string)
 	u.Name = c["name"].(string)
@@ -168,25 +171,25 @@ type redisBlacklist struct {
 	exp time.Duration
 }
 
-func newRedisBlacklist(rc *redis.Client, exp time.Duration) *redisBlacklist {
+func NewRedisBlacklist(rc *redis.Client, exp time.Duration) *redisBlacklist {
 	return &redisBlacklist{rc: rc, exp: exp}
 }
 
-func (j *redisBlacklist) Add(ctx context.Context, token string) error {
-	if err := j.rc.Set(ctx, j.getKey(token), 1, j.exp).Err(); err != nil {
+func (r *redisBlacklist) Add(ctx context.Context, token string) error {
+	if err := r.rc.Set(ctx, r.getKey(token), 1, r.exp).Err(); err != nil {
 		return fmt.Errorf("add token to blacklist: %w", err)
 	}
 	return nil
 }
 
-func (j *redisBlacklist) Has(ctx context.Context, token string) (bool, error) {
-	c, err := j.rc.Exists(ctx, j.getKey(token)).Result()
+func (r *redisBlacklist) Has(ctx context.Context, token string) (bool, error) {
+	c, err := r.rc.Exists(ctx, r.getKey(token)).Result()
 	if err != nil {
 		return false, fmt.Errorf("check token in blacklist: %w", err)
 	}
 	return c == 1, nil
 }
 
-func (j *redisBlacklist) getKey(token string) string {
+func (r *redisBlacklist) getKey(token string) string {
 	return fmt.Sprintf("jwt:blacklist:%s", token)
 }

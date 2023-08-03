@@ -6,6 +6,7 @@ import (
 	"gobit-demo/internal/api"
 	"gobit-demo/internal/validate"
 
+	"github.com/golang-jwt/jwt/v5"
 	"github.com/labstack/echo/v4"
 )
 
@@ -18,7 +19,9 @@ type authService interface {
 
 type tokenService interface {
 	GenerateToken(user *LoginUser) (string, error)
+	Verify(token string) (jwt.Claims, error)
 	AddToBlacklist(ctx context.Context, token string) error
+	IsInBlacklist(ctx context.Context, token string) (bool, error)
 }
 
 type controller struct {
@@ -78,6 +81,10 @@ func (c *controller) register(e echo.Context) error {
 
 func (c *controller) logout(e echo.Context) error {
 	token := getJwtTokenFromRequest(e)
+	if token == "" {
+		return nil
+	}
+
 	if err := c.ts.AddToBlacklist(e.Request().Context(), token); err != nil {
 		return err
 	}

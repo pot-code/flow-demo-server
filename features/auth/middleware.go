@@ -4,7 +4,6 @@ import (
 	"gobit-demo/internal/api"
 	"strings"
 
-	"github.com/golang-jwt/jwt/v5"
 	"github.com/labstack/echo/v4"
 )
 
@@ -16,12 +15,7 @@ func getJwtTokenFromRequest(c echo.Context) string {
 	return ""
 }
 
-type jwtService interface {
-	Verify(token string) (jwt.Claims, error)
-	ClaimToUser(claims jwt.Claims) *LoginUser
-}
-
-func AuthMiddleware(ts jwtService) func(next echo.HandlerFunc) echo.HandlerFunc {
+func AuthMiddleware(ts tokenService) func(next echo.HandlerFunc) echo.HandlerFunc {
 	return func(next echo.HandlerFunc) echo.HandlerFunc {
 		return func(c echo.Context) error {
 			token := getJwtTokenFromRequest(c)
@@ -34,7 +28,15 @@ func AuthMiddleware(ts jwtService) func(next echo.HandlerFunc) echo.HandlerFunc 
 				return api.JsonUnauthorized(c, "token 无效")
 			}
 
-			u := ts.ClaimToUser(claim)
+			ok, err := ts.IsInBlacklist(c.Request().Context(), token)
+			if err != nil {
+				return err
+			}
+			if ok {
+				return api.JsonUnauthorized(c, "token 无效")
+			}
+
+			u := new(LoginUser).fromClaim(claim)
 			c.SetRequest(c.Request().WithContext(setLoginUserContextValue(c.Request().Context(), u)))
 			return next(c)
 		}

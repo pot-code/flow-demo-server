@@ -31,21 +31,25 @@ func main() {
 	if err != nil {
 		log.Fatal().Err(err).Msg("error creating gorm client")
 	}
-	jwt := auth.NewJwtService(token.NewJwtIssuer(cfg.Token.Secret), cfg.Token.Exp)
+	js := auth.NewJwtService(
+		token.NewJwtIssuer(cfg.Token.Secret),
+		auth.NewRedisBlacklist(rc, cfg.Token.Exp),
+		cfg.Token.Exp,
+	)
 
 	e := echo.New()
 	e.HTTPErrorHandler = api.ErrorHandler
 	e.Use(api.LoggingMiddleware)
 
 	api.GroupRoute(e, "/auth", func(g *echo.Group) {
-		auth.RegisterRoute(g, gc, jwt, rc, cfg.Token.Exp)
+		auth.RegisterRoute(g, gc, js, cfg.Token.Exp)
 	})
 	api.GroupRoute(e, "/flow", func(g *echo.Group) {
-		g.Use(auth.AuthMiddleware(jwt))
+		g.Use(auth.AuthMiddleware(js))
 		flow.RegisterRoute(g, gc)
 	})
 	api.GroupRoute(e, "/user", func(g *echo.Group) {
-		g.Use(auth.AuthMiddleware(jwt))
+		g.Use(auth.AuthMiddleware(js))
 		user.RegisterRoute(g, gc)
 	})
 
