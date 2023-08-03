@@ -9,6 +9,7 @@ import (
 	"time"
 
 	"github.com/golang-jwt/jwt/v5"
+	"github.com/redis/go-redis/v9"
 	"golang.org/x/crypto/bcrypt"
 	"gorm.io/gorm"
 )
@@ -105,17 +106,31 @@ func (s *AuthService) FindUserByCredential(ctx context.Context, req *LoginReques
 	return new(LoginUser).fromUser(user), err
 }
 
+type jwtBlacklist interface {
+	Add(ctx context.Context, token string) error
+	Has(ctx context.Context, token string) (bool, error)
+}
+
 type JwtService struct {
 	jwt *token.JwtIssuer
+	bl  jwtBlacklist
 	exp time.Duration
 }
 
-func NewJwtService(jwt *token.JwtIssuer, exp time.Duration) *JwtService {
-	return &JwtService{jwt: jwt, exp: exp}
+func NewJwtService(jwt *token.JwtIssuer, bl jwtBlacklist, exp time.Duration) *JwtService {
+	return &JwtService{jwt: jwt, bl: bl, exp: exp}
 }
 
 func (s *JwtService) GenerateToken(u *LoginUser) (string, error) {
 	return s.jwt.Sign(s.userToClaim(u))
+}
+
+func (s *JwtService) AddToBlacklist(ctx context.Context, token string) error {
+	return s.bl.Add(ctx, token)
+}
+
+func (s *JwtService) IsInBlacklist(ctx context.Context, token string) (bool, error) {
+	return s.bl.Has(ctx, token)
 }
 
 func (j *JwtService) userToClaim(u *LoginUser) jwt.Claims {
@@ -126,4 +141,32 @@ func (j *JwtService) userToClaim(u *LoginUser) jwt.Claims {
 		"mobile":   u.Mobile,
 		"exp":      float64(time.Now().Add(j.exp).Unix()),
 	}
+}
+
+type redisBlacklist struct {
+	rc  *redis.Client
+	exp time.Duration
+}
+
+func newRedisBlacklist(rc *redis.Client, exp time.Duration) *redisBlacklist {
+	return &redisBlacklist{rc: rc, exp: exp}
+}
+
+func (j *redisBlacklist) Add(ctx context.Context, token string) error {
+	if err := j.rc.Set(ctx, j.getKey(token), 1, j.exp).Err(); err != nil {
+		return fmt.Errorf("add token to blacklist: %w", err)
+	}
+	return nil
+}
+
+func (j *redisBlacklist) Has(ctx context.Context, token string) (bool, error) {
+	c, err := j.rc.Exists(ctx, j.getKey(token)).Result()
+	if err != nil {
+		return false, fmt.Errorf("check token in blacklist: %w", err)
+	}
+	return c == 1, nil
+}
+
+func (j *redisBlacklist) getKey(token string) string {
+	return fmt.Sprintf("jwt:blacklist:%s", token)
 }

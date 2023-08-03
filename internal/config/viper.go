@@ -12,6 +12,7 @@ type AppConfig struct {
 	Logging  *Logging
 	Database *Database
 	Token    *Token
+	Cache    *Cache
 }
 
 type Logging struct {
@@ -19,6 +20,10 @@ type Logging struct {
 }
 
 type Database struct {
+	DSN string
+}
+
+type Cache struct {
 	DSN string
 }
 
@@ -41,7 +46,10 @@ func LoadConfig() *AppConfig {
 			Level: viper.GetString("LOG_LEVEL"),
 		},
 		Database: &Database{
-			DSN: viper.GetString("MYSQL_DSN"),
+			DSN: viper.GetString("DATABASE_DSN"),
+		},
+		Cache: &Cache{
+			DSN: viper.GetString("CACHE_DSN"),
 		},
 		Token: &Token{
 			Secret: viper.GetString("JWT_SECRET"),

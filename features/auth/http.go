@@ -18,6 +18,7 @@ type authService interface {
 
 type tokenService interface {
 	GenerateToken(user *LoginUser) (string, error)
+	AddToBlacklist(ctx context.Context, token string) error
 }
 
 type controller struct {
@@ -73,4 +74,12 @@ func (c *controller) register(e echo.Context) error {
 		return api.JsonBusinessError(e, err.Error())
 	}
 	return err
+}
+
+func (c *controller) logout(e echo.Context) error {
+	token := getJwtTokenFromRequest(e)
+	if err := c.ts.AddToBlacklist(e.Request().Context(), token); err != nil {
+		return err
+	}
+	return nil
 }

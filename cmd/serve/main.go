@@ -6,6 +6,7 @@ import (
 	"gobit-demo/features/flow"
 	"gobit-demo/features/user"
 	"gobit-demo/internal/api"
+	"gobit-demo/internal/cache"
 	"gobit-demo/internal/config"
 	"gobit-demo/internal/db"
 	"gobit-demo/internal/logging"
@@ -24,8 +25,9 @@ func main() {
 
 	log.Debug().Any("config", cfg).Msg("config")
 
-	conn := db.NewDB(cfg.Database.DSN)
-	gc, err := db.NewGormClient(conn)
+	rc := cache.NewRedisCache(cfg.Cache.DSN)
+	dc := db.NewDB(cfg.Database.DSN)
+	gc, err := db.NewGormClient(dc)
 	if err != nil {
 		log.Fatal().Err(err).Msg("error creating gorm client")
 	}
@@ -36,7 +38,7 @@ func main() {
 	e.Use(api.LoggingMiddleware)
 
 	api.GroupRoute(e, "/auth", func(g *echo.Group) {
-		auth.RegisterRoute(g, gc, jwt, cfg.Token.Exp)
+		auth.RegisterRoute(g, gc, jwt, rc, cfg.Token.Exp)
 	})
 	api.GroupRoute(e, "/flow", func(g *echo.Group) {
 		g.Use(auth.AuthMiddleware(jwt))
