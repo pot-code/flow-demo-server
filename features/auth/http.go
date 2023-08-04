@@ -85,6 +85,10 @@ func (c *controller) logout(e echo.Context) error {
 		return nil
 	}
 
+	if _, err := c.ts.Verify(token); err != nil {
+		return api.JsonUnauthorized(e, "token 无效")
+	}
+
 	if err := c.ts.AddToBlacklist(e.Request().Context(), token); err != nil {
 		return err
 	}

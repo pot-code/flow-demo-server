@@ -16,7 +16,7 @@ func main() {
 	logging.Init(cfg.Logging.Level)
 
 	d := db.NewDB(cfg.Database.DSN)
-	g, err := db.NewGormClient(d)
+	g, err := db.NewGormClient(d, log.Logger)
 	if err != nil {
 		log.Fatal().Err(err).Msg("error creating gorm client")
 	}

@@ -15,7 +15,7 @@ import (
 )
 
 var (
-	ErrUserNotFound         = errors.New("用户未找到")
+	ErrUserNotFound         = errors.New("用户不存在")
 	ErrDuplicatedUser       = errors.New("用户已存在")
 	ErrIncorrectCredentials = errors.New("用户名或密码错误")
 )

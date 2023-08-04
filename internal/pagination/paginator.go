@@ -33,3 +33,15 @@ func EntPaginator[Q EntQuery[Q, V], V any](
 
 	return data, count, nil
 }
+
+type GormQuery[T any] interface {
+	Limit(int) T
+	Offset(int) T
+}
+
+func GormPaginator[Q GormQuery[Q]](
+	query Q,
+	pagination *Pagination,
+) Q {
+	return query.Limit(pagination.PageSize).Offset((pagination.Page - 1) * pagination.PageSize)
+}

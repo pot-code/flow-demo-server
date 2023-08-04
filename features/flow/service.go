@@ -51,9 +51,7 @@ func (s *FlowService) ListFlow(ctx context.Context, p *pagination.Pagination) ([
 		count int64
 	)
 
-	if err := s.g.WithContext(ctx).Model(&model.Flow{}).
-		Limit(p.PageSize).
-		Offset((p.Page - 1) * p.PageSize).
+	if err := pagination.GormPaginator(s.g.WithContext(ctx).Model(&model.Flow{}), p).
 		Find(&flows).
 		Count(&count).
 		Error; err != nil {

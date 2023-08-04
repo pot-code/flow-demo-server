@@ -27,7 +27,7 @@ func main() {
 
 	rc := cache.NewRedisCache(cfg.Cache.DSN)
 	dc := db.NewDB(cfg.Database.DSN)
-	gc, err := db.NewGormClient(dc)
+	gc, err := db.NewGormClient(dc, log.Logger)
 	if err != nil {
 		log.Fatal().Err(err).Msg("error creating gorm client")
 	}
