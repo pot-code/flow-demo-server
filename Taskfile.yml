@@ -6,15 +6,15 @@ env:
   EXT: '{{if eq OS "windows"}}.exe{{else}}{{end}}'
 
 tasks:
-  build:
+  build:http:
     cmds:
-      - go build -v -o ./dist/app ./cmd/serve
+      - go build -v -o ./dist/app ./cmd/http
     sources:
       - ./**/*.go
       - ./.env
-  build-dev:
+  build:http:dev:
     cmds:
-      - go build -o ./tmp/main$EXT ./cmd/serve
+      - go build -o ./tmp/main$EXT ./cmd/http
     sources:
       - ./features/**/*.go
       - ./internal/**/*.go
@@ -27,5 +27,5 @@ tasks:
       - go run ./cmd/migrate
   dev:
     cmds:
-      - task: build-dev
+      - task: build:http:dev
       - ./tmp/main$EXT
