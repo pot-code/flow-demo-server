@@ -10,7 +10,7 @@ var LoggingMiddleware = middleware.RequestLoggerWithConfig(middleware.RequestLog
 	LogURI:    true,
 	LogStatus: true,
 	LogValuesFunc: func(c echo.Context, v middleware.RequestLoggerValues) error {
-		log.Info().
+		log.Debug().
 			Str("method", c.Request().Method).
 			Str("uri", v.URI).
 			Int("status", v.Status).

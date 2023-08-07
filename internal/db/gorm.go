@@ -42,7 +42,7 @@ func (g *gormLogger) Warn(_ context.Context, msg string, data ...interface{}) {
 }
 
 func (g *gormLogger) Error(_ context.Context, msg string, data ...interface{}) {
-	g.l.Error().Msgf(msg, data...)
+	// g.l.Error().Msgf(msg, data...)
 }
 
 func (g *gormLogger) Trace(_ context.Context, begin time.Time, fc func() (sql string, rowsAffected int64), err error) {
