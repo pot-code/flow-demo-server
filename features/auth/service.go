@@ -54,16 +54,15 @@ func (s *AuthService) FindUserByMobile(ctx context.Context, mobile string) (*Log
 
 func (s *AuthService) CreateUser(ctx context.Context, payload *CreateUserRequest) error {
 	return s.g.Transaction(func(tx *gorm.DB) error {
-		var count int64
-		if err := s.g.WithContext(ctx).
+		result := tx.WithContext(ctx).
 			Model(&model.User{}).
 			Where(&model.User{Mobile: payload.Mobile}).
 			Or(&model.User{Username: payload.Username}).
-			Count(&count).
-			Error; err != nil {
+			Take(nil)
+		if err := result.Error; err != nil {
 			return fmt.Errorf("check duplicate user: %w", err)
 		}
-		if count > 0 {
+		if result.RowsAffected > 0 {
 			return ErrDuplicatedUser
 		}
 
@@ -72,7 +71,7 @@ func (s *AuthService) CreateUser(ctx context.Context, payload *CreateUserRequest
 			return fmt.Errorf("hash password: %w", err)
 		}
 
-		if err = s.g.WithContext(ctx).Create(&model.User{
+		if err = tx.WithContext(ctx).Create(&model.User{
 			Name:     payload.Name,
 			Username: payload.Username,
 			Password: string(h),
