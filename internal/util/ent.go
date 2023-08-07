@@ -1,21 +1,22 @@
-package pagination
+package util
 
 import (
 	"context"
 	"fmt"
+	"gobit-demo/internal/pagination"
 )
 
-type EntQuery[Q any, V any] interface {
+type entQuery[Q any, V any] interface {
 	Offset(int) Q
 	Limit(int) Q
 	Count(ctx context.Context) (int, error)
 	All(ctx context.Context) (V, error)
 }
 
-func EntPaginator[Q EntQuery[Q, V], V any](
+func EntPaginator[Q entQuery[Q, V], V any](
 	ctx context.Context,
 	query Q,
-	pagination *Pagination,
+	pagination *pagination.Pagination,
 	dataType V,
 ) (V, int, error) {
 	count, err := query.Count(ctx)
@@ -32,16 +33,4 @@ func EntPaginator[Q EntQuery[Q, V], V any](
 	}
 
 	return data, count, nil
-}
-
-type GormQuery[T any] interface {
-	Limit(int) T
-	Offset(int) T
-}
-
-func GormPaginator[Q GormQuery[Q]](
-	query Q,
-	pagination *Pagination,
-) Q {
-	return query.Limit(pagination.PageSize).Offset((pagination.Page - 1) * pagination.PageSize)
 }

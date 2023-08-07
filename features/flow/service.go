@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"gobit-demo/internal/pagination"
+	"gobit-demo/internal/util"
 	"gobit-demo/model"
 
 	"gorm.io/gorm"
@@ -24,14 +25,15 @@ func NewFlowService(g *gorm.DB) *FlowService {
 }
 
 func (s *FlowService) CreateFlow(ctx context.Context, req *CreateFlowRequest) error {
-	var count int64
-	if err := s.g.WithContext(ctx).Model(&model.Flow{}).
-		Where(&model.Flow{Name: req.Name}).
-		Count(&count).
-		Error; err != nil {
+	ok, err := util.GormCheckExistence(s.g, func(tx *gorm.DB) *gorm.DB {
+		return tx.WithContext(ctx).Model(&model.Flow{}).
+			Select("1").
+			Where(&model.Flow{Name: req.Name}).Take(nil)
+	})
+	if err != nil {
 		return fmt.Errorf("check duplicate flow: %w", err)
 	}
-	if count > 0 {
+	if ok {
 		return ErrDuplicatedFlow
 	}
 
@@ -51,7 +53,7 @@ func (s *FlowService) ListFlow(ctx context.Context, p *pagination.Pagination) ([
 		count int64
 	)
 
-	if err := pagination.GormPaginator(s.g.WithContext(ctx).Model(&model.Flow{}), p).
+	if err := util.GormPaginator(s.g.WithContext(ctx).Model(&model.Flow{}), p).
 		Find(&flows).
 		Count(&count).
 		Error; err != nil {

@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"gobit-demo/internal/token"
+	"gobit-demo/internal/util"
 	"gobit-demo/model"
 	"time"
 
@@ -54,15 +55,17 @@ func (s *AuthService) FindUserByMobile(ctx context.Context, mobile string) (*Log
 
 func (s *AuthService) CreateUser(ctx context.Context, payload *CreateUserRequest) error {
 	return s.g.Transaction(func(tx *gorm.DB) error {
-		result := tx.WithContext(ctx).
-			Model(&model.User{}).
-			Where(&model.User{Mobile: payload.Mobile}).
-			Or(&model.User{Username: payload.Username}).
-			Take(nil)
-		if err := result.Error; err != nil {
+		ok, err := util.GormCheckExistence(s.g, func(tx *gorm.DB) *gorm.DB {
+			return tx.WithContext(ctx).
+				Model(&model.User{}).
+				Select("1").
+				Where(&model.User{Mobile: payload.Mobile}).
+				Or(&model.User{Username: payload.Username}).Take(nil)
+		})
+		if err != nil {
 			return fmt.Errorf("check duplicate user: %w", err)
 		}
-		if result.RowsAffected > 0 {
+		if ok {
 			return ErrDuplicatedUser
 		}
 
