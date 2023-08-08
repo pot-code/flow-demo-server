@@ -1,15 +1,21 @@
 package auth
 
-var topic = "auth"
-
 type UserCreatedEvent struct {
-	ID       uint   `json:"id,omitempty"`
-	Username string `json:"username,omitempty"`
-	Email    string `json:"email,omitempty"`
+	ID       uint
+	Username string
+	Email    string
+}
+
+func (e *UserCreatedEvent) Topic() string {
+	return "user.created"
 }
 
 type UserLoginEvent struct {
-	ID       uint   `json:"id,omitempty"`
-	Username string `json:"username,omitempty"`
-	IP       string `json:"ip,omitempty"`
+	ID       uint
+	Username string
+	IP       string
+}
+
+func (e *UserLoginEvent) Topic() string {
+	return "user.login"
 }

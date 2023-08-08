@@ -9,6 +9,7 @@ import (
 	"gobit-demo/internal/api"
 	"gobit-demo/internal/cache"
 	"gobit-demo/internal/db"
+	"gobit-demo/internal/event"
 	"gobit-demo/internal/logging"
 	"gobit-demo/internal/mq"
 	"gobit-demo/internal/token"
@@ -34,10 +35,11 @@ func main() {
 	}
 
 	pub := mq.NewKafkaPublisher(cfg.MessageQueue.BrokerList())
+	eb := event.NewKafkaEventBus(pub)
 
 	js := auth.NewJwtService(
 		token.NewJwtIssuer(cfg.Token.Secret),
-		auth.NewRedisBlacklist(rc, cfg.Token.Exp),
+		auth.NewRedisTokenBlacklist(rc, cfg.Token.Exp),
 		cfg.Token.Exp,
 	)
 
@@ -46,7 +48,7 @@ func main() {
 	e.Use(api.LoggingMiddleware)
 
 	api.GroupRoute(e, "/auth", func(g *echo.Group) {
-		auth.RegisterRoute(g, gc, pub, js, cfg.Token.Exp)
+		auth.RegisterRoute(g, gc, eb, js, cfg.Token.Exp)
 	})
 	api.GroupRoute(e, "/flow", func(g *echo.Group) {
 		g.Use(auth.AuthMiddleware(js))

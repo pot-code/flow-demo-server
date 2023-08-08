@@ -17,7 +17,7 @@ func NewKafkaSubscriber(brokers []string, consumerGroup string) *kafka.Subscribe
 		Unmarshaler:           kafka.DefaultMarshaler{},
 		OverwriteSaramaConfig: config,
 		ConsumerGroup:         consumerGroup,
-	}, watermill.NewStdLogger(false, false))
+	}, watermill.NewStdLogger(true, true))
 	if err != nil {
 		panic(fmt.Errorf("error creating kafka subscriber: %w", err))
 	}
@@ -28,7 +28,7 @@ func NewKafkaPublisher(brokers []string) *kafka.Publisher {
 	pub, err := kafka.NewPublisher(kafka.PublisherConfig{
 		Brokers:   brokers,
 		Marshaler: kafka.DefaultMarshaler{},
-	}, watermill.NewStdLogger(false, false))
+	}, watermill.NewStdLogger(true, true))
 	if err != nil {
 		panic(fmt.Errorf("error creating kafka publisher: %w", err))
 	}

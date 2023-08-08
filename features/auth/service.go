@@ -2,17 +2,14 @@ package auth
 
 import (
 	"context"
-	"encoding/json"
 	"errors"
 	"fmt"
+	"gobit-demo/internal/event"
 	"gobit-demo/internal/token"
 	"gobit-demo/internal/util"
 	"gobit-demo/model"
 	"time"
 
-	"github.com/ThreeDotsLabs/watermill"
-	"github.com/ThreeDotsLabs/watermill-kafka/v2/pkg/kafka"
-	"github.com/ThreeDotsLabs/watermill/message"
 	"github.com/golang-jwt/jwt/v5"
 	"github.com/redis/go-redis/v9"
 	"golang.org/x/crypto/bcrypt"
@@ -26,12 +23,12 @@ var (
 )
 
 type AuthService struct {
-	g   *gorm.DB
-	pub *kafka.Publisher
+	g  *gorm.DB
+	eb event.EventBus
 }
 
-func NewAuthService(g *gorm.DB, pub *kafka.Publisher) *AuthService {
-	return &AuthService{g: g, pub: pub}
+func NewAuthService(g *gorm.DB, eb event.EventBus) *AuthService {
+	return &AuthService{g: g, eb: eb}
 }
 
 func (s *AuthService) FindUserByUserName(ctx context.Context, username string) (*LoginUser, error) {
@@ -93,11 +90,10 @@ func (s *AuthService) CreateUser(ctx context.Context, payload *CreateUserRequest
 		return nil, err
 	}
 
-	b, _ := json.Marshal(UserCreatedEvent{
+	s.eb.Publish(&UserCreatedEvent{
 		ID:       user.ID,
 		Username: user.Username,
 	})
-	s.pub.Publish(topic, message.NewMessage(watermill.NewUUID(), b))
 	return new(RegisterUser).fromUser(&user), nil
 }
 
@@ -119,11 +115,10 @@ func (s *AuthService) FindUserByCredential(ctx context.Context, req *LoginReques
 		return nil, ErrIncorrectCredentials
 	}
 
-	b, _ := json.Marshal(UserLoginEvent{
+	s.eb.Publish(&UserLoginEvent{
 		ID:       user.ID,
 		Username: user.Username,
 	})
-	s.pub.Publish(topic, message.NewMessage(watermill.NewUUID(), b))
 	return new(LoginUser).fromUser(user), err
 }
 
@@ -143,18 +138,18 @@ func (u *RegisterUser) fromUser(user *model.User) *RegisterUser {
 	return u
 }
 
-type jwtBlacklist interface {
+type tokenBlacklist interface {
 	Add(ctx context.Context, token string) error
 	Has(ctx context.Context, token string) (bool, error)
 }
 
 type JwtService struct {
 	jwt *token.JwtIssuer
-	bl  jwtBlacklist
+	bl  tokenBlacklist
 	exp time.Duration
 }
 
-func NewJwtService(jwt *token.JwtIssuer, bl jwtBlacklist, exp time.Duration) *JwtService {
+func NewJwtService(jwt *token.JwtIssuer, bl tokenBlacklist, exp time.Duration) *JwtService {
 	return &JwtService{jwt: jwt, bl: bl, exp: exp}
 }
 
@@ -195,23 +190,23 @@ func (u *LoginUser) fromClaim(claims jwt.Claims) *LoginUser {
 	return u
 }
 
-type redisBlacklist struct {
+type redisTokenBlacklist struct {
 	rc  *redis.Client
 	exp time.Duration
 }
 
-func NewRedisBlacklist(rc *redis.Client, exp time.Duration) *redisBlacklist {
-	return &redisBlacklist{rc: rc, exp: exp}
+func NewRedisTokenBlacklist(rc *redis.Client, exp time.Duration) *redisTokenBlacklist {
+	return &redisTokenBlacklist{rc: rc, exp: exp}
 }
 
-func (r *redisBlacklist) Add(ctx context.Context, token string) error {
+func (r *redisTokenBlacklist) Add(ctx context.Context, token string) error {
 	if err := r.rc.Set(ctx, r.getKey(token), 1, r.exp).Err(); err != nil {
 		return fmt.Errorf("add token to blacklist: %w", err)
 	}
 	return nil
 }
 
-func (r *redisBlacklist) Has(ctx context.Context, token string) (bool, error) {
+func (r *redisTokenBlacklist) Has(ctx context.Context, token string) (bool, error) {
 	c, err := r.rc.Exists(ctx, r.getKey(token)).Result()
 	if err != nil {
 		return false, fmt.Errorf("check token in blacklist: %w", err)
@@ -219,6 +214,6 @@ func (r *redisBlacklist) Has(ctx context.Context, token string) (bool, error) {
 	return c == 1, nil
 }
 
-func (r *redisBlacklist) getKey(token string) string {
+func (r *redisTokenBlacklist) getKey(token string) string {
 	return fmt.Sprintf("jwt:blacklist:%s", token)
 }
