@@ -25,7 +25,7 @@ func NewFlowService(g *gorm.DB) *FlowService {
 }
 
 func (s *FlowService) CreateFlow(ctx context.Context, req *CreateFlowRequest) error {
-	ok, err := util.GormCheckExistence(s.g, func(tx *gorm.DB) *gorm.DB {
+	exists, err := util.GormCheckExistence(s.g, func(tx *gorm.DB) *gorm.DB {
 		return tx.WithContext(ctx).Model(&model.Flow{}).
 			Select("1").
 			Where(&model.Flow{Name: req.Name}).Take(nil)
@@ -33,7 +33,7 @@ func (s *FlowService) CreateFlow(ctx context.Context, req *CreateFlowRequest) er
 	if err != nil {
 		return fmt.Errorf("check duplicate flow: %w", err)
 	}
-	if ok {
+	if exists {
 		return ErrDuplicatedFlow
 	}
 

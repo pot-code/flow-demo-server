@@ -11,8 +11,6 @@ import (
 	"time"
 
 	"github.com/golang-jwt/jwt/v5"
-	"github.com/redis/go-redis/v9"
-	"golang.org/x/crypto/bcrypt"
 	"gorm.io/gorm"
 )
 
@@ -22,13 +20,19 @@ var (
 	ErrIncorrectCredentials = errors.New("用户名或密码错误")
 )
 
+type passwordHash interface {
+	Hash(password string) (string, error)
+	VerifyPassword(password, hash string) error
+}
+
 type AuthService struct {
 	g  *gorm.DB
 	eb event.EventBus
+	h  passwordHash
 }
 
-func NewAuthService(g *gorm.DB, eb event.EventBus) *AuthService {
-	return &AuthService{g: g, eb: eb}
+func NewAuthService(g *gorm.DB, eb event.EventBus, h passwordHash) *AuthService {
+	return &AuthService{g: g, eb: eb, h: h}
 }
 
 func (s *AuthService) FindUserByUserName(ctx context.Context, username string) (*LoginUser, error) {
@@ -62,7 +66,7 @@ func (s *AuthService) CreateUser(ctx context.Context, payload *CreateUserRequest
 		Mobile:   payload.Mobile,
 	}
 	if err := s.g.Transaction(func(tx *gorm.DB) error {
-		ok, err := util.GormCheckExistence(s.g, func(tx *gorm.DB) *gorm.DB {
+		exists, err := util.GormCheckExistence(s.g, func(tx *gorm.DB) *gorm.DB {
 			return tx.WithContext(ctx).
 				Model(&model.User{}).
 				Select("1").
@@ -72,15 +76,15 @@ func (s *AuthService) CreateUser(ctx context.Context, payload *CreateUserRequest
 		if err != nil {
 			return fmt.Errorf("check duplicate user: %w", err)
 		}
-		if ok {
+		if exists {
 			return ErrDuplicatedUser
 		}
 
-		h, err := bcrypt.GenerateFromPassword([]byte(payload.Password), bcrypt.DefaultCost)
+		h, err := s.h.Hash(payload.Password)
 		if err != nil {
 			return fmt.Errorf("hash password: %w", err)
 		}
-		user.Password = string(h)
+		user.Password = h
 
 		if err = tx.WithContext(ctx).Create(&user).Error; err != nil {
 			return fmt.Errorf("create user: %w", err)
@@ -94,6 +98,7 @@ func (s *AuthService) CreateUser(ctx context.Context, payload *CreateUserRequest
 		ID:       user.ID,
 		Username: user.Username,
 	})
+
 	return new(RegisterUser).fromUser(&user), nil
 }
 
@@ -111,14 +116,16 @@ func (s *AuthService) FindUserByCredential(ctx context.Context, req *LoginReques
 		return nil, fmt.Errorf("find user by login credentials: %w", err)
 	}
 
-	if err := bcrypt.CompareHashAndPassword([]byte(user.Password), []byte(req.Password)); err != nil {
+	if err := s.h.VerifyPassword(req.Password, user.Password); err != nil {
 		return nil, ErrIncorrectCredentials
 	}
 
 	s.eb.Publish(&UserLoginEvent{
-		ID:       user.ID,
-		Username: user.Username,
+		ID:        user.ID,
+		Username:  user.Username,
+		Timestamp: time.Now().Unix(),
 	})
+
 	return new(LoginUser).fromUser(user), err
 }
 
@@ -188,32 +195,4 @@ func (u *LoginUser) fromClaim(claims jwt.Claims) *LoginUser {
 	u.Username = c["username"].(string)
 	u.Name = c["name"].(string)
 	return u
-}
-
-type redisTokenBlacklist struct {
-	rc  *redis.Client
-	exp time.Duration
-}
-
-func NewRedisTokenBlacklist(rc *redis.Client, exp time.Duration) *redisTokenBlacklist {
-	return &redisTokenBlacklist{rc: rc, exp: exp}
-}
-
-func (r *redisTokenBlacklist) Add(ctx context.Context, token string) error {
-	if err := r.rc.Set(ctx, r.getKey(token), 1, r.exp).Err(); err != nil {
-		return fmt.Errorf("add token to blacklist: %w", err)
-	}
-	return nil
-}
-
-func (r *redisTokenBlacklist) Has(ctx context.Context, token string) (bool, error) {
-	c, err := r.rc.Exists(ctx, r.getKey(token)).Result()
-	if err != nil {
-		return false, fmt.Errorf("check token in blacklist: %w", err)
-	}
-	return c == 1, nil
-}
-
-func (r *redisTokenBlacklist) getKey(token string) string {
-	return fmt.Sprintf("jwt:blacklist:%s", token)
 }

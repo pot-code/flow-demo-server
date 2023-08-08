@@ -34,7 +34,7 @@ func main() {
 		log.Fatal().Err(err).Msg("error creating gorm client")
 	}
 
-	pub := mq.NewKafkaPublisher(cfg.MessageQueue.BrokerList())
+	pub := mq.NewKafkaPublisher(cfg.MessageQueue.BrokerList(), log.Logger)
 	eb := event.NewKafkaEventBus(pub)
 
 	js := auth.NewJwtService(
@@ -48,7 +48,7 @@ func main() {
 	e.Use(api.LoggingMiddleware)
 
 	api.GroupRoute(e, "/auth", func(g *echo.Group) {
-		auth.RegisterRoute(g, gc, eb, js, cfg.Token.Exp)
+		auth.RegisterRoute(g, gc, eb, js)
 	})
 	api.GroupRoute(e, "/flow", func(g *echo.Group) {
 		g.Use(auth.AuthMiddleware(js))

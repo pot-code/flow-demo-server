@@ -1,9 +1,9 @@
 package auth
 
 type UserCreatedEvent struct {
-	ID       uint
-	Username string
-	Email    string
+	ID       uint   `json:"id,omitempty"`
+	Username string `json:"username,omitempty"`
+	Email    string `json:"email,omitempty"`
 }
 
 func (e *UserCreatedEvent) Topic() string {
@@ -11,9 +11,9 @@ func (e *UserCreatedEvent) Topic() string {
 }
 
 type UserLoginEvent struct {
-	ID       uint
-	Username string
-	IP       string
+	ID        uint   `json:"id,omitempty"`
+	Username  string `json:"username,omitempty"`
+	Timestamp int64  `json:"timestamp,omitempty"`
 }
 
 func (e *UserLoginEvent) Topic() string {
