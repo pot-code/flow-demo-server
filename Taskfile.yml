@@ -4,6 +4,7 @@ version: "3"
 
 env:
   EXT: '{{if eq OS "windows"}}.exe{{else}}{{end}}'
+  PROJECT_NAME: gobit
 
 tasks:
   build:http:
@@ -25,6 +26,19 @@ tasks:
   migrate:
     cmds:
       - go run ./cmd/migrate
+  docker:up:
+    dir: ./docker
+    cmds:
+      - docker compose -p $PROJECT_NAME --env-file ../.env up -d
+  docker:down:
+    dir: ./docker
+    cmds:
+      - docker compose -p $PROJECT_NAME --env-file ../.env down
+  docker:stop:
+    dir: ./docker
+    cmds:
+      - docker compose -p $PROJECT_NAME --env-file ../.env stop
+
   dev:
     cmds:
       - task: build:http:dev

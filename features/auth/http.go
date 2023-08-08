@@ -3,6 +3,7 @@ package auth
 import (
 	"context"
 	"errors"
+	"fmt"
 	"gobit-demo/internal/api"
 	"gobit-demo/internal/validate"
 
@@ -55,7 +56,7 @@ func (c *controller) login(e echo.Context) error {
 
 	token, err := c.ts.GenerateToken(user)
 	if err != nil {
-		return err
+		return fmt.Errorf("generate token: %w", err)
 	}
 
 	return api.JsonData(e, map[string]any{
@@ -75,6 +76,9 @@ func (c *controller) register(e echo.Context) error {
 	_, err := c.us.CreateUser(e.Request().Context(), data)
 	if errors.Is(err, ErrDuplicatedUser) {
 		return api.JsonBusinessError(e, err.Error())
+	}
+	if err != nil {
+		return fmt.Errorf("create user: %w", err)
 	}
 	return err
 }
