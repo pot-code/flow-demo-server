@@ -2,7 +2,7 @@ package event
 
 import (
 	"bytes"
-	"encoding/gob"
+	"encoding/json"
 	"fmt"
 
 	"github.com/ThreeDotsLabs/watermill"
@@ -20,7 +20,7 @@ func NewKafkaEventBus(pub *kafka.Publisher) *kafkaEventBus {
 
 func (k *kafkaEventBus) Publish(e Event) error {
 	var buf bytes.Buffer
-	if err := gob.NewEncoder(&buf).Encode(e); err != nil {
+	if err := json.NewEncoder(&buf).Encode(e); err != nil {
 		panic(fmt.Errorf("error encoding event: %w", err))
 	}
 
