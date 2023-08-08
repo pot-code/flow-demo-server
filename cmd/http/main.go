@@ -29,10 +29,7 @@ func main() {
 
 	rc := cache.NewRedisCache(cfg.Cache.Address)
 	dc := db.NewDB(cfg.Database.String())
-	gc, err := db.NewGormClient(dc, log.Logger)
-	if err != nil {
-		log.Fatal().Err(err).Msg("error creating gorm client")
-	}
+	gd := db.NewGormClient(dc, log.Logger)
 
 	pub := mq.NewKafkaPublisher(cfg.MessageQueue.BrokerList(), log.Logger)
 	eb := event.NewKafkaEventBus(pub)
@@ -48,15 +45,15 @@ func main() {
 	e.Use(api.LoggingMiddleware)
 
 	api.GroupRoute(e, "/auth", func(g *echo.Group) {
-		auth.RegisterRoute(g, gc, eb, js)
+		auth.RegisterRoute(g, gd, eb, js)
 	})
 	api.GroupRoute(e, "/flow", func(g *echo.Group) {
 		g.Use(auth.AuthMiddleware(js))
-		flow.RegisterRoute(g, gc)
+		flow.RegisterRoute(g, gd)
 	})
 	api.GroupRoute(e, "/user", func(g *echo.Group) {
 		g.Use(auth.AuthMiddleware(js))
-		user.RegisterRoute(g, gc)
+		user.RegisterRoute(g, gd)
 	})
 
 	if err := e.Start(fmt.Sprintf(":%d", cfg.HttpPort)); err != http.ErrServerClosed {

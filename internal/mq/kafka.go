@@ -18,7 +18,7 @@ func NewKafkaSubscriber(brokers []string, consumerGroup string, l zerolog.Logger
 		Unmarshaler:           kafka.DefaultMarshaler{},
 		OverwriteSaramaConfig: config,
 		ConsumerGroup:         consumerGroup,
-	}, NewWatermillLogger(l))
+	}, newWatermillLogger(l))
 	if err != nil {
 		panic(fmt.Errorf("error creating kafka subscriber: %w", err))
 	}
@@ -29,7 +29,7 @@ func NewKafkaPublisher(brokers []string, l zerolog.Logger) *kafka.Publisher {
 	pub, err := kafka.NewPublisher(kafka.PublisherConfig{
 		Brokers:   brokers,
 		Marshaler: kafka.DefaultMarshaler{},
-	}, NewWatermillLogger(l))
+	}, newWatermillLogger(l))
 	if err != nil {
 		panic(fmt.Errorf("error creating kafka publisher: %w", err))
 	}
@@ -40,7 +40,7 @@ type watermillLogger struct {
 	l zerolog.Logger
 }
 
-func NewWatermillLogger(l zerolog.Logger) watermill.LoggerAdapter {
+func newWatermillLogger(l zerolog.Logger) watermill.LoggerAdapter {
 	return &watermillLogger{l: l}
 }
 

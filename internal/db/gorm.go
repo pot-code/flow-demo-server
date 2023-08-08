@@ -3,6 +3,7 @@ package db
 import (
 	"context"
 	"database/sql"
+	"fmt"
 	"time"
 
 	"github.com/rs/zerolog"
@@ -11,12 +12,16 @@ import (
 	"gorm.io/gorm/logger"
 )
 
-func NewGormClient(db *sql.DB, logger zerolog.Logger) (*gorm.DB, error) {
-	return gorm.Open(mysql.New(mysql.Config{
+func NewGormClient(db *sql.DB, logger zerolog.Logger) *gorm.DB {
+	gd, err := gorm.Open(mysql.New(mysql.Config{
 		Conn: db,
 	}), &gorm.Config{
 		Logger: NewGormLogger(logger),
 	})
+	if err != nil {
+		panic(fmt.Errorf("error connecting mysql database: %w", err))
+	}
+	return gd
 }
 
 type gormLogger struct {

@@ -16,12 +16,9 @@ func main() {
 	logging.Init(cfg.Logging.Level)
 
 	d := db.NewDB(cfg.Database.String())
-	g, err := db.NewGormClient(d, log.Logger)
-	if err != nil {
-		log.Fatal().Err(err).Msg("error creating gorm client")
-	}
+	gd := db.NewGormClient(d, log.Logger)
 
-	if err := g.AutoMigrate(
+	if err := gd.AutoMigrate(
 		&model.User{},
 		&model.Flow{},
 		&model.FlowNode{},
