@@ -10,6 +10,7 @@ import (
 	"gobit-demo/internal/cache"
 	"gobit-demo/internal/db"
 	"gobit-demo/internal/logging"
+	"gobit-demo/internal/mq"
 	"gobit-demo/internal/token"
 	"gobit-demo/internal/validate"
 	"net/http"
@@ -25,12 +26,15 @@ func main() {
 
 	log.Debug().Any("config", cfg).Msg("config")
 
-	rc := cache.NewRedisCache(cfg.Cache.DSN)
-	dc := db.NewDB(cfg.Database.DSN)
+	rc := cache.NewRedisCache(cfg.Cache.Address)
+	dc := db.NewDB(cfg.Database.String())
 	gc, err := db.NewGormClient(dc, log.Logger)
 	if err != nil {
 		log.Fatal().Err(err).Msg("error creating gorm client")
 	}
+
+	pub := mq.NewKafkaPublisher(cfg.MessageQueue.BrokerList())
+
 	js := auth.NewJwtService(
 		token.NewJwtIssuer(cfg.Token.Secret),
 		auth.NewRedisBlacklist(rc, cfg.Token.Exp),
@@ -42,7 +46,7 @@ func main() {
 	e.Use(api.LoggingMiddleware)
 
 	api.GroupRoute(e, "/auth", func(g *echo.Group) {
-		auth.RegisterRoute(g, gc, js, cfg.Token.Exp)
+		auth.RegisterRoute(g, gc, pub, js, cfg.Token.Exp)
 	})
 	api.GroupRoute(e, "/flow", func(g *echo.Group) {
 		g.Use(auth.AuthMiddleware(js))
@@ -53,7 +57,7 @@ func main() {
 		user.RegisterRoute(g, gc)
 	})
 
-	if err := e.Start(fmt.Sprintf(":%d", cfg.Port)); err != http.ErrServerClosed {
+	if err := e.Start(fmt.Sprintf(":%d", cfg.HttpPort)); err != http.ErrServerClosed {
 		log.Err(err).Msg("error starting server")
 	}
 }

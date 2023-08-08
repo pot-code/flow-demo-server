@@ -19,3 +19,10 @@ type LoginUser struct {
 	Username string
 	Mobile   string
 }
+
+type RegisterUser struct {
+	Id       uint
+	Name     string
+	Username string
+	Mobile   string
+}

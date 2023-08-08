@@ -1,111 +1,51 @@
 version: '3.7'
 services:
-  kratos-migrate:
-    image: oryd/kratos:v1.0.0
-    environment:
-      - DSN=sqlite:///var/lib/sqlite/db.sqlite?_fk=true&mode=rwc
-    volumes:
-      - type: volume
-        source: kratos-sqlite
-        target: /var/lib/sqlite
-        read_only: false
-      - type: bind
-        source: ./config/ory
-        target: /etc/config/kratos
-    command: -c /etc/config/kratos/kratos.yml migrate sql -e --yes
-    restart: on-failure
-    networks:
-      - intranet
-  kratos-selfservice-ui-node:
-    image: oryd/kratos-selfservice-ui-node:v1.0.0
+  kafka-server:
+    image: bitnami/kafka:3.5
     ports:
-      - "4455:4455"
-    environment:
-      - PORT=4455
-      - KRATOS_PUBLIC_URL=http://kratos:4433/
-      - KRATOS_BROWSER_URL=http://127.0.0.1:4433/
+      - 9094:9094
+    expose:
+      - 9092
+      - 9093
     networks:
       - intranet
-    restart: on-failure
-  kratos:
+    environment:
+      KAFKA_CFG_NODE_ID: 0
+      KAFKA_CFG_PROCESS_ROLES: controller,broker
+      KAFKA_CFG_LISTENERS: INTERNAL://:9092,CONTROLLER://:9093,EXTERNAL://:9094
+      KAFKA_CFG_LISTENER_SECURITY_PROTOCOL_MAP: CONTROLLER:PLAINTEXT,INTERNAL:PLAINTEXT,EXTERNAL:PLAINTEXT
+      KAFKA_CFG_CONTROLLER_LISTENER_NAMES: CONTROLLER
+      KAFKA_CFG_INTER_BROKER_LISTENER_NAME: INTERNAL
+      KAFKA_CFG_CONTROLLER_QUORUM_VOTERS: 0@kafka-server:9093
+      KAFKA_CFG_ADVERTISED_LISTENERS: INTERNAL://kafka-server:9092,EXTERNAL://localhost:9094
+
+  kafka-console:
+    image: docker.redpanda.com/redpandadata/console:latest
+    ports:
+      - 8080:8080
+    networks:
+      - intranet
     depends_on:
-      - kratos-migrate
-    image: oryd/kratos:v1.0.0
-    ports:
-      - '4433:4433' # public
-      - '4434:4434' # admin
-    restart: unless-stopped
+      - kafka-server
     environment:
-      - DSN=sqlite:///var/lib/sqlite/db.sqlite?_fk=true
-      - LOG_LEVEL=trace
-    command: serve -c /etc/config/kratos/kratos.yml --dev --watch-courier
-    volumes:
-      - type: volume
-        source: kratos-sqlite
-        target: /var/lib/sqlite
-        read_only: false
-      - type: bind
-        source: ./config/ory
-        target: /etc/config/kratos
-    networks:
-      - intranet
-#  hydra:
-#    image: oryd/hydra:v2.2.0-rc.2
-#    ports:
-#      - "4444:4444" # Public port
-#      - "4445:4445" # Admin port
-#      - "5555:5555" # Port for hydra token user
-#    command: serve -c /etc/config/hydra/hydra.yml all --dev
-#    volumes:
-#      - type: volume
-#        source: hydra-sqlite
-#        target: /var/lib/sqlite
-#        read_only: false
-#      - type: bind
-#        source: ./config/ory
-#        target: /etc/config/hydra
-#    environment:
-#      - DSN=sqlite:///var/lib/sqlite/db.sqlite?_fk=true
-#    restart: unless-stopped
-#    depends_on:
-#      - hydra-migrate
-#    networks:
-#      - intranet
-#  hydra-migrate:
-#    image: oryd/hydra:v2.2.0-rc.2
-#    environment:
-#      - DSN=sqlite:///var/lib/sqlite/db.sqlite?_fk=true
-#    command: migrate -c /etc/config/hydra/hydra.yml sql -e --yes
-#    volumes:
-#      - type: volume
-#        source: hydra-sqlite
-#        target: /var/lib/sqlite
-#        read_only: false
-#      - type: bind
-#        source: ./config/ory
-#        target: /etc/config/hydra
-#    restart: on-failure
-#    networks:
-#      - intranet
-#  consent:
-#    environment:
-#      - HYDRA_ADMIN_URL=http://hydra:4445
-#    image: oryd/hydra-login-consent-node:v2.2.0-rc.2
-#    ports:
-#      - "3000:3000"
-#    restart: unless-stopped
-#    networks:
-#      - intranet
-  mailslurper:
-    image: oryd/mailslurper:latest-smtps
+      KAFKA_BROKERS: kafka-server:9092
+
+  mysql:
+    image: mysql:8
     ports:
-      - '4436:4436'
-      - '4437:4437'
+      - 3306:3306
     networks:
       - intranet
+    environment:
+      MYSQL_ROOT_PASSWORD: ${DATABASE_PASSWORD}
+      MYSQL_DATABASE: ${DATABASE_DB}
+
+  redis:
+    image: redis:7
+    networks:
+      - intranet
+    ports:
+      - 6379:6379
 
 networks:
   intranet:
-volumes:
-  kratos-sqlite:
-#  hydra-sqlite:

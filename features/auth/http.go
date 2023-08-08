@@ -11,7 +11,7 @@ import (
 )
 
 type authService interface {
-	CreateUser(ctx context.Context, dto *CreateUserRequest) error
+	CreateUser(ctx context.Context, dto *CreateUserRequest) (*RegisterUser, error)
 	FindUserByUserName(ctx context.Context, name string) (*LoginUser, error)
 	FindUserByMobile(ctx context.Context, mobile string) (*LoginUser, error)
 	FindUserByCredential(ctx context.Context, req *LoginRequest) (*LoginUser, error)
@@ -72,7 +72,7 @@ func (c *controller) register(e echo.Context) error {
 		return err
 	}
 
-	err := c.us.CreateUser(e.Request().Context(), data)
+	_, err := c.us.CreateUser(e.Request().Context(), data)
 	if errors.Is(err, ErrDuplicatedUser) {
 		return api.JsonBusinessError(e, err.Error())
 	}

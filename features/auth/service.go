@@ -2,6 +2,7 @@ package auth
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"gobit-demo/internal/token"
@@ -9,6 +10,9 @@ import (
 	"gobit-demo/model"
 	"time"
 
+	"github.com/ThreeDotsLabs/watermill"
+	"github.com/ThreeDotsLabs/watermill-kafka/v2/pkg/kafka"
+	"github.com/ThreeDotsLabs/watermill/message"
 	"github.com/golang-jwt/jwt/v5"
 	"github.com/redis/go-redis/v9"
 	"golang.org/x/crypto/bcrypt"
@@ -22,11 +26,12 @@ var (
 )
 
 type AuthService struct {
-	g *gorm.DB
+	g   *gorm.DB
+	pub *kafka.Publisher
 }
 
-func NewAuthService(g *gorm.DB) *AuthService {
-	return &AuthService{g: g}
+func NewAuthService(g *gorm.DB, pub *kafka.Publisher) *AuthService {
+	return &AuthService{g: g, pub: pub}
 }
 
 func (s *AuthService) FindUserByUserName(ctx context.Context, username string) (*LoginUser, error) {
@@ -53,8 +58,13 @@ func (s *AuthService) FindUserByMobile(ctx context.Context, mobile string) (*Log
 	return user, err
 }
 
-func (s *AuthService) CreateUser(ctx context.Context, payload *CreateUserRequest) error {
-	return s.g.Transaction(func(tx *gorm.DB) error {
+func (s *AuthService) CreateUser(ctx context.Context, payload *CreateUserRequest) (*RegisterUser, error) {
+	user := model.User{
+		Name:     payload.Name,
+		Username: payload.Username,
+		Mobile:   payload.Mobile,
+	}
+	if err := s.g.Transaction(func(tx *gorm.DB) error {
 		ok, err := util.GormCheckExistence(s.g, func(tx *gorm.DB) *gorm.DB {
 			return tx.WithContext(ctx).
 				Model(&model.User{}).
@@ -73,18 +83,22 @@ func (s *AuthService) CreateUser(ctx context.Context, payload *CreateUserRequest
 		if err != nil {
 			return fmt.Errorf("hash password: %w", err)
 		}
+		user.Password = string(h)
 
-		if err = tx.WithContext(ctx).Create(&model.User{
-			Name:     payload.Name,
-			Username: payload.Username,
-			Password: string(h),
-			Mobile:   payload.Mobile,
-		}).Error; err != nil {
+		if err = tx.WithContext(ctx).Create(&user).Error; err != nil {
 			return fmt.Errorf("create user: %w", err)
 		}
-
 		return nil
+	}); err != nil {
+		return nil, err
+	}
+
+	b, _ := json.Marshal(UserCreatedEvent{
+		ID:       user.ID,
+		Username: user.Username,
 	})
+	s.pub.Publish(topic, message.NewMessage(watermill.NewUUID(), b))
+	return new(RegisterUser).fromUser(&user), nil
 }
 
 func (s *AuthService) FindUserByCredential(ctx context.Context, req *LoginRequest) (*LoginUser, error) {
@@ -105,10 +119,23 @@ func (s *AuthService) FindUserByCredential(ctx context.Context, req *LoginReques
 		return nil, ErrIncorrectCredentials
 	}
 
+	b, _ := json.Marshal(UserLoginEvent{
+		ID:       user.ID,
+		Username: user.Username,
+	})
+	s.pub.Publish(topic, message.NewMessage(watermill.NewUUID(), b))
 	return new(LoginUser).fromUser(user), err
 }
 
 func (u *LoginUser) fromUser(user *model.User) *LoginUser {
+	u.Id = user.ID
+	u.Name = user.Name
+	u.Username = user.Username
+	u.Mobile = user.Mobile
+	return u
+}
+
+func (u *RegisterUser) fromUser(user *model.User) *RegisterUser {
 	u.Id = user.ID
 	u.Name = user.Name
 	u.Username = user.Username
