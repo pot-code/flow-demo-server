@@ -13,9 +13,9 @@ import (
 	"gorm.io/gorm"
 )
 
-func NewCasbinEnforcer(gd *gorm.DB) *casbin.Enforcer {
-	gormadapter.TurnOffAutoMigrate(gd)
-	a, err := gormadapter.NewAdapterByDBWithCustomTable(gd, &model.CasbinRule{}, "casbin_rules")
+func NewCasbinEnforcer(db *gorm.DB) *casbin.Enforcer {
+	gormadapter.TurnOffAutoMigrate(db)
+	a, err := gormadapter.NewAdapterByDBWithCustomTable(db, &model.CasbinRule{}, "casbin_rules")
 	if err != nil {
 		panic(fmt.Errorf("error creating casbin gorm adapter: %w", err))
 	}
@@ -24,7 +24,7 @@ func NewCasbinEnforcer(gd *gorm.DB) *casbin.Enforcer {
 	if err != nil {
 		panic(fmt.Errorf("error creating casbin enforcer: %w", err))
 	}
-	e.SetRoleManager(newRoleManager(gd))
+	e.SetRoleManager(newRoleManager(db))
 	e.EnableAutoSave(true)
 	e.LoadPolicy()
 	return e
