@@ -19,6 +19,7 @@ func main() {
 	gd := db.NewGormClient(d, log.Logger)
 
 	if err := gd.AutoMigrate(
+		&model.CasbinRule{},
 		&model.User{},
 		&model.Flow{},
 		&model.FlowNode{},

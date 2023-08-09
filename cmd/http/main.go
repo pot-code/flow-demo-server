@@ -5,6 +5,7 @@ import (
 	"gobit-demo/config"
 	"gobit-demo/features/auth"
 	"gobit-demo/features/flow"
+	"gobit-demo/features/perm"
 	"gobit-demo/features/user"
 	"gobit-demo/internal/api"
 	"gobit-demo/internal/cache"
@@ -39,6 +40,8 @@ func main() {
 		auth.NewRedisTokenBlacklist(rc, cfg.Token.Exp),
 		cfg.Token.Exp,
 	)
+
+	perm.NewCasbinEnforcer(gd)
 
 	e := echo.New()
 	e.HTTPErrorHandler = api.ErrorHandler
