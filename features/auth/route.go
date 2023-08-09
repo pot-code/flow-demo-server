@@ -14,7 +14,7 @@ type route struct {
 	ts TokenService
 }
 
-func NewRoute(us Service, ts TokenService) *route {
+func NewRoute(us Service, ts TokenService) api.Route {
 	return &route{us: us, ts: ts}
 }
 

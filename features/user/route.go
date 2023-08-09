@@ -10,7 +10,7 @@ type route struct {
 	s Service
 }
 
-func NewRoute(s Service) *route {
+func NewRoute(s Service) api.Route {
 	return &route{s: s}
 }
 

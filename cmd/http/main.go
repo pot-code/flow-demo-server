@@ -68,18 +68,15 @@ func main() {
 	}
 	e.Use(api.LoggingMiddleware)
 
-	api.GroupRoute(e, "/auth",
-		auth.NewRoute(auth.NewService(gc, eb, auth.NewBcryptPasswordHash()), js).Append)
-	api.GroupRoute(e, "/flow",
-		func(g *echo.Group) {
-			g.Use(auth.AuthMiddleware(js))
-			flow.NewRoute(flow.NewService(gc), ps).Append(g)
-		})
-	api.GroupRoute(e, "/user",
-		func(g *echo.Group) {
-			g.Use(auth.AuthMiddleware(js))
-			user.NewRoute(user.NewService(gc)).Append(g)
-		})
+	api.AddGroupRoute(e, "/auth", auth.NewRoute(auth.NewService(gc, eb, auth.NewBcryptPasswordHash()), js))
+	api.AddGroupRoute(e, "/flow", api.RouteFn(func(g *echo.Group) {
+		g.Use(auth.AuthMiddleware(js))
+		flow.NewRoute(flow.NewService(gc), ps).Append(g)
+	}))
+	api.AddGroupRoute(e, "/user", api.RouteFn(func(g *echo.Group) {
+		g.Use(auth.AuthMiddleware(js))
+		user.NewRoute(user.NewService(gc)).Append(g)
+	}))
 
 	if err := e.Start(fmt.Sprintf(":%d", cfg.HttpPort)); err != http.ErrServerClosed {
 		log.Err(err).Msg("error starting server")

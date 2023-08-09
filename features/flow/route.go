@@ -14,7 +14,7 @@ type route struct {
 	ps perm.Service
 }
 
-func NewRoute(s Service, ps perm.Service) *route {
+func NewRoute(s Service, ps perm.Service) api.Route {
 	return &route{s: s, ps: ps}
 }
 
@@ -63,6 +63,10 @@ func (c *route) listFlow(e echo.Context) error {
 }
 
 func (c *route) createFlowNode(e echo.Context) error {
+	if err := c.ps.HasPerm(e.Request().Context(), "flow.node", "create"); err != nil {
+		return err
+	}
+
 	data := new(CreateFlowNodeRequest)
 	if err := api.Bind(e, data); err != nil {
 		return err
@@ -79,6 +83,10 @@ func (c *route) createFlowNode(e echo.Context) error {
 }
 
 func (c *route) listFlowNode(e echo.Context) error {
+	if err := c.ps.HasPerm(e.Request().Context(), "flow.node", "list"); err != nil {
+		return err
+	}
+
 	req := new(ListFlowNodeParams)
 	if err := api.Bind(e, req); err != nil {
 		return err

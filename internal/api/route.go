@@ -2,9 +2,17 @@ package api
 
 import "github.com/labstack/echo/v4"
 
-type groupFn func(e *echo.Group)
+type Route interface {
+	Append(e *echo.Group)
+}
 
-func GroupRoute(e *echo.Echo, prefix string, fn groupFn) {
+type RouteFn func(e *echo.Group)
+
+func (r RouteFn) Append(e *echo.Group) {
+	r(e)
+}
+
+func AddGroupRoute(e *echo.Echo, prefix string, r Route) {
 	g := e.Group(prefix)
-	fn(g)
+	r.Append(g)
 }
