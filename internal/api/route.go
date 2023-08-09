@@ -12,7 +12,7 @@ func (r RouteFn) Append(e *echo.Group) {
 	r(e)
 }
 
-func AddGroupRoute(e *echo.Echo, prefix string, r Route) {
+func NewRouteGroup(e *echo.Echo, prefix string, r Route) {
 	g := e.Group(prefix)
 	r.Append(g)
 }
