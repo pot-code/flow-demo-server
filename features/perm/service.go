@@ -38,7 +38,7 @@ func (s *service) DeletePermission(ctx context.Context, role string, obj string,
 }
 
 func (s *service) HasPermission(ctx context.Context, obj string, act string) error {
-	u, ok := auth.GetLoginUserFromContext(ctx)
+	u, ok := new(auth.LoginUser).FromContext(ctx)
 	if !ok {
 		panic(fmt.Errorf("no login user attached in context"))
 	}

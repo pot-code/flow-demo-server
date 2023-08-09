@@ -37,7 +37,7 @@ func AuthMiddleware(ts TokenService) func(next echo.HandlerFunc) echo.HandlerFun
 			}
 
 			u := new(LoginUser).fromClaim(claim)
-			c.SetRequest(c.Request().WithContext(setLoginUserContextValue(c.Request().Context(), u)))
+			c.SetRequest(c.Request().WithContext(u.ToContext(c.Request().Context())))
 			return next(c)
 		}
 	}
