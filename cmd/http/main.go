@@ -5,6 +5,7 @@ import (
 	"gobit-demo/config"
 	"gobit-demo/features/auth"
 	"gobit-demo/features/flow"
+	"gobit-demo/features/perm"
 	"gobit-demo/features/user"
 	"gobit-demo/internal/api"
 	"gobit-demo/internal/cache"
@@ -17,6 +18,7 @@ import (
 	"net/http"
 
 	"github.com/labstack/echo/v4"
+	v "github.com/pot-code/gobit/pkg/validate"
 	"github.com/rs/zerolog/log"
 )
 
@@ -29,7 +31,7 @@ func main() {
 
 	rc := cache.NewRedisCache(cfg.Cache.Address)
 	dc := db.NewDB(cfg.Database.String())
-	gd := db.NewGormClient(dc, log.Logger)
+	gc := db.NewGormClient(dc, log.Logger)
 
 	pub := mq.NewKafkaPublisher(cfg.MessageQueue.BrokerList(), log.Logger)
 	eb := event.NewKafkaEventBus(pub)
@@ -39,21 +41,43 @@ func main() {
 		auth.NewTokenBlacklist(rc, cfg.Token.Exp),
 		cfg.Token.Exp,
 	)
+	en := perm.NewCasbinEnforcer(gc)
+	ps := perm.NewService(en)
 
 	e := echo.New()
-	e.HTTPErrorHandler = api.ErrorHandler
+	e.HTTPErrorHandler = func(err error, c echo.Context) {
+		switch e := err.(type) {
+		case v.ValidationError:
+			api.JsonBusinessError(c, e[0].Error())
+		case *v.ValidationResult:
+			api.JsonBadRequest(c, e.Error())
+		case *api.BindError:
+			api.JsonBadRequest(c, e.Error())
+		case *perm.NoPermissionError:
+			api.JsonUnauthorized(c, "权限不足")
+		case *echo.HTTPError:
+			api.Json(c, e.Code, map[string]any{
+				"code": e.Code,
+				"msg":  e.Message,
+			})
+		default:
+			log.Err(err).Msg("")
+			api.JsonServerError(c, e.Error())
+		}
+
+	}
 	e.Use(api.LoggingMiddleware)
 
 	api.GroupRoute(e, "/auth", func(g *echo.Group) {
-		auth.RegisterRoute(g, gd, eb, js)
+		auth.RegisterRoute(g, gc, eb, js)
 	})
 	api.GroupRoute(e, "/flow", func(g *echo.Group) {
 		g.Use(auth.AuthMiddleware(js))
-		flow.RegisterRoute(g, gd)
+		flow.RegisterRoute(g, gc, ps)
 	})
 	api.GroupRoute(e, "/user", func(g *echo.Group) {
 		g.Use(auth.AuthMiddleware(js))
-		user.RegisterRoute(g, gd)
+		user.RegisterRoute(g, gc)
 	})
 
 	if err := e.Start(fmt.Sprintf(":%d", cfg.HttpPort)); err != http.ErrServerClosed {

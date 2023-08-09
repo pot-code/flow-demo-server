@@ -19,10 +19,10 @@ var (
 )
 
 type Service interface {
-	CreateUser(ctx context.Context, dto *CreateUserRequest) (*RegisterUser, error)
+	CreateUser(ctx context.Context, data *CreateUserRequest) (*RegisterUser, error)
 	FindUserByUserName(ctx context.Context, name string) (*LoginUser, error)
 	FindUserByMobile(ctx context.Context, mobile string) (*LoginUser, error)
-	FindUserByCredential(ctx context.Context, req *LoginRequest) (*LoginUser, error)
+	FindUserByCredential(ctx context.Context, data *LoginRequest) (*LoginUser, error)
 }
 
 func NewService(g *gorm.DB, eb event.EventBus, h PasswordHash) Service {
@@ -59,19 +59,19 @@ func (s *service) FindUserByMobile(ctx context.Context, mobile string) (*LoginUs
 	return user, err
 }
 
-func (s *service) CreateUser(ctx context.Context, payload *CreateUserRequest) (*RegisterUser, error) {
+func (s *service) CreateUser(ctx context.Context, data *CreateUserRequest) (*RegisterUser, error) {
 	user := model.User{
-		Name:     payload.Name,
-		Username: payload.Username,
-		Mobile:   payload.Mobile,
+		Name:     data.Name,
+		Username: data.Username,
+		Mobile:   data.Mobile,
 	}
 	if err := s.g.Transaction(func(tx *gorm.DB) error {
 		exists, err := util.GormCheckExistence(s.g, func(tx *gorm.DB) *gorm.DB {
 			return tx.WithContext(ctx).
 				Model(&model.User{}).
 				Select("1").
-				Where(&model.User{Mobile: payload.Mobile}).
-				Or(&model.User{Username: payload.Username}).Take(nil)
+				Where(&model.User{Mobile: data.Mobile}).
+				Or(&model.User{Username: data.Username}).Take(nil)
 		})
 		if err != nil {
 			return fmt.Errorf("check duplicate user: %w", err)
@@ -80,7 +80,7 @@ func (s *service) CreateUser(ctx context.Context, payload *CreateUserRequest) (*
 			return ErrDuplicatedUser
 		}
 
-		h, err := s.h.Hash(payload.Password)
+		h, err := s.h.Hash(data.Password)
 		if err != nil {
 			return fmt.Errorf("hash password: %w", err)
 		}
@@ -102,11 +102,11 @@ func (s *service) CreateUser(ctx context.Context, payload *CreateUserRequest) (*
 	return new(RegisterUser).fromUser(&user), nil
 }
 
-func (s *service) FindUserByCredential(ctx context.Context, req *LoginRequest) (*LoginUser, error) {
+func (s *service) FindUserByCredential(ctx context.Context, data *LoginRequest) (*LoginUser, error) {
 	user := new(model.User)
 	err := s.g.WithContext(ctx).
-		Where(&model.User{Mobile: req.Mobile}).
-		Or(&model.User{Username: req.Username}).
+		Where(&model.User{Mobile: data.Mobile}).
+		Or(&model.User{Username: data.Username}).
 		Take(user).
 		Error
 	if errors.Is(err, gorm.ErrRecordNotFound) {
@@ -116,7 +116,7 @@ func (s *service) FindUserByCredential(ctx context.Context, req *LoginRequest) (
 		return nil, fmt.Errorf("find user by login credentials: %w", err)
 	}
 
-	if err := s.h.VerifyPassword(req.Password, user.Password); err != nil {
+	if err := s.h.VerifyPassword(data.Password, user.Password); err != nil {
 		return nil, ErrIncorrectCredentials
 	}
 

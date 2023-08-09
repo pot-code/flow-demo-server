@@ -7,8 +7,8 @@ import (
 	"gorm.io/gorm"
 )
 
-func RegisterRoute(g *echo.Group, db *gorm.DB) {
-	c := newController(NewService(db), perm.NewService(db))
+func RegisterRoute(g *echo.Group, db *gorm.DB, ps perm.Service) {
+	c := newController(NewService(db), ps)
 	g.POST("", c.createFlow)
 	g.GET("", c.listFlow)
 	g.GET("/node", c.listFlowNode)
