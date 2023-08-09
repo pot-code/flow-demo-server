@@ -21,6 +21,7 @@ func main() {
 	if err := gd.AutoMigrate(
 		&model.CasbinRule{},
 		&model.User{},
+		&model.Role{},
 		&model.Flow{},
 		&model.FlowNode{},
 	); err != nil {

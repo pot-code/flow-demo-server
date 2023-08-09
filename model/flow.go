@@ -4,14 +4,14 @@ import "gorm.io/gorm"
 
 type Flow struct {
 	gorm.Model
-	Name        string `gorm:"uniqueIndex,size:12"`
+	Name        string `gorm:"uniqueIndex,not null,size:12"`
 	Description *string
 	Nodes       []*FlowNode
 }
 
 type FlowNode struct {
 	gorm.Model
-	Name        string
+	Name        string `gorm:"not null"`
 	Description *string
 	FlowID      uint
 	NextID      *uint
