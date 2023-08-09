@@ -27,7 +27,7 @@ type service struct {
 	g *gorm.DB
 }
 
-func NewFlowService(g *gorm.DB) *service {
+func NewService(g *gorm.DB) Service {
 	return &service{g: g}
 }
 

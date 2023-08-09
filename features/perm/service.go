@@ -2,14 +2,16 @@ package perm
 
 import (
 	"context"
+
+	"gorm.io/gorm"
 )
 
-type PermService interface {
-	HasPerm(ctx context.Context, obj, act string) bool
-	AddPerm(ctx context.Context, role, obj, act string) bool
-	DeletePerm(ctx context.Context, role, obj, act string) bool
+type Service interface {
+	HasPerm(ctx context.Context, obj, act string) error
+	AddPerm(ctx context.Context, role, obj, act string) error
+	DeletePerm(ctx context.Context, role, obj, act string) error
 }
 
-type RoleService interface {
-	HasRole(ctx context.Context, role string) bool
+func NewService(db *gorm.DB) Service {
+	return nil
 }

@@ -6,6 +6,6 @@ import (
 )
 
 func RegisterRoute(g *echo.Group, gc *gorm.DB) {
-	c := newController(NewUserService(gc))
+	c := newController(NewService(gc))
 	g.GET("", c.list)
 }

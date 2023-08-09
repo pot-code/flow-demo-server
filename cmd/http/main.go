@@ -34,9 +34,9 @@ func main() {
 	pub := mq.NewKafkaPublisher(cfg.MessageQueue.BrokerList(), log.Logger)
 	eb := event.NewKafkaEventBus(pub)
 
-	js := auth.NewJwtService(
+	js := auth.NewTokenService(
 		token.NewJwtIssuer(cfg.Token.Secret),
-		auth.NewRedisTokenBlacklist(rc, cfg.Token.Exp),
+		auth.NewTokenBlacklist(rc, cfg.Token.Exp),
 		cfg.Token.Exp,
 	)
 

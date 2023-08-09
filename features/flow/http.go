@@ -2,6 +2,7 @@ package flow
 
 import (
 	"errors"
+	"gobit-demo/features/perm"
 	"gobit-demo/internal/api"
 	"gobit-demo/internal/validate"
 
@@ -9,14 +10,19 @@ import (
 )
 
 type controller struct {
-	s Service
+	s  Service
+	ps perm.Service
 }
 
-func newController(s Service) *controller {
-	return &controller{s: s}
+func newController(s Service, ps perm.Service) *controller {
+	return &controller{s: s, ps: ps}
 }
 
 func (c *controller) createFlow(e echo.Context) error {
+	if err := c.ps.HasPerm(e.Request().Context(), "flow", "create"); err != nil {
+		return err
+	}
+
 	data := new(CreateFlowRequest)
 	if err := api.Bind(e, data); err != nil {
 		return err
@@ -33,6 +39,10 @@ func (c *controller) createFlow(e echo.Context) error {
 }
 
 func (c *controller) listFlow(e echo.Context) error {
+	if err := c.ps.HasPerm(e.Request().Context(), "flow", "list"); err != nil {
+		return err
+	}
+
 	p, err := api.GetPaginationFromRequest(e)
 	if err != nil {
 		return err

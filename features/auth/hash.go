@@ -2,11 +2,16 @@ package auth
 
 import "golang.org/x/crypto/bcrypt"
 
-type bcryptHash struct{}
+type PasswordHash interface {
+	Hash(password string) (string, error)
+	VerifyPassword(password, hash string) error
+}
 
-func NewBcryptHash() *bcryptHash {
+func NewPasswordHash() PasswordHash {
 	return &bcryptHash{}
 }
+
+type bcryptHash struct{}
 
 func (*bcryptHash) Hash(password string) (string, error) {
 	b, err := bcrypt.GenerateFromPassword([]byte(password), bcrypt.DefaultCost)

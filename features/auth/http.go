@@ -10,11 +10,11 @@ import (
 )
 
 type controller struct {
-	us AuthService
+	us Service
 	ts TokenService
 }
 
-func newController(us AuthService, ts TokenService) *controller {
+func newController(us Service, ts TokenService) *controller {
 	return &controller{us: us, ts: ts}
 }
 

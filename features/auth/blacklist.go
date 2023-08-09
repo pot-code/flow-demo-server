@@ -8,13 +8,18 @@ import (
 	"github.com/redis/go-redis/v9"
 )
 
+type TokenBlacklist interface {
+	Add(ctx context.Context, token string) error
+	Has(ctx context.Context, token string) (bool, error)
+}
+
+func NewTokenBlacklist(rc *redis.Client, exp time.Duration) TokenBlacklist {
+	return &redisTokenBlacklist{rc: rc, exp: exp}
+}
+
 type redisTokenBlacklist struct {
 	rc  *redis.Client
 	exp time.Duration
-}
-
-func NewRedisTokenBlacklist(rc *redis.Client, exp time.Duration) *redisTokenBlacklist {
-	return &redisTokenBlacklist{rc: rc, exp: exp}
 }
 
 func (r *redisTokenBlacklist) Add(ctx context.Context, token string) error {

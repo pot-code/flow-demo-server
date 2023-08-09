@@ -5,12 +5,10 @@ import (
 	"errors"
 	"fmt"
 	"gobit-demo/internal/event"
-	"gobit-demo/internal/token"
 	"gobit-demo/internal/util"
 	"gobit-demo/model"
 	"time"
 
-	"github.com/golang-jwt/jwt/v5"
 	"gorm.io/gorm"
 )
 
@@ -20,29 +18,24 @@ var (
 	ErrIncorrectCredentials = errors.New("用户名或密码错误")
 )
 
-type passwordHash interface {
-	Hash(password string) (string, error)
-	VerifyPassword(password, hash string) error
-}
-
-type AuthService interface {
+type Service interface {
 	CreateUser(ctx context.Context, dto *CreateUserRequest) (*RegisterUser, error)
 	FindUserByUserName(ctx context.Context, name string) (*LoginUser, error)
 	FindUserByMobile(ctx context.Context, mobile string) (*LoginUser, error)
 	FindUserByCredential(ctx context.Context, req *LoginRequest) (*LoginUser, error)
 }
 
-type authService struct {
+func NewService(g *gorm.DB, eb event.EventBus, h PasswordHash) Service {
+	return &service{g: g, eb: eb, h: h}
+}
+
+type service struct {
 	g  *gorm.DB
 	eb event.EventBus
-	h  passwordHash
+	h  PasswordHash
 }
 
-func NewAuthService(g *gorm.DB, eb event.EventBus, h passwordHash) *authService {
-	return &authService{g: g, eb: eb, h: h}
-}
-
-func (s *authService) FindUserByUserName(ctx context.Context, username string) (*LoginUser, error) {
+func (s *service) FindUserByUserName(ctx context.Context, username string) (*LoginUser, error) {
 	user := new(LoginUser)
 	err := s.g.WithContext(ctx).Model(&model.User{}).Where(&model.User{Username: username}).Take(user).Error
 	if errors.Is(err, gorm.ErrRecordNotFound) {
@@ -54,7 +47,7 @@ func (s *authService) FindUserByUserName(ctx context.Context, username string) (
 	return user, err
 }
 
-func (s *authService) FindUserByMobile(ctx context.Context, mobile string) (*LoginUser, error) {
+func (s *service) FindUserByMobile(ctx context.Context, mobile string) (*LoginUser, error) {
 	user := new(LoginUser)
 	err := s.g.WithContext(ctx).Model(&model.User{}).Where(&model.User{Mobile: mobile}).Take(user).Error
 	if errors.Is(err, gorm.ErrRecordNotFound) {
@@ -66,7 +59,7 @@ func (s *authService) FindUserByMobile(ctx context.Context, mobile string) (*Log
 	return user, err
 }
 
-func (s *authService) CreateUser(ctx context.Context, payload *CreateUserRequest) (*RegisterUser, error) {
+func (s *service) CreateUser(ctx context.Context, payload *CreateUserRequest) (*RegisterUser, error) {
 	user := model.User{
 		Name:     payload.Name,
 		Username: payload.Username,
@@ -109,7 +102,7 @@ func (s *authService) CreateUser(ctx context.Context, payload *CreateUserRequest
 	return new(RegisterUser).fromUser(&user), nil
 }
 
-func (s *authService) FindUserByCredential(ctx context.Context, req *LoginRequest) (*LoginUser, error) {
+func (s *service) FindUserByCredential(ctx context.Context, req *LoginRequest) (*LoginUser, error) {
 	user := new(model.User)
 	err := s.g.WithContext(ctx).
 		Where(&model.User{Mobile: req.Mobile}).
@@ -149,64 +142,5 @@ func (u *RegisterUser) fromUser(user *model.User) *RegisterUser {
 	u.Name = user.Name
 	u.Username = user.Username
 	u.Mobile = user.Mobile
-	return u
-}
-
-type TokenService interface {
-	GenerateToken(user *LoginUser) (string, error)
-	Verify(token string) (jwt.Claims, error)
-	AddToBlacklist(ctx context.Context, token string) error
-	IsInBlacklist(ctx context.Context, token string) (bool, error)
-}
-
-type tokenBlacklist interface {
-	Add(ctx context.Context, token string) error
-	Has(ctx context.Context, token string) (bool, error)
-}
-
-type jwtService struct {
-	jwt *token.JwtIssuer
-	bl  tokenBlacklist
-	exp time.Duration
-}
-
-func NewJwtService(jwt *token.JwtIssuer, bl tokenBlacklist, exp time.Duration) *jwtService {
-	return &jwtService{jwt: jwt, bl: bl, exp: exp}
-}
-
-func (s *jwtService) GenerateToken(u *LoginUser) (string, error) {
-	return s.jwt.Sign(u.toClaim(s.exp))
-}
-
-func (s *jwtService) Verify(token string) (jwt.Claims, error) {
-	return s.jwt.Verify(token)
-}
-
-func (s *jwtService) AddToBlacklist(ctx context.Context, token string) error {
-	return s.bl.Add(ctx, token)
-}
-
-func (s *jwtService) IsInBlacklist(ctx context.Context, token string) (bool, error) {
-	return s.bl.Has(ctx, token)
-}
-
-func (u *LoginUser) toClaim(exp time.Duration) jwt.Claims {
-	return jwt.MapClaims{
-		"id":       u.Id,
-		"username": u.Username,
-		"name":     u.Name,
-		"exp":      float64(time.Now().Add(exp).Unix()),
-	}
-}
-
-func (u *LoginUser) fromClaim(claims jwt.Claims) *LoginUser {
-	c, ok := claims.(jwt.MapClaims)
-	if !ok {
-		panic("claims is not jwt.MapClaims")
-	}
-
-	u.Id = uint(c["id"].(float64))
-	u.Username = c["username"].(string)
-	u.Name = c["name"].(string)
 	return u
 }
