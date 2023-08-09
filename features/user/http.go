@@ -1,22 +1,16 @@
 package user
 
 import (
-	"context"
 	"gobit-demo/internal/api"
-	"gobit-demo/internal/pagination"
 
 	"github.com/labstack/echo/v4"
 )
 
-type service interface {
-	ListUser(ctx context.Context, p *pagination.Pagination) ([]*ListUserResponse, int, error)
-}
-
 type controller struct {
-	s service
+	s Service
 }
 
-func newController(s service) *controller {
+func newController(s Service) *controller {
 	return &controller{s: s}
 }
 

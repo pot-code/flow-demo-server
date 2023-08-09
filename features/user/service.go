@@ -10,15 +10,19 @@ import (
 	"gorm.io/gorm"
 )
 
-type UserService struct {
+type Service interface {
+	ListUser(ctx context.Context, p *pagination.Pagination) ([]*ListUserResponse, int, error)
+}
+
+type service struct {
 	g *gorm.DB
 }
 
-func NewUserService(g *gorm.DB) *UserService {
-	return &UserService{g: g}
+func NewUserService(g *gorm.DB) *service {
+	return &service{g: g}
 }
 
-func (s *UserService) ListUser(ctx context.Context, p *pagination.Pagination) ([]*ListUserResponse, int, error) {
+func (s *service) ListUser(ctx context.Context, p *pagination.Pagination) ([]*ListUserResponse, int, error) {
 	var (
 		users []*ListUserResponse
 		count int64

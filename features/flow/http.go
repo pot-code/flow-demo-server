@@ -1,27 +1,18 @@
 package flow
 
 import (
-	"context"
 	"errors"
 	"gobit-demo/internal/api"
-	"gobit-demo/internal/pagination"
 	"gobit-demo/internal/validate"
 
 	"github.com/labstack/echo/v4"
 )
 
-type service interface {
-	CreateFlow(ctx context.Context, data *CreateFlowRequest) error
-	ListFlow(ctx context.Context, p *pagination.Pagination) ([]*ListFlowResponse, int, error)
-	CreateFlowNode(ctx context.Context, data *CreateFlowNodeRequest) error
-	ListFlowNodeByFlowID(ctx context.Context, flowID uint) ([]*ListFlowNodeResponse, error)
-}
-
 type controller struct {
-	s service
+	s Service
 }
 
-func newController(s service) *controller {
+func newController(s Service) *controller {
 	return &controller{s: s}
 }
 

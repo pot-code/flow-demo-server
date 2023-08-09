@@ -25,17 +25,24 @@ type passwordHash interface {
 	VerifyPassword(password, hash string) error
 }
 
-type AuthService struct {
+type AuthService interface {
+	CreateUser(ctx context.Context, dto *CreateUserRequest) (*RegisterUser, error)
+	FindUserByUserName(ctx context.Context, name string) (*LoginUser, error)
+	FindUserByMobile(ctx context.Context, mobile string) (*LoginUser, error)
+	FindUserByCredential(ctx context.Context, req *LoginRequest) (*LoginUser, error)
+}
+
+type authService struct {
 	g  *gorm.DB
 	eb event.EventBus
 	h  passwordHash
 }
 
-func NewAuthService(g *gorm.DB, eb event.EventBus, h passwordHash) *AuthService {
-	return &AuthService{g: g, eb: eb, h: h}
+func NewAuthService(g *gorm.DB, eb event.EventBus, h passwordHash) *authService {
+	return &authService{g: g, eb: eb, h: h}
 }
 
-func (s *AuthService) FindUserByUserName(ctx context.Context, username string) (*LoginUser, error) {
+func (s *authService) FindUserByUserName(ctx context.Context, username string) (*LoginUser, error) {
 	user := new(LoginUser)
 	err := s.g.WithContext(ctx).Model(&model.User{}).Where(&model.User{Username: username}).Take(user).Error
 	if errors.Is(err, gorm.ErrRecordNotFound) {
@@ -47,7 +54,7 @@ func (s *AuthService) FindUserByUserName(ctx context.Context, username string) (
 	return user, err
 }
 
-func (s *AuthService) FindUserByMobile(ctx context.Context, mobile string) (*LoginUser, error) {
+func (s *authService) FindUserByMobile(ctx context.Context, mobile string) (*LoginUser, error) {
 	user := new(LoginUser)
 	err := s.g.WithContext(ctx).Model(&model.User{}).Where(&model.User{Mobile: mobile}).Take(user).Error
 	if errors.Is(err, gorm.ErrRecordNotFound) {
@@ -59,7 +66,7 @@ func (s *AuthService) FindUserByMobile(ctx context.Context, mobile string) (*Log
 	return user, err
 }
 
-func (s *AuthService) CreateUser(ctx context.Context, payload *CreateUserRequest) (*RegisterUser, error) {
+func (s *authService) CreateUser(ctx context.Context, payload *CreateUserRequest) (*RegisterUser, error) {
 	user := model.User{
 		Name:     payload.Name,
 		Username: payload.Username,
@@ -102,7 +109,7 @@ func (s *AuthService) CreateUser(ctx context.Context, payload *CreateUserRequest
 	return new(RegisterUser).fromUser(&user), nil
 }
 
-func (s *AuthService) FindUserByCredential(ctx context.Context, req *LoginRequest) (*LoginUser, error) {
+func (s *authService) FindUserByCredential(ctx context.Context, req *LoginRequest) (*LoginUser, error) {
 	user := new(model.User)
 	err := s.g.WithContext(ctx).
 		Where(&model.User{Mobile: req.Mobile}).
@@ -145,34 +152,41 @@ func (u *RegisterUser) fromUser(user *model.User) *RegisterUser {
 	return u
 }
 
+type TokenService interface {
+	GenerateToken(user *LoginUser) (string, error)
+	Verify(token string) (jwt.Claims, error)
+	AddToBlacklist(ctx context.Context, token string) error
+	IsInBlacklist(ctx context.Context, token string) (bool, error)
+}
+
 type tokenBlacklist interface {
 	Add(ctx context.Context, token string) error
 	Has(ctx context.Context, token string) (bool, error)
 }
 
-type JwtService struct {
+type jwtService struct {
 	jwt *token.JwtIssuer
 	bl  tokenBlacklist
 	exp time.Duration
 }
 
-func NewJwtService(jwt *token.JwtIssuer, bl tokenBlacklist, exp time.Duration) *JwtService {
-	return &JwtService{jwt: jwt, bl: bl, exp: exp}
+func NewJwtService(jwt *token.JwtIssuer, bl tokenBlacklist, exp time.Duration) *jwtService {
+	return &jwtService{jwt: jwt, bl: bl, exp: exp}
 }
 
-func (s *JwtService) GenerateToken(u *LoginUser) (string, error) {
+func (s *jwtService) GenerateToken(u *LoginUser) (string, error) {
 	return s.jwt.Sign(u.toClaim(s.exp))
 }
 
-func (s *JwtService) Verify(token string) (jwt.Claims, error) {
+func (s *jwtService) Verify(token string) (jwt.Claims, error) {
 	return s.jwt.Verify(token)
 }
 
-func (s *JwtService) AddToBlacklist(ctx context.Context, token string) error {
+func (s *jwtService) AddToBlacklist(ctx context.Context, token string) error {
 	return s.bl.Add(ctx, token)
 }
 
-func (s *JwtService) IsInBlacklist(ctx context.Context, token string) (bool, error) {
+func (s *jwtService) IsInBlacklist(ctx context.Context, token string) (bool, error) {
 	return s.bl.Has(ctx, token)
 }
 

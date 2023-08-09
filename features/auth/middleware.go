@@ -15,7 +15,7 @@ func getJwtTokenFromRequest(c echo.Context) string {
 	return ""
 }
 
-func AuthMiddleware(ts tokenService) func(next echo.HandlerFunc) echo.HandlerFunc {
+func AuthMiddleware(ts TokenService) func(next echo.HandlerFunc) echo.HandlerFunc {
 	return func(next echo.HandlerFunc) echo.HandlerFunc {
 		return func(c echo.Context) error {
 			token := getJwtTokenFromRequest(c)

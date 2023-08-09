@@ -1,36 +1,20 @@
 package auth
 
 import (
-	"context"
 	"errors"
 	"fmt"
 	"gobit-demo/internal/api"
 	"gobit-demo/internal/validate"
 
-	"github.com/golang-jwt/jwt/v5"
 	"github.com/labstack/echo/v4"
 )
 
-type authService interface {
-	CreateUser(ctx context.Context, dto *CreateUserRequest) (*RegisterUser, error)
-	FindUserByUserName(ctx context.Context, name string) (*LoginUser, error)
-	FindUserByMobile(ctx context.Context, mobile string) (*LoginUser, error)
-	FindUserByCredential(ctx context.Context, req *LoginRequest) (*LoginUser, error)
-}
-
-type tokenService interface {
-	GenerateToken(user *LoginUser) (string, error)
-	Verify(token string) (jwt.Claims, error)
-	AddToBlacklist(ctx context.Context, token string) error
-	IsInBlacklist(ctx context.Context, token string) (bool, error)
-}
-
 type controller struct {
-	us authService
-	ts tokenService
+	us AuthService
+	ts TokenService
 }
 
-func newController(us authService, ts tokenService) *controller {
+func newController(us AuthService, ts TokenService) *controller {
 	return &controller{us: us, ts: ts}
 }
 

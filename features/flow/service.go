@@ -16,15 +16,22 @@ var (
 	ErrDuplicatedFlowNode = errors.New("流程结点已存在")
 )
 
-type FlowService struct {
+type Service interface {
+	CreateFlow(ctx context.Context, data *CreateFlowRequest) error
+	ListFlow(ctx context.Context, p *pagination.Pagination) ([]*ListFlowResponse, int, error)
+	CreateFlowNode(ctx context.Context, data *CreateFlowNodeRequest) error
+	ListFlowNodeByFlowID(ctx context.Context, flowID uint) ([]*ListFlowNodeResponse, error)
+}
+
+type service struct {
 	g *gorm.DB
 }
 
-func NewFlowService(g *gorm.DB) *FlowService {
-	return &FlowService{g: g}
+func NewFlowService(g *gorm.DB) *service {
+	return &service{g: g}
 }
 
-func (s *FlowService) CreateFlow(ctx context.Context, req *CreateFlowRequest) error {
+func (s *service) CreateFlow(ctx context.Context, req *CreateFlowRequest) error {
 	exists, err := util.GormCheckExistence(s.g, func(tx *gorm.DB) *gorm.DB {
 		return tx.WithContext(ctx).Model(&model.Flow{}).
 			Select("1").
@@ -47,7 +54,7 @@ func (s *FlowService) CreateFlow(ctx context.Context, req *CreateFlowRequest) er
 	return nil
 }
 
-func (s *FlowService) ListFlow(ctx context.Context, p *pagination.Pagination) ([]*ListFlowResponse, int, error) {
+func (s *service) ListFlow(ctx context.Context, p *pagination.Pagination) ([]*ListFlowResponse, int, error) {
 	var (
 		flows []*ListFlowResponse
 		count int64
@@ -62,7 +69,7 @@ func (s *FlowService) ListFlow(ctx context.Context, p *pagination.Pagination) ([
 	return flows, int(count), nil
 }
 
-func (s *FlowService) CreateFlowNode(ctx context.Context, req *CreateFlowNodeRequest) error {
+func (s *service) CreateFlowNode(ctx context.Context, req *CreateFlowNodeRequest) error {
 	var nodes []*model.FlowNode
 	if err := s.g.WithContext(ctx).Model(&model.FlowNode{}).
 		Where(&model.FlowNode{FlowID: *req.FlowID}).
@@ -88,7 +95,7 @@ func (s *FlowService) CreateFlowNode(ctx context.Context, req *CreateFlowNodeReq
 	return nil
 }
 
-func (s *FlowService) ListFlowNodeByFlowID(ctx context.Context, flowID uint) ([]*ListFlowNodeResponse, error) {
+func (s *service) ListFlowNodeByFlowID(ctx context.Context, flowID uint) ([]*ListFlowNodeResponse, error) {
 	var nodes []*ListFlowNodeResponse
 	if err := s.g.WithContext(ctx).Model(&model.FlowNode{}).
 		Where(&model.FlowNode{FlowID: flowID}).
