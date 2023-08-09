@@ -10,9 +10,9 @@ import (
 )
 
 type Service interface {
-	HasPerm(ctx context.Context, obj, act string) error
-	AddPerm(ctx context.Context, role, obj, act string) error
-	DeletePerm(ctx context.Context, role, obj, act string) error
+	HasPermission(ctx context.Context, obj, act string) error
+	AddPermission(ctx context.Context, role, obj, act string) error
+	DeletePermission(ctx context.Context, role, obj, act string) error
 }
 
 func NewService(e *casbin.Enforcer) Service {
@@ -23,27 +23,24 @@ type service struct {
 	e *casbin.Enforcer
 }
 
-func (s *service) AddPerm(ctx context.Context, role string, obj string, act string) error {
+func (s *service) AddPermission(ctx context.Context, role string, obj string, act string) error {
 	if _, err := s.e.AddPolicy(role, obj, act); err != nil {
 		return fmt.Errorf("add permission: %w", err)
 	}
 	return nil
 }
 
-func (s *service) DeletePerm(ctx context.Context, role string, obj string, act string) error {
+func (s *service) DeletePermission(ctx context.Context, role string, obj string, act string) error {
 	if _, err := s.e.RemovePolicy(role, obj, act); err != nil {
 		return fmt.Errorf("delete permission: %w", err)
 	}
 	return nil
 }
 
-func (s *service) HasPerm(ctx context.Context, obj string, act string) error {
+func (s *service) HasPermission(ctx context.Context, obj string, act string) error {
 	u, ok := auth.GetLoginUserFromContext(ctx)
 	if !ok {
-		return &NoPermissionError{
-			Obj: obj,
-			Act: act,
-		}
+		panic(fmt.Errorf("no login user attached in context"))
 	}
 
 	ok, err := s.e.Enforce(strconv.Itoa(int(u.Id)), obj, act)
