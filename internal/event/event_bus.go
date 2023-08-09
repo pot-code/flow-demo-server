@@ -14,7 +14,7 @@ type kafkaEventBus struct {
 	pub *kafka.Publisher
 }
 
-func NewKafkaEventBus(pub *kafka.Publisher) *kafkaEventBus {
+func NewKafkaEventBus(pub *kafka.Publisher) EventBus {
 	return &kafkaEventBus{pub: pub}
 }
 

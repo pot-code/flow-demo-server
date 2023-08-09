@@ -7,11 +7,11 @@ type PasswordHash interface {
 	VerifyPassword(password, hash string) error
 }
 
-func NewPasswordHash() PasswordHash {
+type bcryptHash struct{}
+
+func NewBcryptPasswordHash() PasswordHash {
 	return &bcryptHash{}
 }
-
-type bcryptHash struct{}
 
 func (*bcryptHash) Hash(password string) (string, error) {
 	b, err := bcrypt.GenerateFromPassword([]byte(password), bcrypt.DefaultCost)

@@ -16,7 +16,7 @@ func NewGormClient(db *sql.DB, logger zerolog.Logger) *gorm.DB {
 	gd, err := gorm.Open(mysql.New(mysql.Config{
 		Conn: db,
 	}), &gorm.Config{
-		Logger: NewGormLogger(logger),
+		Logger: newGormLogger(logger),
 	})
 	if err != nil {
 		panic(fmt.Errorf("error connecting mysql database: %w", err))
@@ -28,7 +28,7 @@ type gormLogger struct {
 	l zerolog.Logger
 }
 
-func NewGormLogger(l zerolog.Logger) logger.Interface {
+func newGormLogger(l zerolog.Logger) logger.Interface {
 	return &gormLogger{l}
 }
 

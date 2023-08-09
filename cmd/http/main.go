@@ -36,9 +36,9 @@ func main() {
 	pub := mq.NewKafkaPublisher(cfg.MessageQueue.BrokerList(), log.Logger)
 	eb := event.NewKafkaEventBus(pub)
 
-	js := auth.NewTokenService(
+	js := auth.NewJwtTokenService(
 		token.NewJwtIssuer(cfg.Token.Secret),
-		auth.NewTokenBlacklist(rc, cfg.Token.Exp),
+		auth.NewRedisTokenBlacklist(rc, cfg.Token.Exp),
 		cfg.Token.Exp,
 	)
 	en := perm.NewCasbinEnforcer(gc)
@@ -68,15 +68,18 @@ func main() {
 	}
 	e.Use(api.LoggingMiddleware)
 
-	api.GroupRoute(e, "/auth", auth.NewRoute(auth.NewService(gc, eb, auth.NewPasswordHash()), js).Append)
-	api.GroupRoute(e, "/flow", func(g *echo.Group) {
-		g.Use(auth.AuthMiddleware(js))
-		flow.NewRoute(flow.NewService(gc), ps).Append(g)
-	})
-	api.GroupRoute(e, "/user", func(g *echo.Group) {
-		g.Use(auth.AuthMiddleware(js))
-		user.NewRoute(user.NewService(gc)).Append(g)
-	})
+	api.GroupRoute(e, "/auth",
+		auth.NewRoute(auth.NewService(gc, eb, auth.NewBcryptPasswordHash()), js).Append)
+	api.GroupRoute(e, "/flow",
+		func(g *echo.Group) {
+			g.Use(auth.AuthMiddleware(js))
+			flow.NewRoute(flow.NewService(gc), ps).Append(g)
+		})
+	api.GroupRoute(e, "/user",
+		func(g *echo.Group) {
+			g.Use(auth.AuthMiddleware(js))
+			user.NewRoute(user.NewService(gc)).Append(g)
+		})
 
 	if err := e.Start(fmt.Sprintf(":%d", cfg.HttpPort)); err != http.ErrServerClosed {
 		log.Err(err).Msg("error starting server")

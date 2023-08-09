@@ -24,18 +24,18 @@ func NewCasbinEnforcer(gd *gorm.DB) *casbin.Enforcer {
 	if err != nil {
 		panic(fmt.Errorf("error creating casbin enforcer: %w", err))
 	}
-	e.SetRoleManager(newGormRoleManager(gd))
+	e.SetRoleManager(newRoleManager(gd))
 	e.EnableAutoSave(true)
 	e.LoadPolicy()
 	return e
 }
 
-type gormRoleManager struct {
-	g *gorm.DB
+func newRoleManager(g *gorm.DB) rbac.RoleManager {
+	return &gormRoleManager{g: g}
 }
 
-func newGormRoleManager(g *gorm.DB) *gormRoleManager {
-	return &gormRoleManager{g: g}
+type gormRoleManager struct {
+	g *gorm.DB
 }
 
 func (r *gormRoleManager) Clear() error {

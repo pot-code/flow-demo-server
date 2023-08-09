@@ -15,14 +15,14 @@ type TokenService interface {
 	IsInBlacklist(ctx context.Context, token string) (bool, error)
 }
 
-func NewTokenService(jwt *token.JwtIssuer, bl TokenBlacklist, exp time.Duration) TokenService {
-	return &jwtService{jwt: jwt, bl: bl, exp: exp}
-}
-
 type jwtService struct {
 	jwt *token.JwtIssuer
 	bl  TokenBlacklist
 	exp time.Duration
+}
+
+func NewJwtTokenService(jwt *token.JwtIssuer, bl TokenBlacklist, exp time.Duration) TokenService {
+	return &jwtService{jwt: jwt, bl: bl, exp: exp}
 }
 
 func (s *jwtService) GenerateToken(u *LoginUser) (string, error) {
