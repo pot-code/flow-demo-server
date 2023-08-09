@@ -31,30 +31,30 @@ func NewCasbinEnforcer(gd *gorm.DB) *casbin.Enforcer {
 }
 
 func newRoleManager(g *gorm.DB) rbac.RoleManager {
-	return &gormRoleManager{g: g}
+	return &roleManager{g: g}
 }
 
-type gormRoleManager struct {
+type roleManager struct {
 	g *gorm.DB
 }
 
-func (r *gormRoleManager) Clear() error {
+func (r *roleManager) Clear() error {
 	return nil
 }
 
-func (r *gormRoleManager) AddLink(name1 string, name2 string, domain ...string) error {
+func (r *roleManager) AddLink(name1 string, name2 string, domain ...string) error {
 	panic("implement me")
 }
 
-func (r *gormRoleManager) BuildRelationship(name1 string, name2 string, domain ...string) error {
+func (r *roleManager) BuildRelationship(name1 string, name2 string, domain ...string) error {
 	panic("implement me")
 }
 
-func (r *gormRoleManager) DeleteLink(name1 string, name2 string, domain ...string) error {
+func (r *roleManager) DeleteLink(name1 string, name2 string, domain ...string) error {
 	panic("implement me")
 }
 
-func (r *gormRoleManager) HasLink(name1 string, name2 string, domain ...string) (bool, error) {
+func (r *roleManager) HasLink(name1 string, name2 string, domain ...string) (bool, error) {
 	roles, err := r.GetRoles(name1, domain...)
 	if err != nil {
 		return false, err
@@ -67,7 +67,7 @@ func (r *gormRoleManager) HasLink(name1 string, name2 string, domain ...string) 
 	return false, nil
 }
 
-func (r *gormRoleManager) GetRoles(name string, domain ...string) ([]string, error) {
+func (r *roleManager) GetRoles(name string, domain ...string) ([]string, error) {
 	uid, err := strconv.Atoi(name)
 	if err != nil {
 		return nil, fmt.Errorf("invalid user id: %w", err)
@@ -84,7 +84,7 @@ func (r *gormRoleManager) GetRoles(name string, domain ...string) ([]string, err
 	return roles, nil
 }
 
-func (r *gormRoleManager) GetUsers(name string, domain ...string) ([]string, error) {
+func (r *roleManager) GetUsers(name string, domain ...string) ([]string, error) {
 	rid, err := strconv.Atoi(name)
 	if err != nil {
 		return nil, fmt.Errorf("invalid role id: %w", err)
@@ -101,30 +101,30 @@ func (r *gormRoleManager) GetUsers(name string, domain ...string) ([]string, err
 	return users, nil
 }
 
-func (r *gormRoleManager) GetDomains(name string) ([]string, error) {
+func (r *roleManager) GetDomains(name string) ([]string, error) {
 	panic("implement me")
 }
 
-func (r *gormRoleManager) GetAllDomains() ([]string, error) {
+func (r *roleManager) GetAllDomains() ([]string, error) {
 	panic("implement me")
 }
 
-func (r *gormRoleManager) PrintRoles() error {
+func (r *roleManager) PrintRoles() error {
 	panic("implement me")
 }
 
-func (r *gormRoleManager) SetLogger(logger log.Logger) {
+func (r *roleManager) SetLogger(logger log.Logger) {
 	panic("implement me")
 }
 
-func (r *gormRoleManager) Match(str string, pattern string) bool {
+func (r *roleManager) Match(str string, pattern string) bool {
 	panic("implement me")
 }
 
-func (r *gormRoleManager) AddMatchingFunc(name string, fn rbac.MatchingFunc) {
+func (r *roleManager) AddMatchingFunc(name string, fn rbac.MatchingFunc) {
 	panic("implement me")
 }
 
-func (r *gormRoleManager) AddDomainMatchingFunc(name string, fn rbac.MatchingFunc) {
+func (r *roleManager) AddDomainMatchingFunc(name string, fn rbac.MatchingFunc) {
 	panic("implement me")
 }

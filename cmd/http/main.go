@@ -64,7 +64,6 @@ func main() {
 			log.Err(err).Msg("")
 			api.JsonServerError(c, e.Error())
 		}
-
 	}
 	e.Use(api.LoggingMiddleware)
 

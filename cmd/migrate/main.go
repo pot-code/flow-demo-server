@@ -16,9 +16,9 @@ func main() {
 	logging.Init(cfg.Logging.Level)
 
 	d := db.NewDB(cfg.Database.String())
-	gd := db.NewGormClient(d, log.Logger)
+	gc := db.NewGormClient(d, log.Logger)
 
-	if err := gd.AutoMigrate(
+	if err := gc.AutoMigrate(
 		&model.CasbinRule{},
 		&model.User{},
 		&model.Role{},
