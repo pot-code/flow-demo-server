@@ -68,9 +68,9 @@ func (r *roleManager) HasLink(name1 string, name2 string, domain ...string) (boo
 }
 
 func (r *roleManager) GetRoles(name string, domain ...string) ([]string, error) {
-	uid, err := strconv.Atoi(name)
+	uid, err := r.parseUserId(name)
 	if err != nil {
-		return nil, fmt.Errorf("invalid user id: %w", err)
+		return nil, err
 	}
 
 	var roles []string
@@ -84,10 +84,18 @@ func (r *roleManager) GetRoles(name string, domain ...string) ([]string, error) 
 	return roles, nil
 }
 
-func (r *roleManager) GetUsers(name string, domain ...string) ([]string, error) {
-	rid, err := strconv.Atoi(name)
+func (r *roleManager) parseUserId(name string) (interface{}, error) {
+	uid, err := strconv.Atoi(name)
 	if err != nil {
-		return nil, fmt.Errorf("invalid role id: %w", err)
+		return 0, fmt.Errorf("invalid user id: %w", err)
+	}
+	return uint(uid), nil
+}
+
+func (r *roleManager) GetUsers(name string, domain ...string) ([]string, error) {
+	rid, err := r.parseRoleId(name)
+	if err != nil {
+		return nil, err
 	}
 
 	var users []string
@@ -99,6 +107,14 @@ func (r *roleManager) GetUsers(name string, domain ...string) ([]string, error) 
 		return nil, fmt.Errorf("get user roles: %w", err)
 	}
 	return users, nil
+}
+
+func (r *roleManager) parseRoleId(name string) (interface{}, error) {
+	uid, err := strconv.Atoi(name)
+	if err != nil {
+		return 0, fmt.Errorf("invalid role id: %w", err)
+	}
+	return uint(uid), nil
 }
 
 func (r *roleManager) GetDomains(name string) ([]string, error) {
