@@ -15,7 +15,7 @@ func GormCheckExistence(db *gorm.DB, queryFn func(tx *gorm.DB) *gorm.DB) (bool, 
 	var result existenceResult
 	sql := db.ToSQL(queryFn)
 	if err := db.Raw(fmt.Sprintf("SELECT EXISTS(%s) as exist", sql)).Scan(&result).Error; err != nil {
-		return false, fmt.Errorf("check existence: %w", err)
+		return false, fmt.Errorf("select exists: %w", err)
 	}
 	return result.Exist, nil
 }

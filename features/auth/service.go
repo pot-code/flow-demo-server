@@ -66,7 +66,7 @@ func (s *service) CreateUser(ctx context.Context, data *CreateUserRequest) (*Reg
 		Mobile:   data.Mobile,
 	}
 	if err := s.g.Transaction(func(tx *gorm.DB) error {
-		exists, err := util.GormCheckExistence(s.g, func(tx *gorm.DB) *gorm.DB {
+		exists, err := util.GormCheckExistence(tx, func(tx *gorm.DB) *gorm.DB {
 			return tx.WithContext(ctx).
 				Model(&model.User{}).
 				Select("1").

@@ -32,26 +32,28 @@ func NewService(g *gorm.DB) Service {
 }
 
 func (s *service) CreateFlow(ctx context.Context, req *CreateFlowRequest) error {
-	exists, err := util.GormCheckExistence(s.g, func(tx *gorm.DB) *gorm.DB {
-		return tx.WithContext(ctx).Model(&model.Flow{}).
-			Select("1").
-			Where(&model.Flow{Name: req.Name}).Take(nil)
-	})
-	if err != nil {
-		return fmt.Errorf("check duplicate flow: %w", err)
-	}
-	if exists {
-		return ErrDuplicatedFlow
-	}
+	return s.g.Transaction(func(tx *gorm.DB) error {
+		exists, err := util.GormCheckExistence(tx, func(tx *gorm.DB) *gorm.DB {
+			return tx.WithContext(ctx).Model(&model.Flow{}).
+				Select("1").
+				Where(&model.Flow{Name: req.Name}).Take(nil)
+		})
+		if err != nil {
+			return fmt.Errorf("check duplicate flow: %w", err)
+		}
+		if exists {
+			return ErrDuplicatedFlow
+		}
 
-	save := &model.Flow{
-		Name:        req.Name,
-		Description: req.Description,
-	}
-	if err := s.g.WithContext(ctx).Create(save).Error; err != nil {
-		return fmt.Errorf("create flow: %w", err)
-	}
-	return nil
+		save := &model.Flow{
+			Name:        req.Name,
+			Description: req.Description,
+		}
+		if err := tx.WithContext(ctx).Create(save).Error; err != nil {
+			return fmt.Errorf("create flow: %w", err)
+		}
+		return nil
+	})
 }
 
 func (s *service) ListFlow(ctx context.Context, p *pagination.Pagination) ([]*ListFlowResponse, int, error) {
@@ -70,29 +72,32 @@ func (s *service) ListFlow(ctx context.Context, p *pagination.Pagination) ([]*Li
 }
 
 func (s *service) CreateFlowNode(ctx context.Context, req *CreateFlowNodeRequest) error {
-	var nodes []*model.FlowNode
-	if err := s.g.WithContext(ctx).Model(&model.FlowNode{}).
-		Where(&model.FlowNode{FlowID: *req.FlowID}).
-		Find(&nodes).
-		Error; err != nil {
-		return fmt.Errorf("query flow node: %w", err)
-	}
-	for _, node := range nodes {
-		if node.Name == req.Name {
+	return s.g.Transaction(func(tx *gorm.DB) error {
+		ok, err := util.GormCheckExistence(tx, func(tx *gorm.DB) *gorm.DB {
+			return tx.WithContext(ctx).
+				Model(&model.FlowNode{}).
+				Select("1").
+				Where(&model.FlowNode{FlowID: *req.FlowID}).
+				Take(nil)
+		})
+		if err != nil {
+			return fmt.Errorf("check duplicate flow node: %w", err)
+		}
+		if ok {
 			return ErrDuplicatedFlowNode
 		}
-	}
 
-	if err := s.g.WithContext(ctx).Create(&model.FlowNode{
-		FlowID:      *req.FlowID,
-		Name:        req.Name,
-		Description: req.Description,
-		PrevID:      req.PrevID,
-		NextID:      req.NextID,
-	}).Error; err != nil {
-		return fmt.Errorf("create flow node: %w", err)
-	}
-	return nil
+		if err := tx.WithContext(ctx).Create(&model.FlowNode{
+			FlowID:      *req.FlowID,
+			Name:        req.Name,
+			Description: req.Description,
+			PrevID:      req.PrevID,
+			NextID:      req.NextID,
+		}).Error; err != nil {
+			return fmt.Errorf("create flow node: %w", err)
+		}
+		return nil
+	})
 }
 
 func (s *service) ListFlowNodeByFlowID(ctx context.Context, flowID uint) ([]*ListFlowNodeResponse, error) {
