@@ -68,16 +68,14 @@ func main() {
 	}
 	e.Use(api.LoggingMiddleware)
 
-	api.GroupRoute(e, "/auth", func(g *echo.Group) {
-		auth.RegisterRoute(g, gc, eb, js)
-	})
+	api.GroupRoute(e, "/auth", auth.NewRoute(auth.NewService(gc, eb, auth.NewPasswordHash()), js).Append)
 	api.GroupRoute(e, "/flow", func(g *echo.Group) {
 		g.Use(auth.AuthMiddleware(js))
-		flow.RegisterRoute(g, gc, ps)
+		flow.NewRoute(flow.NewService(gc), ps).Append(g)
 	})
 	api.GroupRoute(e, "/user", func(g *echo.Group) {
 		g.Use(auth.AuthMiddleware(js))
-		user.RegisterRoute(g, gc)
+		user.NewRoute(user.NewService(gc)).Append(g)
 	})
 
 	if err := e.Start(fmt.Sprintf(":%d", cfg.HttpPort)); err != http.ErrServerClosed {
