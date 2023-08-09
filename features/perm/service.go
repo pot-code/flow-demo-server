@@ -2,16 +2,11 @@ package perm
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	"gobit-demo/features/auth"
 	"strconv"
 
 	"github.com/casbin/casbin/v2"
-)
-
-var (
-	ErrForbidden = errors.New("权限不足")
 )
 
 type Service interface {
@@ -43,7 +38,14 @@ func (s *service) DeletePerm(ctx context.Context, role string, obj string, act s
 }
 
 func (s *service) HasPerm(ctx context.Context, obj string, act string) error {
-	u := auth.GetLoginUserFromContext(ctx)
+	u, ok := auth.GetLoginUserFromContext(ctx)
+	if !ok {
+		return &NoPermissionError{
+			Obj: obj,
+			Act: act,
+		}
+	}
+
 	ok, err := s.e.Enforce(strconv.Itoa(int(u.Id)), obj, act)
 	if err != nil {
 		return fmt.Errorf("check permission: %w", err)
