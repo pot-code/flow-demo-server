@@ -1,4 +1,4 @@
-package perm
+package rbac
 
 import "fmt"
 

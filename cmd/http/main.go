@@ -5,7 +5,7 @@ import (
 	"gobit-demo/config"
 	"gobit-demo/features/auth"
 	"gobit-demo/features/flow"
-	"gobit-demo/features/perm"
+	"gobit-demo/features/rbac"
 	"gobit-demo/features/user"
 	"gobit-demo/internal/api"
 	"gobit-demo/internal/cache"
@@ -32,17 +32,14 @@ func main() {
 	rc := cache.NewRedisCache(cfg.Cache.Address)
 	dc := db.NewMysqlDB(cfg.Database.String())
 	gc := orm.NewGormDB(dc, log.Logger)
-
-	pub := mq.NewKafkaPublisher(cfg.MessageQueue.BrokerList(), log.Logger)
-	eb := event.NewKafkaEventBus(pub)
-
+	kb := mq.NewKafkaPublisher(cfg.MessageQueue.BrokerList(), log.Logger)
+	eb := event.NewKafkaEventBus(kb)
 	js := auth.NewJwtTokenService(
 		auth.NewRedisTokenBlacklist(rc, cfg.Token.Exp),
 		cfg.Token.Secret,
 		cfg.Token.Exp,
 	)
-	en := perm.NewCasbinEnforcer(gc)
-	ps := perm.NewService(en)
+	rs := rbac.NewService(gc)
 
 	e := echo.New()
 	e.HTTPErrorHandler = func(err error, c echo.Context) {
@@ -53,7 +50,7 @@ func main() {
 			api.JsonBadRequest(c, e.Error())
 		case *api.BindError:
 			api.JsonBadRequest(c, e.Error())
-		case *perm.NoPermissionError:
+		case *rbac.NoPermissionError:
 			api.JsonUnauthorized(c, "权限不足")
 		case *echo.HTTPError:
 			api.Json(c, e.Code, map[string]any{
@@ -70,7 +67,7 @@ func main() {
 	api.NewRouteGroup(e, "/auth", auth.NewRoute(auth.NewService(gc, eb, auth.NewBcryptPasswordHash()), js))
 	api.NewRouteGroup(e, "/flow", api.RouteFn(func(g *echo.Group) {
 		g.Use(auth.AuthMiddleware(js))
-		flow.NewRoute(flow.NewService(gc), ps).Append(g)
+		flow.NewRoute(flow.NewService(gc), rs).Append(g)
 	}))
 	api.NewRouteGroup(e, "/user", api.RouteFn(func(g *echo.Group) {
 		g.Use(auth.AuthMiddleware(js))

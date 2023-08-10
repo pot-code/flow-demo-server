@@ -1,4 +1,4 @@
-package perm
+package rbac
 
 import (
 	"fmt"
@@ -13,7 +13,7 @@ import (
 	"gorm.io/gorm"
 )
 
-func NewCasbinEnforcer(db *gorm.DB) *casbin.Enforcer {
+func newCasbinEnforcer(db *gorm.DB) *casbin.Enforcer {
 	gormadapter.TurnOffAutoMigrate(db)
 	a, err := gormadapter.NewAdapterByDBWithCustomTable(db, &model.CasbinRule{}, "casbin_rules")
 	if err != nil {

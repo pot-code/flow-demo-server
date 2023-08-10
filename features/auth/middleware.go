@@ -36,7 +36,7 @@ func AuthMiddleware(ts TokenService) func(next echo.HandlerFunc) echo.HandlerFun
 				return api.JsonUnauthorized(c, "token 无效")
 			}
 
-			c.SetRequest(c.Request().WithContext(u.ToContext(c.Request().Context())))
+			c.SetRequest(c.Request().WithContext(u.WithContext(c.Request().Context())))
 			return next(c)
 		}
 	}

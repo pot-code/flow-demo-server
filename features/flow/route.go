@@ -2,7 +2,7 @@ package flow
 
 import (
 	"errors"
-	"gobit-demo/features/perm"
+	"gobit-demo/features/rbac"
 	"gobit-demo/internal/api"
 	"gobit-demo/internal/validate"
 
@@ -11,11 +11,11 @@ import (
 
 type route struct {
 	s  Service
-	ps perm.Service
+	rs rbac.Service
 }
 
-func NewRoute(s Service, ps perm.Service) api.Route {
-	return &route{s: s, ps: ps}
+func NewRoute(s Service, rs rbac.Service) api.Route {
+	return &route{s: s, rs: rs}
 }
 
 func (c *route) Append(g *echo.Group) {
@@ -26,7 +26,7 @@ func (c *route) Append(g *echo.Group) {
 }
 
 func (c *route) createFlow(e echo.Context) error {
-	if err := c.ps.HasPermission(e.Request().Context(), "flow", "create"); err != nil {
+	if err := c.rs.HasPermission(e.Request().Context(), "flow", "create"); err != nil {
 		return err
 	}
 
@@ -46,7 +46,7 @@ func (c *route) createFlow(e echo.Context) error {
 }
 
 func (c *route) listFlow(e echo.Context) error {
-	if err := c.ps.HasPermission(e.Request().Context(), "flow", "list"); err != nil {
+	if err := c.rs.HasPermission(e.Request().Context(), "flow", "list"); err != nil {
 		return err
 	}
 
@@ -63,7 +63,7 @@ func (c *route) listFlow(e echo.Context) error {
 }
 
 func (c *route) createFlowNode(e echo.Context) error {
-	if err := c.ps.HasPermission(e.Request().Context(), "flow.node", "create"); err != nil {
+	if err := c.rs.HasPermission(e.Request().Context(), "flow.node", "create"); err != nil {
 		return err
 	}
 
@@ -83,7 +83,7 @@ func (c *route) createFlowNode(e echo.Context) error {
 }
 
 func (c *route) listFlowNode(e echo.Context) error {
-	if err := c.ps.HasPermission(e.Request().Context(), "flow.node", "list"); err != nil {
+	if err := c.rs.HasPermission(e.Request().Context(), "flow.node", "list"); err != nil {
 		return err
 	}
 
