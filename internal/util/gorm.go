@@ -7,27 +7,22 @@ import (
 	"gorm.io/gorm"
 )
 
-type existenceResult struct {
-	Exist bool
+type gormWrap struct {
+	*gorm.DB
 }
 
-func GormCheckExistence(db *gorm.DB, queryFn func(tx *gorm.DB) *gorm.DB) (bool, error) {
-	var result existenceResult
-	sql := db.ToSQL(queryFn)
-	if err := db.Raw(fmt.Sprintf("SELECT EXISTS(%s) as exist", sql)).Scan(&result).Error; err != nil {
+func NewGormWrap(db *gorm.DB) *gormWrap {
+	return &gormWrap{db}
+}
+
+func (g *gormWrap) Paginate(p *pagination.Pagination) *gorm.DB {
+	return g.Limit(p.PageSize).Offset((p.Page - 1) * p.PageSize)
+}
+
+func (g *gormWrap) Exists() (bool, error) {
+	var result bool
+	if err := g.Select(true).Scan(&result).Error; err != nil {
 		return false, fmt.Errorf("select exists: %w", err)
 	}
-	return result.Exist, nil
-}
-
-type gormQuery[T any] interface {
-	Limit(int) T
-	Offset(int) T
-}
-
-func GormPaginator[Q gormQuery[Q]](
-	query Q,
-	pagination *pagination.Pagination,
-) Q {
-	return query.Limit(pagination.PageSize).Offset((pagination.Page - 1) * pagination.PageSize)
+	return result, nil
 }

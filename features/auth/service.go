@@ -66,13 +66,9 @@ func (s *service) CreateUser(ctx context.Context, data *CreateUserRequest) (*Reg
 		Mobile:   data.Mobile,
 	}
 	if err := s.g.Transaction(func(tx *gorm.DB) error {
-		exists, err := util.GormCheckExistence(tx, func(tx *gorm.DB) *gorm.DB {
-			return tx.WithContext(ctx).
-				Model(&model.User{}).
-				Select("1").
-				Where(&model.User{Mobile: data.Mobile}).
-				Or(&model.User{Username: data.Username}).Take(nil)
-		})
+		exists, err := util.NewGormWrap(tx.WithContext(ctx).Model(&model.User{}).
+			Where(&model.User{Mobile: data.Mobile}).
+			Or(&model.User{Username: data.Username})).Exists()
 		if err != nil {
 			return fmt.Errorf("check duplicate user: %w", err)
 		}
@@ -104,16 +100,13 @@ func (s *service) CreateUser(ctx context.Context, data *CreateUserRequest) (*Reg
 
 func (s *service) FindUserByCredential(ctx context.Context, data *LoginRequest) (*LoginUser, error) {
 	user := new(model.User)
-	err := s.g.WithContext(ctx).
-		Where(&model.User{Mobile: data.Mobile}).
+	if err := s.g.WithContext(ctx).Where(&model.User{Mobile: data.Mobile}).
 		Or(&model.User{Username: data.Username}).
-		Take(user).
-		Error
-	if errors.Is(err, gorm.ErrRecordNotFound) {
-		return nil, ErrUserNotFound
-	}
-	if err != nil {
-		return nil, fmt.Errorf("find user by login credentials: %w", err)
+		Take(user).Error; err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return nil, ErrUserNotFound
+		}
+		return nil, err
 	}
 
 	if err := s.h.VerifyPassword(data.Password, user.Password); err != nil {
@@ -126,7 +119,7 @@ func (s *service) FindUserByCredential(ctx context.Context, data *LoginRequest) 
 		Timestamp: time.Now().Unix(),
 	})
 
-	return new(LoginUser).fromUser(user), err
+	return new(LoginUser).fromUser(user), nil
 }
 
 func (u *LoginUser) fromUser(user *model.User) *LoginUser {

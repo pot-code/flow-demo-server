@@ -28,7 +28,8 @@ func (s *service) ListUser(ctx context.Context, p *pagination.Pagination) ([]*Li
 		count int64
 	)
 
-	if err := util.GormPaginator(s.g.WithContext(ctx).Model(&model.User{}), p).
+	if err := util.NewGormWrap(s.g.WithContext(ctx).Model(&model.User{})).
+		Paginate(p).
 		Find(&users).
 		Count(&count).
 		Error; err != nil {

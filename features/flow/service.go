@@ -33,11 +33,8 @@ func NewService(g *gorm.DB) Service {
 
 func (s *service) CreateFlow(ctx context.Context, req *CreateFlowRequest) error {
 	return s.g.Transaction(func(tx *gorm.DB) error {
-		exists, err := util.GormCheckExistence(tx, func(tx *gorm.DB) *gorm.DB {
-			return tx.WithContext(ctx).Model(&model.Flow{}).
-				Select("1").
-				Where(&model.Flow{Name: req.Name}).Take(nil)
-		})
+		exists, err := util.NewGormWrap(tx.WithContext(ctx).Model(&model.Flow{}).
+			Where(&model.Flow{Name: req.Name})).Exists()
 		if err != nil {
 			return fmt.Errorf("check duplicate flow: %w", err)
 		}
@@ -62,7 +59,8 @@ func (s *service) ListFlow(ctx context.Context, p *pagination.Pagination) ([]*Li
 		count int64
 	)
 
-	if err := util.GormPaginator(s.g.WithContext(ctx).Model(&model.Flow{}), p).
+	if err := util.NewGormWrap(s.g.WithContext(ctx).Model(&model.Flow{})).
+		Paginate(p).
 		Find(&flows).
 		Count(&count).
 		Error; err != nil {
@@ -73,13 +71,8 @@ func (s *service) ListFlow(ctx context.Context, p *pagination.Pagination) ([]*Li
 
 func (s *service) CreateFlowNode(ctx context.Context, req *CreateFlowNodeRequest) error {
 	return s.g.Transaction(func(tx *gorm.DB) error {
-		ok, err := util.GormCheckExistence(tx, func(tx *gorm.DB) *gorm.DB {
-			return tx.WithContext(ctx).
-				Model(&model.FlowNode{}).
-				Select("1").
-				Where(&model.FlowNode{FlowID: *req.FlowID}).
-				Take(nil)
-		})
+		ok, err := util.NewGormWrap(tx.WithContext(ctx).Model(&model.FlowNode{}).
+			Where(&model.FlowNode{FlowID: *req.FlowID})).Exists()
 		if err != nil {
 			return fmt.Errorf("check duplicate flow node: %w", err)
 		}
