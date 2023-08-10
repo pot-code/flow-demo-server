@@ -1,7 +1,6 @@
 package util
 
 import (
-	"fmt"
 	"gobit-demo/internal/pagination"
 
 	"gorm.io/gorm"
@@ -21,8 +20,8 @@ func (g *gormWrap) Paginate(p *pagination.Pagination) *gorm.DB {
 
 func (g *gormWrap) Exists() (bool, error) {
 	var result bool
-	if err := g.Select(true).Scan(&result).Error; err != nil {
-		return false, fmt.Errorf("select exists: %w", err)
+	if err := g.Select("true").Scan(&result).Error; err != nil {
+		return false, err
 	}
 	return result, nil
 }
