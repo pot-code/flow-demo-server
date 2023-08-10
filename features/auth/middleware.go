@@ -23,7 +23,7 @@ func AuthMiddleware(ts TokenService) func(next echo.HandlerFunc) echo.HandlerFun
 				return api.JsonUnauthenticated(c, "未登录")
 			}
 
-			claim, err := ts.Verify(token)
+			u, err := ts.Verify(token)
 			if err != nil {
 				return api.JsonUnauthorized(c, "token 无效")
 			}
@@ -36,7 +36,6 @@ func AuthMiddleware(ts TokenService) func(next echo.HandlerFunc) echo.HandlerFun
 				return api.JsonUnauthorized(c, "token 无效")
 			}
 
-			u := new(LoginUser).fromClaim(claim)
 			c.SetRequest(c.Request().WithContext(u.ToContext(c.Request().Context())))
 			return next(c)
 		}

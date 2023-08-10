@@ -10,27 +10,31 @@ import (
 
 type TokenService interface {
 	GenerateToken(user *LoginUser) (string, error)
-	Verify(token string) (jwt.Claims, error)
+	Verify(token string) (*LoginUser, error)
 	AddToBlacklist(ctx context.Context, token string) error
 	IsInBlacklist(ctx context.Context, token string) (bool, error)
 }
 
 type jwtService struct {
-	jwt *token.JwtIssuer
+	i   *token.JwtIssuer
 	bl  TokenBlacklist
 	exp time.Duration
 }
 
-func NewJwtTokenService(jwt *token.JwtIssuer, bl TokenBlacklist, exp time.Duration) TokenService {
-	return &jwtService{jwt: jwt, bl: bl, exp: exp}
+func NewJwtTokenService(bl TokenBlacklist, secret string, tokenExpiration time.Duration) TokenService {
+	return &jwtService{i: token.NewJwtIssuer(secret), bl: bl, exp: tokenExpiration}
 }
 
 func (s *jwtService) GenerateToken(u *LoginUser) (string, error) {
-	return s.jwt.Sign(u.toClaim(s.exp))
+	return s.i.Sign(u.toClaim(s.exp))
 }
 
-func (s *jwtService) Verify(token string) (jwt.Claims, error) {
-	return s.jwt.Verify(token)
+func (s *jwtService) Verify(token string) (*LoginUser, error) {
+	c, err := s.i.Verify(token)
+	if err != nil {
+		return nil, err
+	}
+	return new(LoginUser).fromClaim(c), nil
 }
 
 func (s *jwtService) AddToBlacklist(ctx context.Context, token string) error {

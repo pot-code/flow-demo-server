@@ -14,7 +14,6 @@ import (
 	"gobit-demo/internal/logging"
 	"gobit-demo/internal/mq"
 	"gobit-demo/internal/orm"
-	"gobit-demo/internal/token"
 	"gobit-demo/internal/validate"
 	"net/http"
 
@@ -38,8 +37,8 @@ func main() {
 	eb := event.NewKafkaEventBus(pub)
 
 	js := auth.NewJwtTokenService(
-		token.NewJwtIssuer(cfg.Token.Secret),
 		auth.NewRedisTokenBlacklist(rc, cfg.Token.Exp),
+		cfg.Token.Secret,
 		cfg.Token.Exp,
 	)
 	en := perm.NewCasbinEnforcer(gc)
