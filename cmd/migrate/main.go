@@ -4,6 +4,7 @@ import (
 	"gobit-demo/config"
 	"gobit-demo/internal/db"
 	"gobit-demo/internal/logging"
+	"gobit-demo/internal/orm"
 	"gobit-demo/internal/validate"
 	"gobit-demo/model"
 
@@ -15,8 +16,8 @@ func main() {
 	cfg := config.LoadConfig()
 	logging.Init(cfg.Logging.Level)
 
-	d := db.NewDB(cfg.Database.String())
-	gc := db.NewGormClient(d, log.Logger)
+	d := db.NewMysqlDB(cfg.Database.String())
+	gc := orm.NewGormDB(d, log.Logger)
 
 	if err := gc.AutoMigrate(
 		&model.CasbinRule{},

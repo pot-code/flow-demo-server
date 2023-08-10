@@ -1,4 +1,4 @@
-package db
+package orm
 
 import (
 	"context"
@@ -12,7 +12,7 @@ import (
 	"gorm.io/gorm/logger"
 )
 
-func NewGormClient(db *sql.DB, logger zerolog.Logger) *gorm.DB {
+func NewGormDB(db *sql.DB, logger zerolog.Logger) *gorm.DB {
 	gd, err := gorm.Open(mysql.New(mysql.Config{
 		Conn: db,
 	}), &gorm.Config{

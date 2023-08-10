@@ -8,7 +8,7 @@ import (
 	_ "github.com/go-sql-driver/mysql"
 )
 
-func NewDB(dsn string) *sql.DB {
+func NewMysqlDB(dsn string) *sql.DB {
 	db, err := sql.Open("mysql", dsn)
 	if err != nil {
 		panic(fmt.Errorf("error connecting mysql database: %w", err))

@@ -1,4 +1,4 @@
-package util
+package orm
 
 import (
 	"gobit-demo/internal/pagination"
@@ -6,19 +6,19 @@ import (
 	"gorm.io/gorm"
 )
 
-type gormWrap struct {
+type gormWrapper struct {
 	*gorm.DB
 }
 
-func NewGormWrap(db *gorm.DB) *gormWrap {
-	return &gormWrap{db}
+func NewGormWrapper(db *gorm.DB) *gormWrapper {
+	return &gormWrapper{db}
 }
 
-func (g *gormWrap) Paginate(p *pagination.Pagination) *gorm.DB {
+func (g *gormWrapper) Paginate(p *pagination.Pagination) *gorm.DB {
 	return g.Limit(p.PageSize).Offset((p.Page - 1) * p.PageSize)
 }
 
-func (g *gormWrap) Exists() (bool, error) {
+func (g *gormWrapper) Exists() (bool, error) {
 	var result bool
 	if err := g.Select("true").Scan(&result).Error; err != nil {
 		return false, err

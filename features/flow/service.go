@@ -4,8 +4,8 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"gobit-demo/internal/orm"
 	"gobit-demo/internal/pagination"
-	"gobit-demo/internal/util"
 	"gobit-demo/model"
 
 	"gorm.io/gorm"
@@ -33,7 +33,7 @@ func NewService(g *gorm.DB) Service {
 
 func (s *service) CreateFlow(ctx context.Context, req *CreateFlowRequest) error {
 	return s.g.Transaction(func(tx *gorm.DB) error {
-		exists, err := util.NewGormWrap(tx.WithContext(ctx).Model(&model.Flow{}).
+		exists, err := orm.NewGormWrapper(tx.WithContext(ctx).Model(&model.Flow{}).
 			Where(&model.Flow{Name: req.Name})).Exists()
 		if err != nil {
 			return fmt.Errorf("check duplicate flow: %w", err)
@@ -59,7 +59,7 @@ func (s *service) ListFlow(ctx context.Context, p *pagination.Pagination) ([]*Li
 		count int64
 	)
 
-	if err := util.NewGormWrap(s.g.WithContext(ctx).Model(&model.Flow{})).
+	if err := orm.NewGormWrapper(s.g.WithContext(ctx).Model(&model.Flow{})).
 		Paginate(p).
 		Find(&flows).
 		Count(&count).
@@ -71,7 +71,7 @@ func (s *service) ListFlow(ctx context.Context, p *pagination.Pagination) ([]*Li
 
 func (s *service) CreateFlowNode(ctx context.Context, req *CreateFlowNodeRequest) error {
 	return s.g.Transaction(func(tx *gorm.DB) error {
-		ok, err := util.NewGormWrap(tx.WithContext(ctx).Model(&model.FlowNode{}).
+		ok, err := orm.NewGormWrapper(tx.WithContext(ctx).Model(&model.FlowNode{}).
 			Where(&model.FlowNode{FlowID: *req.FlowID})).Exists()
 		if err != nil {
 			return fmt.Errorf("check duplicate flow node: %w", err)

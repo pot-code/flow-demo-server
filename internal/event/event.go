@@ -5,5 +5,5 @@ type Event interface {
 }
 
 type EventBus interface {
-	Publish(e Event) error
+	Publish(e Event)
 }

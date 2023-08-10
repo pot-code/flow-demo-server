@@ -72,7 +72,10 @@ func (r *roleManager) GetRoles(name string, domain ...string) ([]string, error) 
 	if err != nil {
 		return nil, err
 	}
+	return r.getUserRoles(uid)
+}
 
+func (r *roleManager) getUserRoles(uid interface{}) ([]string, error) {
 	var roles []string
 	if err := r.g.Table("user_roles").
 		Select("roles.name").
@@ -104,7 +107,7 @@ func (r *roleManager) GetUsers(name string, domain ...string) ([]string, error) 
 		Joins("INNER JOIN roles ON user_roles.user_id = users.id").
 		Where("user_roles.role_id = ?", rid).
 		Scan(&users).Error; err != nil {
-		return nil, fmt.Errorf("get user roles: %w", err)
+		return nil, fmt.Errorf("get role users: %w", err)
 	}
 	return users, nil
 }

@@ -18,14 +18,11 @@ func NewKafkaEventBus(pub *kafka.Publisher) EventBus {
 	return &kafkaEventBus{pub: pub}
 }
 
-func (k *kafkaEventBus) Publish(e Event) error {
+func (k *kafkaEventBus) Publish(e Event) {
 	var buf bytes.Buffer
 	if err := json.NewEncoder(&buf).Encode(e); err != nil {
 		panic(fmt.Errorf("error encoding event: %w", err))
 	}
 
-	if err := k.pub.Publish(e.Topic(), message.NewMessage(watermill.NewUUID(), buf.Bytes())); err != nil {
-		return fmt.Errorf("error publishing event: %w", err)
-	}
-	return nil
+	k.pub.Publish(e.Topic(), message.NewMessage(watermill.NewUUID(), buf.Bytes()))
 }

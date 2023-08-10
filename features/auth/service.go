@@ -5,7 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"gobit-demo/internal/event"
-	"gobit-demo/internal/util"
+	"gobit-demo/internal/orm"
 	"gobit-demo/model"
 	"time"
 
@@ -66,7 +66,7 @@ func (s *service) CreateUser(ctx context.Context, data *CreateUserRequest) (*Reg
 		Mobile:   data.Mobile,
 	}
 	if err := s.g.Transaction(func(tx *gorm.DB) error {
-		exists, err := util.NewGormWrap(tx.WithContext(ctx).Model(&model.User{}).
+		exists, err := orm.NewGormWrapper(tx.WithContext(ctx).Model(&model.User{}).
 			Where(&model.User{Mobile: data.Mobile}).
 			Or(&model.User{Username: data.Username})).Exists()
 		if err != nil {

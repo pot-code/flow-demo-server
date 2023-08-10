@@ -13,6 +13,7 @@ import (
 	"gobit-demo/internal/event"
 	"gobit-demo/internal/logging"
 	"gobit-demo/internal/mq"
+	"gobit-demo/internal/orm"
 	"gobit-demo/internal/token"
 	"gobit-demo/internal/validate"
 	"net/http"
@@ -30,8 +31,8 @@ func main() {
 	log.Debug().Any("config", cfg).Msg("config")
 
 	rc := cache.NewRedisCache(cfg.Cache.Address)
-	dc := db.NewDB(cfg.Database.String())
-	gc := db.NewGormClient(dc, log.Logger)
+	dc := db.NewMysqlDB(cfg.Database.String())
+	gc := orm.NewGormDB(dc, log.Logger)
 
 	pub := mq.NewKafkaPublisher(cfg.MessageQueue.BrokerList(), log.Logger)
 	eb := event.NewKafkaEventBus(pub)

@@ -3,8 +3,8 @@ package user
 import (
 	"context"
 	"fmt"
+	"gobit-demo/internal/orm"
 	"gobit-demo/internal/pagination"
-	"gobit-demo/internal/util"
 	"gobit-demo/model"
 
 	"gorm.io/gorm"
@@ -28,7 +28,7 @@ func (s *service) ListUser(ctx context.Context, p *pagination.Pagination) ([]*Li
 		count int64
 	)
 
-	if err := util.NewGormWrap(s.g.WithContext(ctx).Model(&model.User{})).
+	if err := orm.NewGormWrapper(s.g.WithContext(ctx).Model(&model.User{})).
 		Paginate(p).
 		Find(&users).
 		Count(&count).
