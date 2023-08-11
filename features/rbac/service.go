@@ -4,9 +4,8 @@ import (
 	"context"
 	"fmt"
 	"gobit-demo/features/auth"
-	"strconv"
 
-	"github.com/casbin/casbin/v2"
+	"github.com/open-policy-agent/opa/rego"
 	"gorm.io/gorm"
 )
 
@@ -15,11 +14,19 @@ type Service interface {
 }
 
 func NewService(g *gorm.DB) Service {
-	return &service{e: newCasbinEnforcer(g)}
+	query, err := rego.New(
+		rego.Query("data.rbac.allow"),
+		rego.Load([]string{"opa/rbac.rego"}, nil),
+	).PrepareForEval(context.Background())
+	if err != nil {
+		panic(fmt.Errorf("create rego query: %w", err))
+	}
+	return &service{g: g, q: &query}
 }
 
 type service struct {
-	e *casbin.Enforcer
+	g *gorm.DB
+	q *rego.PreparedEvalQuery
 }
 
 func (s *service) HasPermission(ctx context.Context, obj string, act string) error {
@@ -28,13 +35,17 @@ func (s *service) HasPermission(ctx context.Context, obj string, act string) err
 		panic(fmt.Errorf("no login user attached in context"))
 	}
 
-	ok, err := s.e.Enforce(strconv.Itoa(int(u.Id)), obj, act)
+	res, err := s.q.Eval(ctx, rego.EvalInput(map[string]any{
+		"sub": u.ID,
+		"obj": obj,
+		"act": act,
+	}))
 	if err != nil {
-		return fmt.Errorf("check permission: %w", err)
+		return fmt.Errorf("evaluate policy: %w", err)
 	}
-	if !ok {
+	if !res.Allowed() {
 		return &NoPermissionError{
-			UserID:   u.Id,
+			UserID:   u.ID,
 			Username: u.Username,
 			Obj:      obj,
 			Act:      act,

@@ -28,7 +28,7 @@ type Database struct {
 	Database string
 }
 
-func (d *Database) String() string {
+func (d *Database) GetDSN() string {
 	return fmt.Sprintf("%s:%s@tcp(%s)/%s?charset=utf8mb4&parseTime=True&loc=Local", d.Username, d.Password, d.Address, d.Database)
 }
 
@@ -40,7 +40,7 @@ type MessageQueue struct {
 	Brokers string
 }
 
-func (m *MessageQueue) BrokerList() []string {
+func (m *MessageQueue) GetBrokerList() []string {
 	return strings.Split(m.Brokers, ",")
 }
 

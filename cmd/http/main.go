@@ -30,9 +30,9 @@ func main() {
 	log.Debug().Any("config", cfg).Msg("config")
 
 	rc := cache.NewRedisCache(cfg.Cache.Address)
-	dc := db.NewMysqlDB(cfg.Database.String())
+	dc := db.NewMysqlDB(cfg.Database.GetDSN())
 	gc := orm.NewGormDB(dc, log.Logger)
-	kb := mq.NewKafkaPublisher(cfg.MessageQueue.BrokerList(), log.Logger)
+	kb := mq.NewKafkaPublisher(cfg.MessageQueue.GetBrokerList(), log.Logger)
 	eb := event.NewKafkaEventBus(kb)
 	js := auth.NewJwtTokenService(
 		auth.NewRedisTokenBlacklist(rc, cfg.Token.Exp),

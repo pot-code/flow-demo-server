@@ -16,13 +16,13 @@ func main() {
 	cfg := config.LoadConfig()
 	logging.Init(cfg.Logging.Level)
 
-	d := db.NewMysqlDB(cfg.Database.String())
+	d := db.NewMysqlDB(cfg.Database.GetDSN())
 	gc := orm.NewGormDB(d, log.Logger)
 
 	if err := gc.AutoMigrate(
-		&model.CasbinRule{},
 		&model.User{},
 		&model.Role{},
+		&model.Permission{},
 		&model.Flow{},
 		&model.FlowNode{},
 	); err != nil {

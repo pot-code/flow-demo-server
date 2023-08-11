@@ -123,7 +123,7 @@ func (s *service) FindUserByCredential(ctx context.Context, data *LoginRequest) 
 }
 
 func (u *LoginUser) fromUser(user *model.User) *LoginUser {
-	u.Id = user.ID
+	u.ID = user.ID
 	u.Name = user.Name
 	u.Username = user.Username
 	u.Mobile = user.Mobile
@@ -131,7 +131,7 @@ func (u *LoginUser) fromUser(user *model.User) *LoginUser {
 }
 
 func (u *RegisterUser) fromUser(user *model.User) *RegisterUser {
-	u.Id = user.ID
+	u.ID = user.ID
 	u.Name = user.Name
 	u.Username = user.Username
 	u.Mobile = user.Mobile

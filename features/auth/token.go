@@ -47,7 +47,7 @@ func (s *jwtService) IsInBlacklist(ctx context.Context, token string) (bool, err
 
 func (u *LoginUser) toClaim(exp time.Duration) jwt.Claims {
 	return jwt.MapClaims{
-		"id":       u.Id,
+		"id":       u.ID,
 		"username": u.Username,
 		"name":     u.Name,
 		"exp":      float64(time.Now().Add(exp).Unix()),
@@ -60,7 +60,7 @@ func (u *LoginUser) fromClaim(claims jwt.Claims) *LoginUser {
 		panic("claims is not jwt.MapClaims")
 	}
 
-	u.Id = uint(c["id"].(float64))
+	u.ID = uint(c["id"].(float64))
 	u.Username = c["username"].(string)
 	u.Name = c["name"].(string)
 	return u
