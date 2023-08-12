@@ -7,6 +7,7 @@ import (
 	"gobit-demo/features/auth"
 	"reflect"
 
+	"github.com/rs/zerolog/log"
 	"gorm.io/gorm"
 )
 
@@ -39,6 +40,11 @@ func (b *auditLogBuilder) Payload(data any) *auditLogBuilder {
 }
 
 func (b *auditLogBuilder) Commit(ctx context.Context) error {
+	if b.a.Action == "" && b.a.Subject == "" && b.a.rawPayload == nil {
+		log.Warn().Msg("empty audit log")
+		return nil
+	}
+
 	if b.a.Subject == "" {
 		u, ok := new(auth.LoginUser).FromContext(ctx)
 		if ok {
