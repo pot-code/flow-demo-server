@@ -4,10 +4,8 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"gobit-demo/internal/event"
 	"gobit-demo/internal/orm"
 	"gobit-demo/model"
-	"time"
 
 	"gorm.io/gorm"
 )
@@ -26,14 +24,13 @@ type Service interface {
 	FindUserByCredential(ctx context.Context, data *LoginRequest) (*LoginUser, error)
 }
 
-func NewService(g *gorm.DB, eb event.EventBus, h PasswordHash) Service {
-	return &service{g: g, eb: eb, h: h}
+func NewService(g *gorm.DB, h PasswordHash) Service {
+	return &service{g: g, h: h}
 }
 
 type service struct {
-	g  *gorm.DB
-	eb event.EventBus
-	h  PasswordHash
+	g *gorm.DB
+	h PasswordHash
 }
 
 func (s *service) FindUserByUserName(ctx context.Context, username string) (*LoginUser, error) {
@@ -91,11 +88,6 @@ func (s *service) CreateUser(ctx context.Context, data *CreateUserRequest) (*Reg
 		return nil, err
 	}
 
-	s.eb.Publish(&UserCreatedEvent{
-		ID:       user.ID,
-		Username: user.Username,
-	})
-
 	return new(RegisterUser).fromUser(&user), nil
 }
 
@@ -117,12 +109,6 @@ func (s *service) FindUserByCredential(ctx context.Context, data *LoginRequest) 
 	if err := s.h.VerifyPassword(data.Password, user.Password); err != nil {
 		return nil, ErrIncorrectCredentials
 	}
-
-	s.eb.Publish(&UserLoginEvent{
-		ID:        user.ID,
-		Username:  user.Username,
-		Timestamp: time.Now().Unix(),
-	})
 
 	return new(LoginUser).fromUser(user), nil
 }

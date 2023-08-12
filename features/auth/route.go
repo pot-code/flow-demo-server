@@ -4,7 +4,9 @@ import (
 	"errors"
 	"fmt"
 	"gobit-demo/internal/api"
+	"gobit-demo/internal/event"
 	"gobit-demo/internal/validate"
+	"time"
 
 	"github.com/labstack/echo/v4"
 )
@@ -12,10 +14,11 @@ import (
 type route struct {
 	us Service
 	ts TokenService
+	eb event.EventBus
 }
 
-func NewRoute(us Service, ts TokenService) api.Route {
-	return &route{us: us, ts: ts}
+func NewRoute(us Service, ts TokenService, eb event.EventBus) api.Route {
+	return &route{us: us, ts: ts, eb: eb}
 }
 
 func (c *route) Append(g *echo.Group) {
@@ -66,14 +69,22 @@ func (c *route) register(e echo.Context) error {
 		return err
 	}
 
-	_, err := c.us.CreateUser(e.Request().Context(), data)
+	u, err := c.us.CreateUser(e.Request().Context(), data)
 	if errors.Is(err, ErrDuplicatedUser) {
 		return api.JsonBusinessError(e, err.Error())
 	}
 	if err != nil {
 		return fmt.Errorf("create user: %w", err)
 	}
-	return err
+
+	c.eb.Publish(&UserCreatedEvent{
+		ID:        u.ID,
+		Username:  u.Username,
+		Mobile:    u.Mobile,
+		Timestamp: time.Now().UnixMilli(),
+	})
+
+	return nil
 }
 
 func (c *route) logout(e echo.Context) error {
@@ -86,8 +97,5 @@ func (c *route) logout(e echo.Context) error {
 		return api.JsonUnauthorized(e, "token 无效")
 	}
 
-	if err := c.ts.AddToBlacklist(e.Request().Context(), token); err != nil {
-		return err
-	}
-	return nil
+	return c.ts.AddToBlacklist(e.Request().Context(), token)
 }

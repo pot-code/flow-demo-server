@@ -8,6 +8,7 @@ import (
 	"github.com/ThreeDotsLabs/watermill"
 	"github.com/ThreeDotsLabs/watermill-kafka/v2/pkg/kafka"
 	"github.com/ThreeDotsLabs/watermill/message"
+	"github.com/rs/zerolog/log"
 )
 
 type kafkaEventBus struct {
@@ -24,5 +25,7 @@ func (k *kafkaEventBus) Publish(e Event) {
 		panic(fmt.Errorf("error encoding event: %w", err))
 	}
 
-	k.pub.Publish(e.Topic(), message.NewMessage(watermill.NewUUID(), buf.Bytes()))
+	if err := k.pub.Publish(e.Topic(), message.NewMessage(watermill.NewUUID(), buf.Bytes())); err != nil {
+		log.Warn().Err(err).Msg("failed to publish event")
+	}
 }

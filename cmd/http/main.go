@@ -65,7 +65,8 @@ func main() {
 	}
 	e.Use(api.LoggingMiddleware)
 
-	api.NewRouteGroup(e, "/auth", auth.NewRoute(auth.NewService(gd, eb, auth.NewBcryptPasswordHash()), js))
+	api.NewRouteGroup(e, "/auth",
+		auth.NewRoute(auth.NewService(gd, auth.NewBcryptPasswordHash()), js, eb))
 	api.NewRouteGroup(e, "/flow", api.RouteFn(func(g *echo.Group) {
 		g.Use(auth.AuthMiddleware(js))
 		flow.NewRoute(flow.NewService(gd), rm, as).Append(g)
