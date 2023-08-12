@@ -6,7 +6,6 @@ import (
 	"gobit-demo/features/audit"
 	"gobit-demo/features/auth"
 	"gobit-demo/features/flow"
-	"gobit-demo/features/rbac"
 	"gobit-demo/features/user"
 	"gobit-demo/internal/api"
 	"gobit-demo/internal/cache"
@@ -40,7 +39,7 @@ func main() {
 		cfg.Token.Secret,
 		cfg.Token.Exp,
 	)
-	rs := rbac.NewService(gd)
+	rm := auth.NewRBAC(gd)
 	as := audit.NewService(gd)
 
 	e := echo.New()
@@ -52,7 +51,7 @@ func main() {
 			api.JsonBadRequest(c, e.Error())
 		case *api.BindError:
 			api.JsonBadRequest(c, e.Error())
-		case *rbac.UnAuthorizedError:
+		case *auth.UnAuthorizedError:
 			api.JsonUnauthorized(c, "权限不足")
 		case *echo.HTTPError:
 			api.Json(c, e.Code, map[string]any{
@@ -69,11 +68,11 @@ func main() {
 	api.NewRouteGroup(e, "/auth", auth.NewRoute(auth.NewService(gd, eb, auth.NewBcryptPasswordHash()), js))
 	api.NewRouteGroup(e, "/flow", api.RouteFn(func(g *echo.Group) {
 		g.Use(auth.AuthMiddleware(js))
-		flow.NewRoute(flow.NewService(gd), rs, as).Append(g)
+		flow.NewRoute(flow.NewService(gd), rm, as).Append(g)
 	}))
 	api.NewRouteGroup(e, "/user", api.RouteFn(func(g *echo.Group) {
 		g.Use(auth.AuthMiddleware(js))
-		user.NewRoute(user.NewService(gd), rs).Append(g)
+		user.NewRoute(user.NewService(gd), rm).Append(g)
 	}))
 
 	if err := e.Start(fmt.Sprintf(":%d", cfg.HttpPort)); err != http.ErrServerClosed {

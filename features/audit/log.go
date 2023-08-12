@@ -5,42 +5,44 @@ import (
 	"encoding/json"
 	"fmt"
 	"gobit-demo/features/auth"
+	"gobit-demo/model"
 	"reflect"
 
 	"github.com/rs/zerolog/log"
 	"gorm.io/gorm"
 )
 
-type auditLogBuilder struct {
-	a *auditLog
-	g *gorm.DB
+type AuditLog struct {
+	a       *model.AuditLog
+	g       *gorm.DB
+	payload any
 }
 
-func newAuditLogBuilder(g *gorm.DB) *auditLogBuilder {
-	return &auditLogBuilder{a: new(auditLog), g: g}
+func NewAuditLog(g *gorm.DB) *AuditLog {
+	return &AuditLog{a: new(model.AuditLog), g: g}
 }
 
-func (b *auditLogBuilder) Subject(subject string) *auditLogBuilder {
+func (b *AuditLog) Subject(subject string) *AuditLog {
 	b.a.Subject = subject
 	return b
 }
 
-func (b *auditLogBuilder) Action(action string) *auditLogBuilder {
+func (b *AuditLog) Action(action string) *AuditLog {
 	b.a.Action = action
 	return b
 }
 
-func (b *auditLogBuilder) Payload(data any) *auditLogBuilder {
+func (b *AuditLog) Payload(data any) *AuditLog {
 	if reflect.TypeOf(data).Kind() != reflect.Pointer {
 		panic("data must be pointer")
 	}
 
-	b.a.rawPayload = data
+	b.payload = data
 	return b
 }
 
-func (b *auditLogBuilder) Commit(ctx context.Context) error {
-	if b.a.Action == "" && b.a.Subject == "" && b.a.rawPayload == nil {
+func (b *AuditLog) Commit(ctx context.Context) error {
+	if b.a.Action == "" && b.a.Subject == "" && b.payload == nil {
 		log.Warn().Msg("empty audit log")
 		return nil
 	}
@@ -52,8 +54,8 @@ func (b *auditLogBuilder) Commit(ctx context.Context) error {
 		}
 	}
 
-	if b.a.rawPayload != nil {
-		bs, err := json.Marshal(b.a.rawPayload)
+	if b.payload != nil {
+		bs, err := json.Marshal(b.payload)
 		if err != nil {
 			return fmt.Errorf("marshal data: %w", err)
 		}

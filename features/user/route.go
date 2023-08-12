@@ -1,19 +1,19 @@
 package user
 
 import (
-	"gobit-demo/features/rbac"
+	"gobit-demo/features/auth"
 	"gobit-demo/internal/api"
 
 	"github.com/labstack/echo/v4"
 )
 
 type route struct {
-	s  Service
-	rs rbac.Service
+	s Service
+	r auth.RBAC
 }
 
-func NewRoute(s Service, rs rbac.Service) api.Route {
-	return &route{s: s, rs: rs}
+func NewRoute(s Service, r auth.RBAC) api.Route {
+	return &route{s: s, r: r}
 }
 
 func (c *route) Append(g *echo.Group) {
@@ -21,7 +21,7 @@ func (c *route) Append(g *echo.Group) {
 }
 
 func (c *route) list(e echo.Context) error {
-	if err := c.rs.CheckPermission(e.Request().Context(), "user", "list"); err != nil {
+	if err := c.r.CheckPermission(e.Request().Context(), "user", "list"); err != nil {
 		return err
 	}
 

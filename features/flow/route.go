@@ -3,7 +3,7 @@ package flow
 import (
 	"errors"
 	"gobit-demo/features/audit"
-	"gobit-demo/features/rbac"
+	"gobit-demo/features/auth"
 	"gobit-demo/internal/api"
 	"gobit-demo/internal/validate"
 
@@ -12,12 +12,12 @@ import (
 
 type route struct {
 	s  Service
-	rs rbac.Service
+	r  auth.RBAC
 	as audit.Service
 }
 
-func NewRoute(s Service, rs rbac.Service, as audit.Service) api.Route {
-	return &route{s: s, rs: rs, as: as}
+func NewRoute(s Service, r auth.RBAC, as audit.Service) api.Route {
+	return &route{s: s, r: r, as: as}
 }
 
 func (c *route) Append(g *echo.Group) {
@@ -28,7 +28,7 @@ func (c *route) Append(g *echo.Group) {
 }
 
 func (c *route) createFlow(e echo.Context) error {
-	if err := c.rs.CheckPermission(e.Request().Context(), "flow", "create"); err != nil {
+	if err := c.r.CheckPermission(e.Request().Context(), "flow", "create"); err != nil {
 		return err
 	}
 
@@ -52,7 +52,7 @@ func (c *route) createFlow(e echo.Context) error {
 }
 
 func (c *route) listFlow(e echo.Context) error {
-	if err := c.rs.CheckPermission(e.Request().Context(), "flow", "list"); err != nil {
+	if err := c.r.CheckPermission(e.Request().Context(), "flow", "list"); err != nil {
 		return err
 	}
 
@@ -69,7 +69,7 @@ func (c *route) listFlow(e echo.Context) error {
 }
 
 func (c *route) createFlowNode(e echo.Context) error {
-	if err := c.rs.CheckPermission(e.Request().Context(), "flow.node", "create"); err != nil {
+	if err := c.r.CheckPermission(e.Request().Context(), "flow.node", "create"); err != nil {
 		return err
 	}
 

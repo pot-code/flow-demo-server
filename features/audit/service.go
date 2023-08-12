@@ -5,7 +5,7 @@ import (
 )
 
 type Service interface {
-	NewAuditLog() *auditLogBuilder
+	NewAuditLog() *AuditLog
 }
 
 func NewService(g *gorm.DB) Service {
@@ -16,6 +16,6 @@ type service struct {
 	g *gorm.DB
 }
 
-func (s *service) NewAuditLog() *auditLogBuilder {
-	return newAuditLogBuilder(s.g)
+func (s *service) NewAuditLog() *AuditLog {
+	return NewAuditLog(s.g)
 }
