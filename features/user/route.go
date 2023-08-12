@@ -21,7 +21,7 @@ func (c *route) Append(g *echo.Group) {
 }
 
 func (c *route) list(e echo.Context) error {
-	if err := c.r.CheckPermission(e.Request().Context(), "user", "list"); err != nil {
+	if err := c.r.CheckPermission(e.Request().Context(), "user:list"); err != nil {
 		return err
 	}
 

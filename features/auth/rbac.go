@@ -11,18 +11,17 @@ import (
 )
 
 type UnAuthorizedError struct {
-	UserID   uint   `json:"user_id,omitempty"`
-	Username string `json:"username,omitempty"`
-	Obj      string `json:"obj,omitempty"`
-	Act      string `json:"act,omitempty"`
+	UserID     uint   `json:"user_id,omitempty"`
+	Username   string `json:"username,omitempty"`
+	Permission string `json:"permission,omitempty"`
 }
 
 func (e UnAuthorizedError) Error() string {
-	return fmt.Sprintf("no permission: username=%s, obj=%s, act=%s", e.Username, e.Obj, e.Act)
+	return fmt.Sprintf("no permission: username=%s, permission=%s", e.Username, e.Permission)
 }
 
 type RBAC interface {
-	CheckPermission(ctx context.Context, obj, act string) error
+	CheckPermission(ctx context.Context, permission string) error
 	CheckRole(ctx context.Context, role string) error
 	GetRoles(ctx context.Context) ([]string, error)
 	GetPermissions(ctx context.Context) ([]string, error)
@@ -57,7 +56,7 @@ func (s *rbac) CheckRole(ctx context.Context, role string) error {
 	}
 }
 
-func (s *rbac) CheckPermission(ctx context.Context, obj string, act string) error {
+func (s *rbac) CheckPermission(ctx context.Context, permission string) error {
 	u, ok := new(LoginUser).FromContext(ctx)
 	if !ok {
 		panic(fmt.Errorf("no login user attached in context"))
@@ -68,7 +67,7 @@ func (s *rbac) CheckPermission(ctx context.Context, obj string, act string) erro
 		Select("roles.name").
 		Joins("INNER JOIN role_permissions ON permissions.id = role_permissions.permission_id").
 		Joins("INNER JOIN roles ON roles.id = role_permissions.role_id").
-		Where(&model.Permission{Object: obj, Action: act}).
+		Where(&model.Permission{Name: permission}).
 		Scan(&allow).Error; err != nil {
 		return fmt.Errorf("get permission roles: %w", err)
 	}
@@ -85,10 +84,9 @@ func (s *rbac) CheckPermission(ctx context.Context, obj string, act string) erro
 	}
 
 	re := &UnAuthorizedError{
-		UserID:   u.ID,
-		Username: u.Username,
-		Obj:      obj,
-		Act:      act,
+		UserID:     u.ID,
+		Username:   u.Username,
+		Permission: permission,
 	}
 	if err := s.as.NewAuditLog().Subject(u.Username).Action("访问受限").Payload(re).
 		Commit(ctx); err != nil {

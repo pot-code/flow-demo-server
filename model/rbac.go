@@ -12,7 +12,6 @@ type Role struct {
 
 type Permission struct {
 	gorm.Model
-	Object      string
-	Action      string
+	Name        string `gorm:"uniqueIndex,not null,size:64"`
 	Description string
 }

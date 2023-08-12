@@ -28,7 +28,7 @@ func (c *route) Append(g *echo.Group) {
 }
 
 func (c *route) createFlow(e echo.Context) error {
-	if err := c.r.CheckPermission(e.Request().Context(), "flow", "create"); err != nil {
+	if err := c.r.CheckPermission(e.Request().Context(), "flow:create"); err != nil {
 		return err
 	}
 	u, _ := new(auth.LoginUser).FromContext(e.Request().Context())
@@ -53,7 +53,7 @@ func (c *route) createFlow(e echo.Context) error {
 }
 
 func (c *route) listFlow(e echo.Context) error {
-	if err := c.r.CheckPermission(e.Request().Context(), "flow", "list"); err != nil {
+	if err := c.r.CheckPermission(e.Request().Context(), "flow:list"); err != nil {
 		return err
 	}
 
@@ -70,7 +70,7 @@ func (c *route) listFlow(e echo.Context) error {
 }
 
 func (c *route) createFlowNode(e echo.Context) error {
-	if err := c.r.CheckPermission(e.Request().Context(), "flow.node", "create"); err != nil {
+	if err := c.r.CheckPermission(e.Request().Context(), "flow.node:create"); err != nil {
 		return err
 	}
 
