@@ -28,12 +28,8 @@ func (c *route) Append(g *echo.Group) {
 }
 
 func (c *route) createFlow(e echo.Context) error {
-	ok, err := c.rs.HasPermission(e.Request().Context(), "flow", "create")
-	if err != nil {
+	if err := c.rs.CheckPermission(e.Request().Context(), "flow", "create"); err != nil {
 		return err
-	}
-	if !ok {
-		return api.JsonUnauthorized(e, "权限不足")
 	}
 
 	data := new(CreateFlowRequest)
@@ -44,7 +40,7 @@ func (c *route) createFlow(e echo.Context) error {
 		return err
 	}
 
-	err = c.s.CreateFlow(e.Request().Context(), data)
+	err := c.s.CreateFlow(e.Request().Context(), data)
 	if errors.Is(err, ErrDuplicatedFlow) {
 		return api.JsonBusinessError(e, err.Error())
 	}
@@ -56,12 +52,8 @@ func (c *route) createFlow(e echo.Context) error {
 }
 
 func (c *route) listFlow(e echo.Context) error {
-	ok, err := c.rs.HasPermission(e.Request().Context(), "flow", "list")
-	if err != nil {
+	if err := c.rs.CheckPermission(e.Request().Context(), "flow", "list"); err != nil {
 		return err
-	}
-	if !ok {
-		return api.JsonUnauthorized(e, "权限不足")
 	}
 
 	p, err := api.GetPaginationFromRequest(e)
@@ -77,12 +69,8 @@ func (c *route) listFlow(e echo.Context) error {
 }
 
 func (c *route) createFlowNode(e echo.Context) error {
-	ok, err := c.rs.HasPermission(e.Request().Context(), "flow.node", "create")
-	if err != nil {
+	if err := c.rs.CheckPermission(e.Request().Context(), "flow.node", "create"); err != nil {
 		return err
-	}
-	if !ok {
-		return api.JsonUnauthorized(e, "权限不足")
 	}
 
 	data := new(CreateFlowNodeRequest)
@@ -93,7 +81,7 @@ func (c *route) createFlowNode(e echo.Context) error {
 		return err
 	}
 
-	err = c.s.CreateFlowNode(e.Request().Context(), data)
+	err := c.s.CreateFlowNode(e.Request().Context(), data)
 	if errors.Is(err, ErrDuplicatedFlowNode) {
 		return api.JsonBusinessError(e, err.Error())
 	}

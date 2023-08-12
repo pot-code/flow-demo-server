@@ -52,6 +52,8 @@ func main() {
 			api.JsonBadRequest(c, e.Error())
 		case *api.BindError:
 			api.JsonBadRequest(c, e.Error())
+		case *rbac.UnAuthorizedError:
+			api.JsonUnauthorized(c, "权限不足")
 		case *echo.HTTPError:
 			api.Json(c, e.Code, map[string]any{
 				"code": e.Code,
@@ -71,7 +73,7 @@ func main() {
 	}))
 	api.NewRouteGroup(e, "/user", api.RouteFn(func(g *echo.Group) {
 		g.Use(auth.AuthMiddleware(js))
-		user.NewRoute(user.NewService(gd)).Append(g)
+		user.NewRoute(user.NewService(gd), rs).Append(g)
 	}))
 
 	if err := e.Start(fmt.Sprintf(":%d", cfg.HttpPort)); err != http.ErrServerClosed {

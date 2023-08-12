@@ -10,9 +10,20 @@ import (
 	"gorm.io/gorm"
 )
 
+type UnAuthorizedError struct {
+	UserID   uint
+	Username string
+	Obj      string
+	Act      string
+}
+
+func (e UnAuthorizedError) Error() string {
+	return fmt.Sprintf("no permission: username=%s, obj=%s, act=%s", e.Username, e.Obj, e.Act)
+}
+
 type Service interface {
-	HasPermission(ctx context.Context, obj, act string) (bool, error)
-	HasRole(ctx context.Context, role string) error
+	CheckPermission(ctx context.Context, obj, act string) error
+	CheckRole(ctx context.Context, role string) error
 	GetRoles(ctx context.Context) ([]string, error)
 	GetPermissions(ctx context.Context) ([]string, error)
 }
@@ -25,11 +36,16 @@ type service struct {
 	g *gorm.DB
 }
 
-func (*service) HasRole(ctx context.Context, role string) error {
+func (*service) CheckRole(ctx context.Context, role string) error {
 	panic("unimplemented")
 }
 
-func (s *service) HasPermission(ctx context.Context, obj string, act string) (bool, error) {
+func (s *service) CheckPermission(ctx context.Context, obj string, act string) error {
+	u, ok := new(auth.LoginUser).FromContext(ctx)
+	if !ok {
+		panic(fmt.Errorf("no login user attached in context"))
+	}
+
 	var allow []string
 	if err := s.g.WithContext(ctx).Model(&model.Permission{}).
 		Select("roles.name").
@@ -37,20 +53,25 @@ func (s *service) HasPermission(ctx context.Context, obj string, act string) (bo
 		Joins("INNER JOIN roles ON roles.id = role_permissions.role_id").
 		Where(&model.Permission{Object: obj, Action: act}).
 		Scan(&allow).Error; err != nil {
-		return false, fmt.Errorf("get permission roles: %w", err)
+		return fmt.Errorf("get permission roles: %w", err)
 	}
 
 	roles, err := s.GetRoles(ctx)
 	if err != nil {
-		return false, err
+		return err
 	}
 
 	for _, role := range roles {
 		if lo.Contains(allow, role) {
-			return true, nil
+			return nil
 		}
 	}
-	return false, nil
+	return &UnAuthorizedError{
+		UserID:   u.ID,
+		Username: u.Username,
+		Obj:      obj,
+		Act:      act,
+	}
 }
 
 func (s *service) GetRoles(ctx context.Context) ([]string, error) {
