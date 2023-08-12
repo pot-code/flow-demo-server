@@ -39,8 +39,8 @@ func main() {
 		cfg.Token.Secret,
 		cfg.Token.Exp,
 	)
-	rm := auth.NewRBAC(gd)
 	as := audit.NewService(gd)
+	rm := auth.NewRBAC(gd, as)
 
 	e := echo.New()
 	e.HTTPErrorHandler = func(err error, c echo.Context) {

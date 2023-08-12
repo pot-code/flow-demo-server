@@ -4,11 +4,9 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"gobit-demo/features/auth"
 	"gobit-demo/model"
 	"reflect"
 
-	"github.com/rs/zerolog/log"
 	"gorm.io/gorm"
 )
 
@@ -43,15 +41,11 @@ func (b *AuditLog) Payload(data any) *AuditLog {
 
 func (b *AuditLog) Commit(ctx context.Context) error {
 	if b.a.Action == "" && b.a.Subject == "" && b.payload == nil {
-		log.Warn().Msg("empty audit log")
-		return nil
+		panic("empty audit log")
 	}
 
 	if b.a.Subject == "" {
-		u, ok := new(auth.LoginUser).FromContext(ctx)
-		if ok {
-			b.a.Subject = u.Username
-		}
+		panic("subject cannot be empty")
 	}
 
 	if b.payload != nil {

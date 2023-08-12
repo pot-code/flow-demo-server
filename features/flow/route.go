@@ -31,6 +31,7 @@ func (c *route) createFlow(e echo.Context) error {
 	if err := c.r.CheckPermission(e.Request().Context(), "flow", "create"); err != nil {
 		return err
 	}
+	u, _ := new(auth.LoginUser).FromContext(e.Request().Context())
 
 	data := new(CreateFlowRequest)
 	if err := api.Bind(e, data); err != nil {
@@ -48,7 +49,7 @@ func (c *route) createFlow(e echo.Context) error {
 		return err
 	}
 
-	return c.as.NewAuditLog().Action("创建流程").Payload(data).Commit(e.Request().Context())
+	return c.as.NewAuditLog().Subject(u.Username).Action("创建流程").Payload(data).Commit(e.Request().Context())
 }
 
 func (c *route) listFlow(e echo.Context) error {
