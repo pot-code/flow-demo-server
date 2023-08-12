@@ -14,5 +14,4 @@ type Permission struct {
 	gorm.Model
 	Object string
 	Action string
-	Scope  string
 }

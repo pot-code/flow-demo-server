@@ -50,8 +50,6 @@ func main() {
 			api.JsonBadRequest(c, e.Error())
 		case *api.BindError:
 			api.JsonBadRequest(c, e.Error())
-		case *rbac.NoPermissionError:
-			api.JsonUnauthorized(c, "权限不足")
 		case *echo.HTTPError:
 			api.Json(c, e.Code, map[string]any{
 				"code": e.Code,

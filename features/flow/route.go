@@ -26,8 +26,12 @@ func (c *route) Append(g *echo.Group) {
 }
 
 func (c *route) createFlow(e echo.Context) error {
-	if err := c.rs.HasPermission(e.Request().Context(), "flow", "create"); err != nil {
+	ok, err := c.rs.HasPermission(e.Request().Context(), "flow", "create")
+	if err != nil {
 		return err
+	}
+	if !ok {
+		return api.JsonUnauthorized(e, "权限不足")
 	}
 
 	data := new(CreateFlowRequest)
@@ -38,7 +42,7 @@ func (c *route) createFlow(e echo.Context) error {
 		return err
 	}
 
-	err := c.s.CreateFlow(e.Request().Context(), data)
+	err = c.s.CreateFlow(e.Request().Context(), data)
 	if errors.Is(err, ErrDuplicatedFlow) {
 		return api.JsonBusinessError(e, err.Error())
 	}
@@ -46,8 +50,12 @@ func (c *route) createFlow(e echo.Context) error {
 }
 
 func (c *route) listFlow(e echo.Context) error {
-	if err := c.rs.HasPermission(e.Request().Context(), "flow", "list"); err != nil {
+	ok, err := c.rs.HasPermission(e.Request().Context(), "flow", "list")
+	if err != nil {
 		return err
+	}
+	if !ok {
+		return api.JsonUnauthorized(e, "权限不足")
 	}
 
 	p, err := api.GetPaginationFromRequest(e)
@@ -63,8 +71,12 @@ func (c *route) listFlow(e echo.Context) error {
 }
 
 func (c *route) createFlowNode(e echo.Context) error {
-	if err := c.rs.HasPermission(e.Request().Context(), "flow.node", "create"); err != nil {
+	ok, err := c.rs.HasPermission(e.Request().Context(), "flow.node", "create")
+	if err != nil {
 		return err
+	}
+	if !ok {
+		return api.JsonUnauthorized(e, "权限不足")
 	}
 
 	data := new(CreateFlowNodeRequest)
@@ -75,7 +87,7 @@ func (c *route) createFlowNode(e echo.Context) error {
 		return err
 	}
 
-	err := c.s.CreateFlowNode(e.Request().Context(), data)
+	err = c.s.CreateFlowNode(e.Request().Context(), data)
 	if errors.Is(err, ErrDuplicatedFlowNode) {
 		return api.JsonBusinessError(e, err.Error())
 	}
@@ -83,10 +95,6 @@ func (c *route) createFlowNode(e echo.Context) error {
 }
 
 func (c *route) listFlowNode(e echo.Context) error {
-	if err := c.rs.HasPermission(e.Request().Context(), "flow.node", "list"); err != nil {
-		return err
-	}
-
 	req := new(ListFlowNodeParams)
 	if err := api.Bind(e, req); err != nil {
 		return err

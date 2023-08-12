@@ -4,82 +4,101 @@ import (
 	"context"
 	"fmt"
 	"gobit-demo/features/auth"
+	"gobit-demo/model"
 
-	"github.com/open-policy-agent/opa/rego"
+	"github.com/samber/lo"
 	"gorm.io/gorm"
 )
 
 type Service interface {
-	HasPermission(ctx context.Context, obj, act string) error
+	HasPermission(ctx context.Context, obj, act string) (bool, error)
+	HasRole(ctx context.Context, role string) error
+	GetRoles(ctx context.Context) ([]string, error)
+	GetPermissions(ctx context.Context) ([]string, error)
 }
 
 func NewService(g *gorm.DB) Service {
-	query, err := rego.New(
-		rego.Query("data.rbac.allow"),
-		rego.Load([]string{"opa/rbac.rego"}, nil),
-	).PrepareForEval(context.Background())
-	if err != nil {
-		panic(fmt.Errorf("create rego query: %w", err))
-	}
-	return &service{g: g, q: &query}
+	return &service{g: g}
 }
 
 type service struct {
 	g *gorm.DB
-	q *rego.PreparedEvalQuery
 }
 
-func (s *service) HasPermission(ctx context.Context, obj string, act string) error {
+func (*service) HasRole(ctx context.Context, role string) error {
+	panic("unimplemented")
+}
+
+func (s *service) HasPermission(ctx context.Context, obj string, act string) (bool, error) {
+	var allow []string
+	if err := s.g.WithContext(ctx).Model(&model.Permission{}).
+		Select("roles.name").
+		Joins("INNER JOIN role_permissions ON permissions.id = role_permissions.permission_id").
+		Joins("INNER JOIN roles ON roles.id = role_permissions.role_id").
+		Where(&model.Permission{Object: obj, Action: act}).
+		Scan(&allow).Error; err != nil {
+		return false, fmt.Errorf("get permission roles: %w", err)
+	}
+
+	roles, err := s.GetRoles(ctx)
+	if err != nil {
+		return false, err
+	}
+
+	for _, role := range roles {
+		if lo.Contains(allow, role) {
+			return true, nil
+		}
+	}
+	return false, nil
+}
+
+func (s *service) GetRoles(ctx context.Context) ([]string, error) {
 	u, ok := new(auth.LoginUser).FromContext(ctx)
 	if !ok {
 		panic(fmt.Errorf("no login user attached in context"))
 	}
 
-	res, err := s.q.Eval(ctx, rego.EvalInput(map[string]any{
-		"sub": u.ID,
-		"obj": obj,
-		"act": act,
-	}))
-	if err != nil {
-		return fmt.Errorf("evaluate policy: %w", err)
-	}
-	if !res.Allowed() {
-		return &NoPermissionError{
-			UserID:   u.ID,
-			Username: u.Username,
-			Obj:      obj,
-			Act:      act,
-		}
-	}
-	return nil
+	var roles []string
+	err := s.g.WithContext(ctx).Model(&model.User{}).
+		Select("roles.name").
+		Joins("INNER JOIN user_roles ON user_roles.user_id = users.id").
+		Joins("INNER JOIN roles ON roles.id = user_roles.role_id").
+		Where("users.id = ?", u.ID).
+		Scan(&roles).Error
+	return roles, err
 }
 
-type PolicyService interface {
-	AddPolicy(ctx context.Context, role, obj, act string) error
-	UpdatePolicy(ctx context.Context, role, obj, act string) error
-	DeletePolicy(ctx context.Context, role, obj, act string) error
+func (s *service) GetPermissions(ctx context.Context) ([]string, error) {
+	panic("unimplemented")
 }
 
-func NewPolicyService(g *gorm.DB) PolicyService {
-	return &policyService{g: g}
+type PermissionService interface {
+	AddPermission(ctx context.Context, role, obj, act string) error
+	UpdatePermission(ctx context.Context, role, obj, act string) error
+	DeletePermission(ctx context.Context, role, obj, act string) error
 }
 
-type policyService struct {
+func NewPermissionService(g *gorm.DB) PermissionService {
+	return &permissionService{g: g}
+}
+
+type permissionService struct {
 	g *gorm.DB
 }
 
-// AddPolicy implements PolicyService.
-func (*policyService) AddPolicy(ctx context.Context, role string, obj string, act string) error {
+// AddPermission implements PolicyService.
+func (*permissionService) AddPermission(ctx context.Context, role string, obj string, act string) error {
 	panic("unimplemented")
 }
 
-// DeletePolicy implements PolicyService.
-func (*policyService) DeletePolicy(ctx context.Context, role string, obj string, act string) error {
+// DeletePermission implements PolicyService.
+func (*permissionService) DeletePermission(ctx context.Context, role string, obj string, act string) error {
 	panic("unimplemented")
 }
 
-// UpdatePolicy implements PolicyService.
-func (*policyService) UpdatePolicy(ctx context.Context, role string, obj string, act string) error {
+// UpdatePermission implements PolicyService.
+func (*permissionService) UpdatePermission(ctx context.Context, role string, obj string, act string) error {
 	panic("unimplemented")
 }
 
