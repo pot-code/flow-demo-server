@@ -14,6 +14,7 @@ import (
 
 var (
 	ErrUserNotFound         = errors.New("用户不存在")
+	ErrUserDisabled         = errors.New("用户已禁用")
 	ErrDuplicatedUser       = errors.New("用户已存在")
 	ErrIncorrectCredentials = errors.New("用户名或密码错误")
 )
@@ -107,6 +108,10 @@ func (s *service) FindUserByCredential(ctx context.Context, data *LoginRequest) 
 			return nil, ErrUserNotFound
 		}
 		return nil, err
+	}
+
+	if user.Disabled {
+		return nil, ErrUserDisabled
 	}
 
 	if err := s.h.VerifyPassword(data.Password, user.Password); err != nil {

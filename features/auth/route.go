@@ -40,6 +40,9 @@ func (c *route) login(e echo.Context) error {
 	if errors.Is(err, ErrIncorrectCredentials) {
 		return api.JsonUnauthenticated(e, err.Error())
 	}
+	if errors.Is(err, ErrUserDisabled) {
+		return api.JsonUnauthenticated(e, err.Error())
+	}
 	if err != nil {
 		return err
 	}
