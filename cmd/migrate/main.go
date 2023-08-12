@@ -20,6 +20,7 @@ func main() {
 	gc := orm.NewGormDB(d, log.Logger)
 
 	if err := gc.AutoMigrate(
+		&model.AuditLog{},
 		&model.User{},
 		&model.Role{},
 		&model.Permission{},

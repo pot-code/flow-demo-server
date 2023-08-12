@@ -2,6 +2,7 @@ package flow
 
 import (
 	"errors"
+	"gobit-demo/features/audit"
 	"gobit-demo/features/rbac"
 	"gobit-demo/internal/api"
 	"gobit-demo/internal/validate"
@@ -12,10 +13,11 @@ import (
 type route struct {
 	s  Service
 	rs rbac.Service
+	as audit.Service
 }
 
-func NewRoute(s Service, rs rbac.Service) api.Route {
-	return &route{s: s, rs: rs}
+func NewRoute(s Service, rs rbac.Service, as audit.Service) api.Route {
+	return &route{s: s, rs: rs, as: as}
 }
 
 func (c *route) Append(g *echo.Group) {
@@ -46,7 +48,11 @@ func (c *route) createFlow(e echo.Context) error {
 	if errors.Is(err, ErrDuplicatedFlow) {
 		return api.JsonBusinessError(e, err.Error())
 	}
-	return err
+	if err != nil {
+		return err
+	}
+
+	return c.as.NewAuditLog().Action("创建流程").Payload(data).Commit(e.Request().Context())
 }
 
 func (c *route) listFlow(e echo.Context) error {

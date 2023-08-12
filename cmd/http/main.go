@@ -3,6 +3,7 @@ package main
 import (
 	"fmt"
 	"gobit-demo/config"
+	"gobit-demo/features/audit"
 	"gobit-demo/features/auth"
 	"gobit-demo/features/flow"
 	"gobit-demo/features/rbac"
@@ -31,7 +32,7 @@ func main() {
 
 	rc := cache.NewRedisCache(cfg.Cache.Address)
 	dc := db.NewMysqlDB(cfg.Database.GetDSN())
-	gc := orm.NewGormDB(dc, log.Logger)
+	gd := orm.NewGormDB(dc, log.Logger)
 	kb := mq.NewKafkaPublisher(cfg.MessageQueue.GetBrokerList(), log.Logger)
 	eb := event.NewKafkaEventBus(kb)
 	js := auth.NewJwtTokenService(
@@ -39,7 +40,8 @@ func main() {
 		cfg.Token.Secret,
 		cfg.Token.Exp,
 	)
-	rs := rbac.NewService(gc)
+	rs := rbac.NewService(gd)
+	as := audit.NewService(gd)
 
 	e := echo.New()
 	e.HTTPErrorHandler = func(err error, c echo.Context) {
@@ -62,14 +64,14 @@ func main() {
 	}
 	e.Use(api.LoggingMiddleware)
 
-	api.NewRouteGroup(e, "/auth", auth.NewRoute(auth.NewService(gc, eb, auth.NewBcryptPasswordHash()), js))
+	api.NewRouteGroup(e, "/auth", auth.NewRoute(auth.NewService(gd, eb, auth.NewBcryptPasswordHash()), js))
 	api.NewRouteGroup(e, "/flow", api.RouteFn(func(g *echo.Group) {
 		g.Use(auth.AuthMiddleware(js))
-		flow.NewRoute(flow.NewService(gc), rs).Append(g)
+		flow.NewRoute(flow.NewService(gd), rs, as).Append(g)
 	}))
 	api.NewRouteGroup(e, "/user", api.RouteFn(func(g *echo.Group) {
 		g.Use(auth.AuthMiddleware(js))
-		user.NewRoute(user.NewService(gc)).Append(g)
+		user.NewRoute(user.NewService(gd)).Append(g)
 	}))
 
 	if err := e.Start(fmt.Sprintf(":%d", cfg.HttpPort)); err != http.ErrServerClosed {

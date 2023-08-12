@@ -12,6 +12,7 @@ type Role struct {
 
 type Permission struct {
 	gorm.Model
-	Object string
-	Action string
+	Object      string
+	Action      string
+	Description string
 }
