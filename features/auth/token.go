@@ -11,17 +11,17 @@ import (
 type TokenService interface {
 	GenerateToken(user *LoginUser) (string, error)
 	Verify(token string) (*LoginUser, error)
-	AddToBlacklist(ctx context.Context, token string) error
-	IsInBlacklist(ctx context.Context, token string) (bool, error)
+	AddToBlockList(ctx context.Context, token string) error
+	IsInBlockList(ctx context.Context, token string) (bool, error)
 }
 
 type jwtService struct {
 	i   *token.JwtIssuer
-	bl  TokenBlacklist
+	bl  TokenBlockList
 	exp time.Duration
 }
 
-func NewJwtTokenService(bl TokenBlacklist, secret string, tokenExpiration time.Duration) TokenService {
+func NewJwtTokenService(bl TokenBlockList, secret string, tokenExpiration time.Duration) TokenService {
 	return &jwtService{i: token.NewJwtIssuer(secret), bl: bl, exp: tokenExpiration}
 }
 
@@ -37,11 +37,11 @@ func (s *jwtService) Verify(token string) (*LoginUser, error) {
 	return new(LoginUser).fromClaim(c), nil
 }
 
-func (s *jwtService) AddToBlacklist(ctx context.Context, token string) error {
+func (s *jwtService) AddToBlockList(ctx context.Context, token string) error {
 	return s.bl.Add(ctx, token)
 }
 
-func (s *jwtService) IsInBlacklist(ctx context.Context, token string) (bool, error) {
+func (s *jwtService) IsInBlockList(ctx context.Context, token string) (bool, error) {
 	return s.bl.Has(ctx, token)
 }
 

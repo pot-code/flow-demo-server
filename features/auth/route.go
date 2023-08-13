@@ -97,5 +97,5 @@ func (c *route) logout(e echo.Context) error {
 		return api.JsonUnauthorized(e, "token 无效")
 	}
 
-	return c.ts.AddToBlacklist(e.Request().Context(), token)
+	return c.ts.AddToBlockList(e.Request().Context(), token)
 }

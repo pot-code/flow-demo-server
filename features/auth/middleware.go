@@ -28,7 +28,7 @@ func AuthMiddleware(ts TokenService) func(next echo.HandlerFunc) echo.HandlerFun
 				return api.JsonUnauthorized(c, "token 无效")
 			}
 
-			ok, err := ts.IsInBlacklist(c.Request().Context(), token)
+			ok, err := ts.IsInBlockList(c.Request().Context(), token)
 			if err != nil {
 				return err
 			}
