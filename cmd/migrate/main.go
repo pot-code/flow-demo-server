@@ -5,14 +5,12 @@ import (
 	"gobit-demo/internal/db"
 	"gobit-demo/internal/logging"
 	"gobit-demo/internal/orm"
-	"gobit-demo/internal/validate"
 	"gobit-demo/model"
 
 	"github.com/rs/zerolog/log"
 )
 
 func main() {
-	validate.Init()
 	cfg := config.LoadConfig()
 	logging.Init(cfg.Logging.Level)
 
