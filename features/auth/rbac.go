@@ -24,7 +24,7 @@ type RBAC interface {
 	CheckPermission(ctx context.Context, permission string) error
 	CheckRole(ctx context.Context, role string) error
 	GetRoles(ctx context.Context) ([]string, error)
-	GetPermissions(ctx context.Context) ([]string, error)
+	ListPermissions(ctx context.Context) ([]string, error)
 	IsAdmin(ctx context.Context) (bool, error)
 }
 
@@ -46,11 +46,6 @@ func (s *rbac) IsAdmin(ctx context.Context) (bool, error) {
 }
 
 func (s *rbac) CheckRole(ctx context.Context, role string) error {
-	u, ok := new(LoginUser).FromContext(ctx)
-	if !ok {
-		panic(fmt.Errorf("no login user attached in context"))
-	}
-
 	roles, err := s.GetRoles(ctx)
 	if err != nil {
 		return err
@@ -59,6 +54,8 @@ func (s *rbac) CheckRole(ctx context.Context, role string) error {
 	if lo.Contains(roles, role) {
 		return nil
 	}
+
+	u := s.getLoginUser(ctx)
 	return &UnAuthorizedError{
 		UserID:   u.ID,
 		Username: u.Username,
@@ -66,11 +63,6 @@ func (s *rbac) CheckRole(ctx context.Context, role string) error {
 }
 
 func (s *rbac) CheckPermission(ctx context.Context, permission string) error {
-	u, ok := new(LoginUser).FromContext(ctx)
-	if !ok {
-		panic(fmt.Errorf("no login user attached in context"))
-	}
-
 	ok, err := s.IsAdmin(ctx)
 	if err != nil {
 		return fmt.Errorf("check admin: %w", err)
@@ -100,6 +92,7 @@ func (s *rbac) CheckPermission(ctx context.Context, permission string) error {
 		}
 	}
 
+	u := s.getLoginUser(ctx)
 	re := &UnAuthorizedError{
 		UserID:     u.ID,
 		Username:   u.Username,
@@ -113,12 +106,9 @@ func (s *rbac) CheckPermission(ctx context.Context, permission string) error {
 }
 
 func (s *rbac) GetRoles(ctx context.Context) ([]string, error) {
-	u, ok := new(LoginUser).FromContext(ctx)
-	if !ok {
-		panic(fmt.Errorf("no login user attached in context"))
-	}
-
 	var roles []string
+
+	u := s.getLoginUser(ctx)
 	err := s.g.WithContext(ctx).Model(&model.User{}).
 		Select("roles.name").
 		Joins("INNER JOIN user_roles ON user_roles.user_id = users.id").
@@ -128,6 +118,14 @@ func (s *rbac) GetRoles(ctx context.Context) ([]string, error) {
 	return roles, err
 }
 
-func (s *rbac) GetPermissions(ctx context.Context) ([]string, error) {
+func (s *rbac) ListPermissions(ctx context.Context) ([]string, error) {
 	panic("unimplemented")
+}
+
+func (s *rbac) getLoginUser(ctx context.Context) *LoginUser {
+	u, ok := new(LoginUser).FromContext(ctx)
+	if !ok {
+		panic(fmt.Errorf("no login user attached in context"))
+	}
+	return u
 }
