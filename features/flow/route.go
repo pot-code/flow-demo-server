@@ -96,7 +96,12 @@ func (c *route) saveFlowNode(e echo.Context) error {
 	if errors.Is(err, ErrFlowNotFound) {
 		return api.JsonBusinessError(e, err.Error())
 	}
-	return err
+	if err != nil {
+		return err
+	}
+
+	u, _ := new(auth.LoginUser).FromContext(e.Request().Context())
+	return c.as.NewAuditLog().Subject(u.Username).Action("创建子流程").Payload(&data).Commit(e.Request().Context())
 }
 
 func (c *route) listFlowNode(e echo.Context) error {

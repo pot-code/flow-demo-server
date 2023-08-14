@@ -6,7 +6,9 @@ type Flow struct {
 	gorm.Model
 	Name        string `gorm:"uniqueIndex,not null,size:12"`
 	Description string
+	OwnerID     *uint
 	Nodes       []*FlowNode
+	Owner       *User `gorm:"foreignKey:OwnerID"`
 }
 
 type FlowNode struct {

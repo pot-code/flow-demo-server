@@ -25,6 +25,7 @@ type RBAC interface {
 	CheckRole(ctx context.Context, role string) error
 	GetRoles(ctx context.Context) ([]string, error)
 	GetPermissions(ctx context.Context) ([]string, error)
+	IsAdmin(ctx context.Context) (bool, error)
 }
 
 func NewRBAC(g *gorm.DB, as audit.Service) RBAC {
@@ -34,6 +35,14 @@ func NewRBAC(g *gorm.DB, as audit.Service) RBAC {
 type rbac struct {
 	g  *gorm.DB
 	as audit.Service
+}
+
+func (s *rbac) IsAdmin(ctx context.Context) (bool, error) {
+	roles, err := s.GetRoles(ctx)
+	if err != nil {
+		return false, fmt.Errorf("get roles: %w", err)
+	}
+	return lo.Contains(roles, "admin"), nil
 }
 
 func (s *rbac) CheckRole(ctx context.Context, role string) error {
@@ -60,6 +69,14 @@ func (s *rbac) CheckPermission(ctx context.Context, permission string) error {
 	u, ok := new(LoginUser).FromContext(ctx)
 	if !ok {
 		panic(fmt.Errorf("no login user attached in context"))
+	}
+
+	ok, err := s.IsAdmin(ctx)
+	if err != nil {
+		return fmt.Errorf("check admin: %w", err)
+	}
+	if ok {
+		return nil
 	}
 
 	var allow []string
