@@ -1,8 +1,8 @@
 package flow
 
 type CreateFlowRequest struct {
-	Name        string  `json:"name" validate:"required"`
-	Description *string `json:"description"`
+	Name        string `json:"name" validate:"required"`
+	Description string `json:"description"`
 }
 
 type ListFlowResponse struct {
@@ -11,23 +11,23 @@ type ListFlowResponse struct {
 	Description string `json:"description"`
 }
 
-type CreateFlowNodeRequest struct {
-	Name        string  `json:"name" validate:"required"`
-	Description *string `json:"description"`
-	FlowID      *uint   `json:"flow_id" validate:"required"`
-	PrevID      *uint   `json:"prev_id"`
-	NextID      *uint   `json:"next_id"`
+type SaveFlowNodeRequest struct {
+	ID          *uint  `json:"id"`
+	Name        string `json:"name" validate:"required"`
+	Description string `json:"description"`
+	PrevID      *uint  `json:"prev_id"`
+	NextID      *uint  `json:"next_id"`
 }
 
-type ListFlowNodeParams struct {
-	FlowID *uint `json:"flow_id" query:"flow_id" validate:"required"`
+type ListFlowNodeQueryParams struct {
+	FlowID *uint `query:"flow_id" validate:"required"`
 }
 
 type ListFlowNodeResponse struct {
-	ID          uint    `json:"id"`
-	Name        string  `json:"name"`
-	Description *string `json:"description"`
-	FlowID      *uint   `json:"flow_id"`
-	PrevID      *uint   `json:"prev_id"`
-	NextID      *uint   `json:"next_id"`
+	ID          uint   `json:"id"`
+	Name        string `json:"name"`
+	Description string `json:"description"`
+	FlowID      *uint  `json:"flow_id"`
+	PrevID      *uint  `json:"prev_id"`
+	NextID      *uint  `json:"next_id"`
 }

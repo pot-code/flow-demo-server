@@ -24,14 +24,13 @@ func (c *route) Append(g *echo.Group) {
 	g.POST("", c.createFlow)
 	g.GET("", c.listFlow)
 	g.GET("/node", c.listFlowNode)
-	g.POST("/node", c.createFlowNode)
+	g.POST("/node/:flow_id", c.saveFlowNode)
 }
 
 func (c *route) createFlow(e echo.Context) error {
 	if err := c.r.CheckPermission(e.Request().Context(), "flow:create"); err != nil {
 		return err
 	}
-	u, _ := new(auth.LoginUser).FromContext(e.Request().Context())
 
 	data := new(CreateFlowRequest)
 	if err := api.Bind(e, data); err != nil {
@@ -49,6 +48,7 @@ func (c *route) createFlow(e echo.Context) error {
 		return err
 	}
 
+	u, _ := new(auth.LoginUser).FromContext(e.Request().Context())
 	return c.as.NewAuditLog().Subject(u.Username).Action("创建流程").Payload(data).Commit(e.Request().Context())
 }
 
@@ -69,28 +69,38 @@ func (c *route) listFlow(e echo.Context) error {
 	return api.JsonPaginationData(e, p, count, data)
 }
 
-func (c *route) createFlowNode(e echo.Context) error {
+func (c *route) saveFlowNode(e echo.Context) error {
 	if err := c.r.CheckPermission(e.Request().Context(), "flow.node:create"); err != nil {
 		return err
 	}
 
-	data := new(CreateFlowNodeRequest)
-	if err := api.Bind(e, data); err != nil {
-		return err
-	}
-	if err := validate.Validator.Struct(data); err != nil {
-		return err
+	var fid uint
+	if err := echo.PathParamsBinder(e).Uint("flow_id", &fid).BindError(); err != nil {
+		return api.NewBindError(err)
 	}
 
-	err := c.s.CreateFlowNode(e.Request().Context(), data)
+	var data []*SaveFlowNodeRequest
+	if err := api.Bind(e, &data); err != nil {
+		return err
+	}
+	for _, v := range data {
+		if err := validate.Validator.Struct(v); err != nil {
+			return err
+		}
+	}
+
+	err := c.s.SaveFlowNode(e.Request().Context(), fid, data)
 	if errors.Is(err, ErrDuplicatedFlowNode) {
+		return api.JsonBusinessError(e, err.Error())
+	}
+	if errors.Is(err, ErrFlowNotFound) {
 		return api.JsonBusinessError(e, err.Error())
 	}
 	return err
 }
 
 func (c *route) listFlowNode(e echo.Context) error {
-	req := new(ListFlowNodeParams)
+	req := new(ListFlowNodeQueryParams)
 	if err := api.Bind(e, req); err != nil {
 		return err
 	}

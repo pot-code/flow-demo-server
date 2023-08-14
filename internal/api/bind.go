@@ -1,7 +1,7 @@
 package api
 
 import (
-	"fmt"
+	"reflect"
 
 	"github.com/labstack/echo/v4"
 )
@@ -23,8 +23,12 @@ func (e *BindError) Unwrap() error {
 }
 
 func Bind(c echo.Context, v any) error {
+	if reflect.TypeOf(v).Kind() != reflect.Pointer {
+		panic("v must be pointer")
+	}
+
 	if err := c.Bind(v); err != nil {
-		return NewBindError(fmt.Errorf("数据解析失败，请检查输入"))
+		return NewBindError(err)
 	}
 	return nil
 }

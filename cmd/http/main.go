@@ -34,13 +34,13 @@ func main() {
 	gd := orm.NewGormDB(dc, log.Logger)
 	kb := mq.NewKafkaPublisher(cfg.MessageQueue.GetBrokerList(), log.Logger)
 	eb := event.NewKafkaEventBus(kb)
+	as := audit.NewService(gd)
+	rm := auth.NewRBAC(gd, as)
 	js := auth.NewJwtTokenService(
 		auth.NewRedisTokenBlacklist(rc, cfg.Token.Exp),
 		cfg.Token.Secret,
 		cfg.Token.Exp,
 	)
-	as := audit.NewService(gd)
-	rm := auth.NewRBAC(gd, as)
 
 	e := echo.New()
 	e.HTTPErrorHandler = func(err error, c echo.Context) {
@@ -50,7 +50,8 @@ func main() {
 		case *v.ValidationResult:
 			api.JsonBadRequest(c, e.Error())
 		case *api.BindError:
-			api.JsonBadRequest(c, e.Error())
+			log.Debug().Err(err).Msg("bind error")
+			api.JsonBadRequest(c, "数据解析失败，请检查输入")
 		case *auth.UnAuthorizedError:
 			api.JsonUnauthorized(c, "权限不足")
 		case *echo.HTTPError:
