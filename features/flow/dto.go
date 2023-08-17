@@ -6,18 +6,18 @@ type Position struct {
 }
 
 type Node struct {
-	ID       uint                   `json:"id" validate:"required"`
+	ID       *string                `json:"id" validate:"required"`
 	Type     string                 `json:"type" validate:"required"`
 	Data     map[string]interface{} `json:"data"`
 	Position *Position              `json:"position" validate:"required"`
 }
 
 type Edge struct {
-	ID           uint   `json:"id"`
-	Source       uint   `json:"source"`
-	Target       uint   `json:"target"`
-	SourceHandle string `json:"sourceHandle"`
-	TargetHandle string `json:"targetHandle"`
+	ID           *string `json:"id" validate:"required"`
+	Source       *string `json:"source" validate:"required"`
+	Target       *string `json:"target" validate:"required"`
+	SourceHandle string  `json:"sourceHandle"`
+	TargetHandle string  `json:"targetHandle"`
 }
 
 type CreateFlowRequest struct {

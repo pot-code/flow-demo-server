@@ -17,10 +17,10 @@ var (
 )
 
 type Service interface {
-	CreateFlow(ctx context.Context, req *CreateFlowRequest) error
-	UpdateFlow(ctx context.Context, req *UpdateFlowRequest) error
-	ListFlow(ctx context.Context, p *pagination.Pagination) ([]*ListFlowResponse, int, error)
 	GetFlowByID(ctx context.Context, fid uint) (*FlowObjectResponse, error)
+	ListFlow(ctx context.Context, p *pagination.Pagination) ([]*ListFlowResponse, int, error)
+	CreateFlow(ctx context.Context, req *CreateFlowRequest, owner uint) error
+	UpdateFlow(ctx context.Context, req *UpdateFlowRequest) error
 }
 
 type service struct {
@@ -38,16 +38,16 @@ func (s *service) GetFlowByID(ctx context.Context, fid uint) (*FlowObjectRespons
 	}
 
 	o := new(FlowObjectResponse)
-	if err := json.Unmarshal([]byte(m.Nodes), o); err != nil {
+	if err := json.Unmarshal([]byte(m.Nodes), &o.Nodes); err != nil {
 		return nil, fmt.Errorf("unmarshal nodes: %w", err)
 	}
-	if err := json.Unmarshal([]byte(m.Edges), o); err != nil {
+	if err := json.Unmarshal([]byte(m.Edges), &o.Edges); err != nil {
 		return nil, fmt.Errorf("unmarshal edges: %w", err)
 	}
 	return o, nil
 }
 
-func (s *service) CreateFlow(ctx context.Context, req *CreateFlowRequest) error {
+func (s *service) CreateFlow(ctx context.Context, req *CreateFlowRequest, owner uint) error {
 	return s.g.Transaction(func(tx *gorm.DB) error {
 		exists, err := orm.NewGormWrapper(tx.WithContext(ctx).Model(&model.Flow{}).
 			Where(&model.Flow{Name: req.Name})).Exists()
@@ -71,6 +71,7 @@ func (s *service) CreateFlow(ctx context.Context, req *CreateFlowRequest) error 
 			Nodes:       string(nodes),
 			Edges:       string(edges),
 			Description: req.Description,
+			OwnerID:     &owner,
 		}
 		if err := tx.WithContext(ctx).Create(save).Error; err != nil {
 			return fmt.Errorf("create flow: %w", err)
