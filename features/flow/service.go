@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"gobit-demo/features/auth"
 	"gobit-demo/internal/orm"
 	"gobit-demo/internal/pagination"
 	"gobit-demo/model"
@@ -19,7 +20,7 @@ var (
 type Service interface {
 	GetFlowByID(ctx context.Context, fid uint) (*FlowObjectResponse, error)
 	ListFlow(ctx context.Context, p *pagination.Pagination) ([]*ListFlowResponse, int, error)
-	CreateFlow(ctx context.Context, req *CreateFlowRequest, owner uint) error
+	CreateFlow(ctx context.Context, req *CreateFlowRequest) error
 	UpdateFlow(ctx context.Context, req *UpdateFlowRequest) error
 }
 
@@ -47,7 +48,8 @@ func (s *service) GetFlowByID(ctx context.Context, fid uint) (*FlowObjectRespons
 	return o, nil
 }
 
-func (s *service) CreateFlow(ctx context.Context, req *CreateFlowRequest, owner uint) error {
+func (s *service) CreateFlow(ctx context.Context, req *CreateFlowRequest) error {
+	us, _ := new(auth.Session).FromContext(ctx)
 	return s.g.Transaction(func(tx *gorm.DB) error {
 		exists, err := orm.NewGormWrapper(tx.WithContext(ctx).Model(&model.Flow{}).
 			Where(&model.Flow{Name: req.Name})).Exists()
@@ -71,7 +73,7 @@ func (s *service) CreateFlow(ctx context.Context, req *CreateFlowRequest, owner 
 			Nodes:       string(nodes),
 			Edges:       string(edges),
 			Description: req.Description,
-			OwnerID:     &owner,
+			OwnerID:     &us.UserID,
 		}
 		if err := tx.WithContext(ctx).Create(save).Error; err != nil {
 			return fmt.Errorf("create flow: %w", err)

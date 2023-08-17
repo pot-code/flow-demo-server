@@ -1,9 +1,7 @@
 package flow
 
 import (
-	"context"
 	"errors"
-	"fmt"
 	"gobit-demo/features/audit"
 	"gobit-demo/features/auth"
 	"gobit-demo/internal/api"
@@ -65,15 +63,15 @@ func (c *route) create(e echo.Context) error {
 		return err
 	}
 
-	u := c.getLoginUser(e.Request().Context())
-	err := c.s.CreateFlow(e.Request().Context(), req, u.ID)
+	s, _ := new(auth.Session).FromContext(e.Request().Context())
+	err := c.s.CreateFlow(e.Request().Context(), req)
 	if errors.Is(err, ErrDuplicatedFlow) {
 		return api.JsonBusinessError(e, err.Error())
 	}
 	if err != nil {
 		return err
 	}
-	return c.as.NewAuditLog().Subject(u.Username).Action("创建流程").Payload(req).Commit(e.Request().Context())
+	return c.as.NewAuditLog().Subject(s.Username).Action("创建流程").Payload(req).Commit(e.Request().Context())
 }
 
 func (c *route) update(e echo.Context) error {
@@ -106,12 +104,4 @@ func (c *route) list(e echo.Context) error {
 		return err
 	}
 	return api.JsonPaginationData(e, p, count, data)
-}
-
-func (c *route) getLoginUser(ctx context.Context) *auth.LoginUser {
-	u, ok := new(auth.LoginUser).FromContext(ctx)
-	if !ok {
-		panic(fmt.Errorf("no login user attached in context"))
-	}
-	return u
 }

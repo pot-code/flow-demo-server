@@ -36,11 +36,10 @@ func main() {
 	eb := event.NewKafkaEventBus(kb)
 	as := audit.NewService(gd)
 	rb := auth.NewRBAC(gd)
-	js := auth.NewJwtTokenService(
-		auth.NewRedisTokenBlacklist(rc, cfg.Token.Exp),
+	ts := auth.NewJwtTokenService(
 		cfg.Token.Secret,
-		cfg.Token.Exp,
 	)
+	sm := auth.NewRedisSessionManager(rc, cfg.Session.Exp)
 
 	e := echo.New()
 	e.HTTPErrorHandler = func(err error, c echo.Context) {
@@ -67,13 +66,13 @@ func main() {
 	e.Use(api.LoggingMiddleware)
 
 	api.NewRouteGroup(e, "/auth",
-		auth.NewRoute(auth.NewService(gd, auth.NewBcryptPasswordHash()), js, eb))
+		auth.NewRoute(auth.NewService(gd, auth.NewBcryptPasswordHash()), ts, sm, eb))
 	api.NewRouteGroup(e, "/flow", api.RouteFn(func(g *echo.Group) {
-		g.Use(auth.AuthMiddleware(js))
+		g.Use(auth.AuthMiddleware(ts, sm))
 		flow.NewRoute(flow.NewService(gd), rb, flow.NewPermissionService(gd), as).Append(g)
 	}))
 	api.NewRouteGroup(e, "/user", api.RouteFn(func(g *echo.Group) {
-		g.Use(auth.AuthMiddleware(js))
+		g.Use(auth.AuthMiddleware(ts, sm))
 		user.NewRoute(user.NewService(gd), rb).Append(g)
 	}))
 

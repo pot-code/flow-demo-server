@@ -14,11 +14,12 @@ import (
 type route struct {
 	us Service
 	ts TokenService
+	sm SessionManager
 	eb event.EventBus
 }
 
-func NewRoute(us Service, ts TokenService, eb event.EventBus) api.Route {
-	return &route{us: us, ts: ts, eb: eb}
+func NewRoute(us Service, ts TokenService, sm SessionManager, eb event.EventBus) api.Route {
+	return &route{us: us, ts: ts, sm: sm, eb: eb}
 }
 
 func (c *route) Append(g *echo.Group) {
@@ -50,7 +51,21 @@ func (c *route) login(e echo.Context) error {
 		return err
 	}
 
-	token, err := c.ts.GenerateToken(user)
+	p, err := c.us.GetUserPermissions(e.Request().Context(), user.ID)
+	if err != nil {
+		return err
+	}
+	r, err := c.us.GetUserRoles(e.Request().Context(), user.ID)
+	if err != nil {
+		return err
+	}
+
+	s, err := c.sm.NewSession(e.Request().Context(), user.ID, user.Username, p, r)
+	if err != nil {
+		return fmt.Errorf("create session: %w", err)
+	}
+
+	token, err := c.ts.GenerateToken(&TokenData{s.SessionID})
 	if err != nil {
 		return fmt.Errorf("generate token: %w", err)
 	}
@@ -88,14 +103,14 @@ func (c *route) register(e echo.Context) error {
 }
 
 func (c *route) logout(e echo.Context) error {
-	token := getJwtTokenFromRequest(e)
+	token := getTokenFromRequest(e)
 	if token == "" {
 		return nil
 	}
 
-	if _, err := c.ts.Verify(token); err != nil {
+	td, err := c.ts.Verify(token)
+	if err != nil {
 		return api.JsonUnauthorized(e, "token 无效")
 	}
-
-	return c.ts.AddToBlockList(e.Request().Context(), token)
+	return c.sm.DeleteSession(e.Request().Context(), td.SessionID)
 }

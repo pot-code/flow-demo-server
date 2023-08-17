@@ -15,6 +15,7 @@ type AppConfig struct {
 	Cache        Cache
 	MessageQueue MessageQueue
 	Token        Token
+	Session      Session
 }
 
 type Logging struct {
@@ -46,6 +47,10 @@ func (m *MessageQueue) GetBrokerList() []string {
 
 type Token struct {
 	Secret string
+}
+
+type Session struct {
+	Secret string
 	Exp    time.Duration
 }
 
@@ -76,7 +81,9 @@ func LoadConfig() *AppConfig {
 		},
 		Token: Token{
 			Secret: viper.GetString("JWT_SECRET"),
-			Exp:    viper.GetDuration("JWT_EXP"),
+		},
+		Session: Session{
+			Exp: viper.GetDuration("SESSION_EXP"),
 		},
 	}
 }

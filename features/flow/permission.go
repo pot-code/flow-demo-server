@@ -19,27 +19,18 @@ type permission struct {
 }
 
 func (p *permission) CanViewFlowByID(ctx context.Context, fid uint) error {
-	u := p.getLoginUser(ctx)
-	ok, err := orm.NewGormWrapper(p.g.WithContext(ctx).Model(&model.Flow{}).Where("id = ? AND owner_id = ?", fid, u.ID)).Exists()
+	s, _ := new(auth.Session).FromContext(ctx)
+	ok, err := orm.NewGormWrapper(p.g.WithContext(ctx).Model(&model.Flow{}).Where("id = ? AND owner_id = ?", fid, s.UserID)).Exists()
 	if err != nil {
 		return fmt.Errorf("check flow exists by id: %w", err)
 	}
 	if !ok {
 		return &auth.UnAuthorizedError{
-			UserID:   u.ID,
-			Username: u.Username,
-			Action:   fmt.Sprintf("view flow %d", fid),
+			UserID: s.UserID,
+			Action: fmt.Sprintf("view flow %d", fid),
 		}
 	}
 	return nil
-}
-
-func (p *permission) getLoginUser(ctx context.Context) *auth.LoginUser {
-	u, ok := new(auth.LoginUser).FromContext(ctx)
-	if !ok {
-		panic(fmt.Errorf("no login user attached in context"))
-	}
-	return u
 }
 
 func NewPermissionService(g *gorm.DB) PermissionService {

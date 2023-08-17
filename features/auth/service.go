@@ -22,15 +22,39 @@ type Service interface {
 	FindUserByUserName(ctx context.Context, name string) (*LoginUser, error)
 	FindUserByMobile(ctx context.Context, mobile string) (*LoginUser, error)
 	FindUserByCredential(ctx context.Context, data *LoginRequest) (*LoginUser, error)
-}
-
-func NewService(g *gorm.DB, h PasswordHash) Service {
-	return &service{g: g, h: h}
+	GetUserPermissions(ctx context.Context, uid uint) ([]string, error)
+	GetUserRoles(ctx context.Context, uid uint) ([]string, error)
 }
 
 type service struct {
 	g *gorm.DB
 	h PasswordHash
+}
+
+// GetUserPermissions implements Service.
+func (s *service) GetUserPermissions(ctx context.Context, uid uint) ([]string, error) {
+	var permissions []string
+	if err := s.g.WithContext(ctx).Model(&model.Permission{}).
+		Distinct("permissions.name").
+		Joins("INNER JOIN role_permissions ON role_permissions.permission_id = permissions.id").
+		Joins("INNER JOIN user_roles ON user_roles.role_id = role_permissions.role_id").
+		Where("user_roles.user_id = ?", uid).
+		Pluck("permissions.name", &permissions).Error; err != nil {
+		return nil, fmt.Errorf("get user permissions: %w", err)
+	}
+	return permissions, nil
+}
+
+// GetUserRoles implements Service.
+func (s *service) GetUserRoles(ctx context.Context, uid uint) ([]string, error) {
+	var roles []string
+	if err := s.g.WithContext(ctx).Model(&model.Role{}).
+		Joins("INNER JOIN user_roles ON user_roles.role_id = roles.id").
+		Where("user_roles.user_id = ?", uid).
+		Pluck("roles.name", &roles).Error; err != nil {
+		return nil, fmt.Errorf("get user roles: %w", err)
+	}
+	return roles, nil
 }
 
 func (s *service) FindUserByUserName(ctx context.Context, username string) (*LoginUser, error) {
@@ -127,4 +151,8 @@ func (u *RegisterUser) fromUser(user *model.User) *RegisterUser {
 	u.Username = user.Username
 	u.Mobile = user.Mobile
 	return u
+}
+
+func NewService(g *gorm.DB, h PasswordHash) Service {
+	return &service{g: g, h: h}
 }

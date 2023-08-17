@@ -6,13 +6,15 @@ import (
 
 type contextKey struct{}
 
-var userKey = contextKey{}
+var (
+	sessionKey = contextKey{}
+)
 
-func (u *LoginUser) FromContext(ctx context.Context) (*LoginUser, bool) {
-	v, ok := ctx.Value(userKey).(*LoginUser)
-	return v, ok
+func (s *Session) WithContext(ctx context.Context) context.Context {
+	return context.WithValue(ctx, sessionKey, s)
 }
 
-func (u *LoginUser) WithContext(ctx context.Context) context.Context {
-	return context.WithValue(ctx, userKey, u)
+func (s *Session) FromContext(ctx context.Context) (*Session, bool) {
+	v, ok := ctx.Value(sessionKey).(*Session)
+	return v, ok
 }

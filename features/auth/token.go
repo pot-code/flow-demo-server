@@ -1,67 +1,59 @@
 package auth
 
 import (
-	"context"
-	"gobit-demo/internal/token"
-	"time"
+	"fmt"
 
 	"github.com/golang-jwt/jwt/v5"
 )
 
-type TokenService interface {
-	GenerateToken(user *LoginUser) (string, error)
-	Verify(token string) (*LoginUser, error)
-	AddToBlockList(ctx context.Context, token string) error
-	IsInBlockList(ctx context.Context, token string) (bool, error)
+type TokenData struct {
+	SessionID string `json:"sid"`
 }
 
-type jwtService struct {
-	i   *token.JwtIssuer
-	bl  TokenBlockList
-	exp time.Duration
-}
-
-func NewJwtTokenService(bl TokenBlockList, secret string, tokenExpiration time.Duration) TokenService {
-	return &jwtService{i: token.NewJwtIssuer(secret), bl: bl, exp: tokenExpiration}
-}
-
-func (s *jwtService) GenerateToken(u *LoginUser) (string, error) {
-	return s.i.Sign(u.toClaim(s.exp))
-}
-
-func (s *jwtService) Verify(token string) (*LoginUser, error) {
-	c, err := s.i.Verify(token)
-	if err != nil {
-		return nil, err
-	}
-	return new(LoginUser).fromClaim(c), nil
-}
-
-func (s *jwtService) AddToBlockList(ctx context.Context, token string) error {
-	return s.bl.Add(ctx, token)
-}
-
-func (s *jwtService) IsInBlockList(ctx context.Context, token string) (bool, error) {
-	return s.bl.Has(ctx, token)
-}
-
-func (u *LoginUser) toClaim(exp time.Duration) jwt.Claims {
+func (t *TokenData) toClaim() jwt.Claims {
 	return jwt.MapClaims{
-		"id":       u.ID,
-		"username": u.Username,
-		"name":     u.Name,
-		"exp":      float64(time.Now().Add(exp).Unix()),
+		"sid": t.SessionID,
 	}
 }
 
-func (u *LoginUser) fromClaim(claims jwt.Claims) *LoginUser {
+func (t *TokenData) fromClaim(claims jwt.Claims) *TokenData {
 	c, ok := claims.(jwt.MapClaims)
 	if !ok {
 		panic("claims is not jwt.MapClaims")
 	}
 
-	u.ID = uint(c["id"].(float64))
-	u.Username = c["username"].(string)
-	u.Name = c["name"].(string)
-	return u
+	t.SessionID = c["sid"].(string)
+	return t
+}
+
+type TokenService interface {
+	GenerateToken(user *TokenData) (string, error)
+	Verify(token string) (*TokenData, error)
+}
+
+type jwtTokenService struct {
+	secret string
+}
+
+func NewJwtTokenService(secret string) TokenService {
+	return &jwtTokenService{secret: secret}
+}
+
+func (s *jwtTokenService) GenerateToken(u *TokenData) (string, error) {
+	return s.Sign(u.toClaim())
+}
+
+func (s *jwtTokenService) Verify(token string) (*TokenData, error) {
+	t, err := jwt.Parse(token, func(token *jwt.Token) (interface{}, error) {
+		return []byte(s.secret), nil
+	})
+	if err != nil {
+		return nil, fmt.Errorf("parse token: %w", err)
+	}
+	return new(TokenData).fromClaim(t.Claims), nil
+}
+
+func (s *jwtTokenService) Sign(claims jwt.Claims) (string, error) {
+	t := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
+	return t.SignedString([]byte(s.secret))
 }
