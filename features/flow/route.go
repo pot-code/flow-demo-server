@@ -33,8 +33,8 @@ func (c *route) getByID(e echo.Context) error {
 		return err
 	}
 
-	var fid uint
-	if err := echo.PathParamsBinder(e).Uint("id", &fid).BindError(); err != nil {
+	var fid string
+	if err := echo.PathParamsBinder(e).String("id", &fid).BindError(); err != nil {
 		return api.NewBindError(err)
 	}
 
@@ -86,6 +86,7 @@ func (c *route) update(e echo.Context) error {
 	if err := validate.Validator.Struct(req); err != nil {
 		return err
 	}
+
 	return c.s.UpdateFlow(e.Request().Context(), req)
 }
 

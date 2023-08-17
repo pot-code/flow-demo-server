@@ -93,7 +93,7 @@ func (c *route) register(e echo.Context) error {
 	}
 
 	c.eb.Publish(&UserCreatedEvent{
-		ID:        u.ID,
+		UserID:    u.ID,
 		Username:  u.Username,
 		Mobile:    u.Mobile,
 		Timestamp: time.Now().UnixMilli(),
@@ -112,5 +112,6 @@ func (c *route) logout(e echo.Context) error {
 	if err != nil {
 		return api.JsonUnauthorized(e, "token 无效")
 	}
+
 	return c.sm.DeleteSession(e.Request().Context(), td.SessionID)
 }

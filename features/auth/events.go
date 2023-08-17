@@ -1,7 +1,7 @@
 package auth
 
 type UserCreatedEvent struct {
-	ID        uint   `json:"id,omitempty"`
+	UserID    string `json:"user_id,omitempty"`
 	Username  string `json:"username,omitempty"`
 	Mobile    string `json:"mobile,omitempty"`
 	Timestamp int64  `json:"timestamp,omitempty"`

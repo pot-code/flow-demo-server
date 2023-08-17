@@ -18,7 +18,7 @@ var (
 )
 
 type Service interface {
-	GetFlowByID(ctx context.Context, fid uint) (*FlowObjectResponse, error)
+	GetFlowByID(ctx context.Context, fid string) (*FlowObjectResponse, error)
 	ListFlow(ctx context.Context, p *pagination.Pagination) ([]*ListFlowResponse, int, error)
 	CreateFlow(ctx context.Context, req *CreateFlowRequest) error
 	UpdateFlow(ctx context.Context, req *UpdateFlowRequest) error
@@ -32,7 +32,7 @@ func NewService(g *gorm.DB) Service {
 	return &service{g: g}
 }
 
-func (s *service) GetFlowByID(ctx context.Context, fid uint) (*FlowObjectResponse, error) {
+func (s *service) GetFlowByID(ctx context.Context, fid string) (*FlowObjectResponse, error) {
 	m := new(model.Flow)
 	if err := s.g.WithContext(ctx).Model(&model.Flow{}).Where("id = ?", fid).Take(m).Error; err != nil {
 		return nil, fmt.Errorf("get flow by id: %w", err)
@@ -50,36 +50,25 @@ func (s *service) GetFlowByID(ctx context.Context, fid uint) (*FlowObjectRespons
 
 func (s *service) CreateFlow(ctx context.Context, req *CreateFlowRequest) error {
 	us, _ := new(auth.Session).FromContext(ctx)
-	return s.g.Transaction(func(tx *gorm.DB) error {
-		exists, err := orm.NewGormWrapper(tx.WithContext(ctx).Model(&model.Flow{}).
-			Where(&model.Flow{Name: req.Name})).Exists()
-		if err != nil {
-			return fmt.Errorf("check duplicate flow: %w", err)
-		}
-		if exists {
-			return ErrDuplicatedFlow
-		}
-
-		nodes, err := json.Marshal(req.Nodes)
-		if err != nil {
-			return fmt.Errorf("marshal nodes: %w", err)
-		}
-		edges, err := json.Marshal(req.Edges)
-		if err != nil {
-			return fmt.Errorf("marshal edges: %w", err)
-		}
-		save := &model.Flow{
-			Name:        req.Name,
-			Nodes:       string(nodes),
-			Edges:       string(edges),
-			Description: req.Description,
-			OwnerID:     &us.UserID,
-		}
-		if err := tx.WithContext(ctx).Create(save).Error; err != nil {
-			return fmt.Errorf("create flow: %w", err)
-		}
-		return nil
-	})
+	nodes, err := json.Marshal(req.Nodes)
+	if err != nil {
+		return fmt.Errorf("marshal nodes: %w", err)
+	}
+	edges, err := json.Marshal(req.Edges)
+	if err != nil {
+		return fmt.Errorf("marshal edges: %w", err)
+	}
+	m := &model.Flow{
+		Name:        req.Name,
+		Nodes:       string(nodes),
+		Edges:       string(edges),
+		Description: req.Description,
+		OwnerID:     &us.UserID,
+	}
+	if err := s.g.WithContext(ctx).Create(m).Error; err != nil {
+		return fmt.Errorf("create flow: %w", err)
+	}
+	return nil
 }
 
 func (s *service) UpdateFlow(ctx context.Context, req *UpdateFlowRequest) error {
@@ -91,14 +80,14 @@ func (s *service) UpdateFlow(ctx context.Context, req *UpdateFlowRequest) error 
 	if err != nil {
 		return fmt.Errorf("marshal edges: %w", err)
 	}
-	save := &model.Flow{
-		Model:       gorm.Model{ID: *req.ID},
+	m := &model.Flow{
+		ID:          req.ID,
 		Name:        req.Name,
 		Nodes:       string(nodes),
 		Edges:       string(edges),
 		Description: req.Description,
 	}
-	if err := s.g.WithContext(ctx).Model(&model.Flow{}).Save(save).Error; err != nil {
+	if err := s.g.WithContext(ctx).Model(&model.Flow{}).Where(&model.Flow{ID: req.ID}).Updates(m).Error; err != nil {
 		return fmt.Errorf("update flow: %w", err)
 	}
 	return nil

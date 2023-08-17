@@ -9,12 +9,12 @@ import (
 )
 
 type UnAuthorizedError struct {
-	UserID uint   `json:"user_id,omitempty"`
+	UserID string `json:"user_id,omitempty"`
 	Action string `json:"action,omitempty"`
 }
 
 func (e UnAuthorizedError) Error() string {
-	return fmt.Sprintf("no permission: user_id=%d, permission=%s", e.UserID, e.Action)
+	return fmt.Sprintf("no permission: user_id=%s, permission=%s", e.UserID, e.Action)
 }
 
 type RBAC interface {

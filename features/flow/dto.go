@@ -1,8 +1,10 @@
 package flow
 
+import "github.com/google/uuid"
+
 type Position struct {
-	X int `json:"x" validate:"required"`
-	Y int `json:"y" validate:"required"`
+	X float32 `json:"x" validate:"required"`
+	Y float32 `json:"y" validate:"required"`
 }
 
 type Node struct {
@@ -21,30 +23,30 @@ type Edge struct {
 }
 
 type CreateFlowRequest struct {
-	Name        string  `json:"name,omitempty" validate:"required"`
+	Name        string  `json:"name,omitempty" validate:"required,min=1,max=32"`
 	Nodes       []*Node `json:"nodes,omitempty" validate:"required"`
 	Edges       []*Edge `json:"edges,omitempty" validate:"required"`
 	Description string  `json:"description,omitempty"`
 }
 
 type UpdateFlowRequest struct {
-	ID          *uint   `json:"id,omitempty" validate:"required"`
-	Name        string  `json:"name,omitempty" validate:"required"`
-	Nodes       []*Node `json:"nodes,omitempty" validate:"required"`
-	Edges       []*Edge `json:"edges,omitempty" validate:"required"`
-	Description string  `json:"description,omitempty"`
+	ID          uuid.UUID `json:"id,omitempty" validate:"required"`
+	Name        string    `json:"name,omitempty" validate:"required,min=1,max=32"`
+	Nodes       []*Node   `json:"nodes,omitempty" validate:"required"`
+	Edges       []*Edge   `json:"edges,omitempty" validate:"required"`
+	Description string    `json:"description,omitempty"`
 }
 
 type FlowObjectResponse struct {
-	ID          *uint   `json:"id,omitempty"`
-	Name        string  `json:"name,omitempty"`
-	Nodes       []*Node `json:"nodes,omitempty"`
-	Edges       []*Edge `json:"edges,omitempty"`
-	Description string  `json:"description,omitempty"`
+	ID          uuid.UUID `json:"id,omitempty"`
+	Name        string    `json:"name,omitempty"`
+	Nodes       []*Node   `json:"nodes,omitempty"`
+	Edges       []*Edge   `json:"edges,omitempty"`
+	Description string    `json:"description,omitempty"`
 }
 
 type ListFlowResponse struct {
-	ID          uint   `json:"id"`
+	ID          string `json:"id"`
 	Name        string `json:"name"`
 	Description string `json:"description"`
 }

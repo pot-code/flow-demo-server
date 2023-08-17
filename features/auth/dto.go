@@ -14,14 +14,14 @@ type LoginRequest struct {
 }
 
 type LoginUser struct {
-	ID       uint
+	ID       string
 	Name     string
 	Username string
 	Mobile   string
 }
 
 type RegisterUser struct {
-	ID       uint
+	ID       string
 	Name     string
 	Username string
 	Mobile   string

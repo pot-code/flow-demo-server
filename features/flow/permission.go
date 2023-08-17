@@ -11,23 +11,24 @@ import (
 )
 
 type PermissionService interface {
-	CanViewFlowByID(ctx context.Context, fid uint) error
+	CanViewFlowByID(ctx context.Context, fid string) error
 }
 
 type permission struct {
 	g *gorm.DB
 }
 
-func (p *permission) CanViewFlowByID(ctx context.Context, fid uint) error {
+func (p *permission) CanViewFlowByID(ctx context.Context, fid string) error {
 	s, _ := new(auth.Session).FromContext(ctx)
-	ok, err := orm.NewGormWrapper(p.g.WithContext(ctx).Model(&model.Flow{}).Where("id = ? AND owner_id = ?", fid, s.UserID)).Exists()
+	ok, err := orm.NewGormWrapper(p.g.WithContext(ctx).Model(&model.Flow{}).
+		Where("id = ? AND owner_id = ?", fid, s.UserID)).Exists()
 	if err != nil {
 		return fmt.Errorf("check flow exists by id: %w", err)
 	}
 	if !ok {
 		return &auth.UnAuthorizedError{
 			UserID: s.UserID,
-			Action: fmt.Sprintf("view flow %d", fid),
+			Action: fmt.Sprintf("view flow %s", fid),
 		}
 	}
 	return nil
