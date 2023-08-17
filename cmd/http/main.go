@@ -35,7 +35,7 @@ func main() {
 	kb := mq.NewKafkaPublisher(cfg.MessageQueue.GetBrokerList(), log.Logger)
 	eb := event.NewKafkaEventBus(kb)
 	as := audit.NewService(gd)
-	rm := auth.NewRBAC(gd, as)
+	rb := auth.NewRBAC(gd)
 	js := auth.NewJwtTokenService(
 		auth.NewRedisTokenBlacklist(rc, cfg.Token.Exp),
 		cfg.Token.Secret,
@@ -70,11 +70,11 @@ func main() {
 		auth.NewRoute(auth.NewService(gd, auth.NewBcryptPasswordHash()), js, eb))
 	api.NewRouteGroup(e, "/flow", api.RouteFn(func(g *echo.Group) {
 		g.Use(auth.AuthMiddleware(js))
-		flow.NewRoute(flow.NewService(gd), rm, as).Append(g)
+		flow.NewRoute(flow.NewService(gd), rb, flow.NewPermissionService(gd), as).Append(g)
 	}))
 	api.NewRouteGroup(e, "/user", api.RouteFn(func(g *echo.Group) {
 		g.Use(auth.AuthMiddleware(js))
-		user.NewRoute(user.NewService(gd), rm).Append(g)
+		user.NewRoute(user.NewService(gd), rb).Append(g)
 	}))
 
 	if err := e.Start(fmt.Sprintf(":%d", cfg.HttpPort)); err != http.ErrServerClosed {

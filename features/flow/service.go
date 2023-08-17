@@ -2,6 +2,7 @@ package flow
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"gobit-demo/internal/orm"
@@ -12,16 +13,14 @@ import (
 )
 
 var (
-	ErrDuplicatedFlow     = errors.New("流程已存在")
-	ErrDuplicatedFlowNode = errors.New("流程结点已存在")
-	ErrFlowNotFound       = errors.New("父流程不存在")
+	ErrDuplicatedFlow = errors.New("流程已存在")
 )
 
 type Service interface {
-	CreateFlow(ctx context.Context, data *CreateFlowRequest) error
+	CreateFlow(ctx context.Context, req *CreateFlowRequest) error
+	UpdateFlow(ctx context.Context, req *UpdateFlowRequest) error
 	ListFlow(ctx context.Context, p *pagination.Pagination) ([]*ListFlowResponse, int, error)
-	SaveFlowNode(ctx context.Context, fid uint, data []*SaveFlowNodeRequest) error
-	ListFlowNodeByFlowID(ctx context.Context, fid uint) ([]*ListFlowNodeResponse, error)
+	GetFlowByID(ctx context.Context, fid uint) (*FlowObjectResponse, error)
 }
 
 type service struct {
@@ -30,6 +29,22 @@ type service struct {
 
 func NewService(g *gorm.DB) Service {
 	return &service{g: g}
+}
+
+func (s *service) GetFlowByID(ctx context.Context, fid uint) (*FlowObjectResponse, error) {
+	m := new(model.Flow)
+	if err := s.g.WithContext(ctx).Model(&model.Flow{}).Where("id = ?", fid).Take(m).Error; err != nil {
+		return nil, fmt.Errorf("get flow by id: %w", err)
+	}
+
+	o := new(FlowObjectResponse)
+	if err := json.Unmarshal([]byte(m.Nodes), o); err != nil {
+		return nil, fmt.Errorf("unmarshal nodes: %w", err)
+	}
+	if err := json.Unmarshal([]byte(m.Edges), o); err != nil {
+		return nil, fmt.Errorf("unmarshal edges: %w", err)
+	}
+	return o, nil
 }
 
 func (s *service) CreateFlow(ctx context.Context, req *CreateFlowRequest) error {
@@ -43,8 +58,18 @@ func (s *service) CreateFlow(ctx context.Context, req *CreateFlowRequest) error 
 			return ErrDuplicatedFlow
 		}
 
+		nodes, err := json.Marshal(req.Nodes)
+		if err != nil {
+			return fmt.Errorf("marshal nodes: %w", err)
+		}
+		edges, err := json.Marshal(req.Edges)
+		if err != nil {
+			return fmt.Errorf("marshal edges: %w", err)
+		}
 		save := &model.Flow{
 			Name:        req.Name,
+			Nodes:       string(nodes),
+			Edges:       string(edges),
 			Description: req.Description,
 		}
 		if err := tx.WithContext(ctx).Create(save).Error; err != nil {
@@ -52,6 +77,28 @@ func (s *service) CreateFlow(ctx context.Context, req *CreateFlowRequest) error 
 		}
 		return nil
 	})
+}
+
+func (s *service) UpdateFlow(ctx context.Context, req *UpdateFlowRequest) error {
+	nodes, err := json.Marshal(req.Nodes)
+	if err != nil {
+		return fmt.Errorf("marshal nodes: %w", err)
+	}
+	edges, err := json.Marshal(req.Edges)
+	if err != nil {
+		return fmt.Errorf("marshal edges: %w", err)
+	}
+	save := &model.Flow{
+		Model:       gorm.Model{ID: *req.ID},
+		Name:        req.Name,
+		Nodes:       string(nodes),
+		Edges:       string(edges),
+		Description: req.Description,
+	}
+	if err := s.g.WithContext(ctx).Model(&model.Flow{}).Save(save).Error; err != nil {
+		return fmt.Errorf("update flow: %w", err)
+	}
+	return nil
 }
 
 func (s *service) ListFlow(ctx context.Context, p *pagination.Pagination) ([]*ListFlowResponse, int, error) {
@@ -68,56 +115,4 @@ func (s *service) ListFlow(ctx context.Context, p *pagination.Pagination) ([]*Li
 		return nil, 0, fmt.Errorf("query flow list: %w", err)
 	}
 	return flows, int(count), nil
-}
-
-func (s *service) SaveFlowNode(ctx context.Context, fid uint, data []*SaveFlowNodeRequest) error {
-	return s.g.Transaction(func(tx *gorm.DB) error {
-		ok, err := orm.NewGormWrapper(tx.WithContext(ctx).Model(&model.Flow{}).
-			Where("id = ?", fid)).Exists()
-		if err != nil {
-			return fmt.Errorf("check parent flow: %w", err)
-		}
-		if !ok {
-			return ErrFlowNotFound
-		}
-
-		for _, e := range data {
-			ok, err := orm.NewGormWrapper(tx.WithContext(ctx).Model(&model.FlowNode{}).
-				Where(&model.FlowNode{Name: e.Name})).Exists()
-			if err != nil {
-				return fmt.Errorf("check duplicate flow node: %w", err)
-			}
-			if ok {
-				return ErrDuplicatedFlowNode
-			}
-		}
-
-		for _, e := range data {
-			m := &model.FlowNode{
-				FlowID:      fid,
-				Name:        e.Name,
-				Description: e.Description,
-				PrevID:      e.PrevID,
-				NextID:      e.NextID,
-			}
-			if e.ID != nil {
-				m.ID = *e.ID
-			}
-			if err := tx.WithContext(ctx).Save(m).Error; err != nil {
-				return fmt.Errorf("save flow node: %w", err)
-			}
-		}
-		return nil
-	})
-}
-
-func (s *service) ListFlowNodeByFlowID(ctx context.Context, fid uint) ([]*ListFlowNodeResponse, error) {
-	var nodes []*ListFlowNodeResponse
-	if err := s.g.WithContext(ctx).Model(&model.FlowNode{}).
-		Where(&model.FlowNode{FlowID: fid}).
-		Find(&nodes).
-		Error; err != nil {
-		return nil, fmt.Errorf("query flow node: %w", err)
-	}
-	return nodes, nil
 }

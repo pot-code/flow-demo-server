@@ -3,7 +3,7 @@ package auth
 import (
 	"context"
 	"fmt"
-	"gobit-demo/features/audit"
+	"gobit-demo/internal/orm"
 	"gobit-demo/model"
 
 	"github.com/samber/lo"
@@ -11,13 +11,13 @@ import (
 )
 
 type UnAuthorizedError struct {
-	UserID     uint   `json:"user_id,omitempty"`
-	Username   string `json:"username,omitempty"`
-	Permission string `json:"permission,omitempty"`
+	UserID   uint   `json:"user_id,omitempty"`
+	Username string `json:"username,omitempty"`
+	Action   string `json:"action,omitempty"`
 }
 
 func (e UnAuthorizedError) Error() string {
-	return fmt.Sprintf("no permission: username=%s, permission=%s", e.Username, e.Permission)
+	return fmt.Sprintf("no permission: username=%s, permission=%s", e.Username, e.Action)
 }
 
 type RBAC interface {
@@ -28,13 +28,12 @@ type RBAC interface {
 	IsAdmin(ctx context.Context) (bool, error)
 }
 
-func NewRBAC(g *gorm.DB, as audit.Service) RBAC {
-	return &rbac{g: g, as: as}
+func NewRBAC(g *gorm.DB) RBAC {
+	return &rbac{g: g}
 }
 
 type rbac struct {
-	g  *gorm.DB
-	as audit.Service
+	g *gorm.DB
 }
 
 func (s *rbac) IsAdmin(ctx context.Context) (bool, error) {
@@ -71,38 +70,23 @@ func (s *rbac) CheckPermission(ctx context.Context, permission string) error {
 		return nil
 	}
 
-	var allow []string
-	if err := s.g.WithContext(ctx).Model(&model.Permission{}).
-		Select("roles.name").
-		Joins("INNER JOIN role_permissions ON permissions.id = role_permissions.permission_id").
-		Joins("INNER JOIN roles ON roles.id = role_permissions.role_id").
-		Where(&model.Permission{Name: permission}).
-		Scan(&allow).Error; err != nil {
+	u := s.getLoginUser(ctx)
+	ok, err = orm.NewGormWrapper(s.g.WithContext(ctx).Model(&model.User{}).
+		Joins("INNER JOIN user_roles ur ON users.id = ur.user_id").
+		Joins("INNER JOIN role_permissions rp ON ur.role_id = rp.role_id").
+		Joins("INNER JOIN permissions p ON rp.permission_id = p.id").
+		Where("users.id = ? AND p.name = ?", u.ID, permission)).Exists()
+	if err != nil {
 		return fmt.Errorf("get permission roles: %w", err)
 	}
-
-	roles, err := s.GetRoles(ctx)
-	if err != nil {
-		return err
+	if ok {
+		return nil
 	}
-
-	for _, role := range roles {
-		if lo.Contains(allow, role) {
-			return nil
-		}
+	return &UnAuthorizedError{
+		UserID:   u.ID,
+		Username: u.Username,
+		Action:   permission,
 	}
-
-	u := s.getLoginUser(ctx)
-	re := &UnAuthorizedError{
-		UserID:     u.ID,
-		Username:   u.Username,
-		Permission: permission,
-	}
-	if err := s.as.NewAuditLog().Subject(u.Username).Action("访问受限").Payload(re).
-		Commit(ctx); err != nil {
-		return fmt.Errorf("commit audit log: %w", err)
-	}
-	return re
 }
 
 func (s *rbac) GetRoles(ctx context.Context) ([]string, error) {

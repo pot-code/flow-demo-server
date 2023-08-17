@@ -23,7 +23,6 @@ func main() {
 		&model.Role{},
 		&model.Permission{},
 		&model.Flow{},
-		&model.FlowNode{},
 	); err != nil {
 		log.Fatal().Err(err).Msg("error migrating schema")
 	}
