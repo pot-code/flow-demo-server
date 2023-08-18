@@ -55,8 +55,8 @@ func (s *service) CreateFlow(ctx context.Context, req *CreateFlowRequest) error 
 	session := s.sm.GetSessionFromContext(ctx)
 	m := &model.Flow{
 		Name:        req.Name,
-		Nodes:       req.Edges,
-		Edges:       req.Nodes,
+		Nodes:       req.Nodes,
+		Edges:       req.Edges,
 		Description: req.Description,
 		OwnerID:     &session.UserID,
 	}
@@ -74,8 +74,8 @@ func (s *service) UpdateFlow(ctx context.Context, req *UpdateFlowRequest) error 
 	m := &model.Flow{
 		ID:          req.ID,
 		Name:        req.Name,
-		Nodes:       req.Edges,
-		Edges:       req.Nodes,
+		Nodes:       req.Nodes,
+		Edges:       req.Edges,
 		Description: req.Description,
 	}
 	if err := s.g.WithContext(ctx).Model(&model.Flow{}).Where(&model.Flow{ID: req.ID}).Updates(m).Error; err != nil {
