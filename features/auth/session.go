@@ -11,6 +11,10 @@ import (
 	"github.com/redis/go-redis/v9"
 )
 
+type sessionKeyType struct{}
+
+var sessionKey = sessionKeyType{}
+
 var (
 	ErrSessionNotFound = fmt.Errorf("session not found")
 )
@@ -25,6 +29,8 @@ type Session struct {
 
 type SessionManager interface {
 	GetSession(ctx context.Context, sid string) (*Session, error)
+	GetSessionFromContext(ctx context.Context) *Session
+	SetSession(ctx context.Context, s *Session) context.Context
 	NewSession(ctx context.Context, uid string, username string, permissions []string, roles []string) (*Session, error)
 	DeleteSession(ctx context.Context, sid string) error
 }
@@ -32,6 +38,20 @@ type SessionManager interface {
 type redisSessionManager struct {
 	r   *redis.Client
 	exp time.Duration
+}
+
+// GetSessionFromContext implements SessionManager.
+func (s *redisSessionManager) GetSessionFromContext(ctx context.Context) *Session {
+	v, ok := ctx.Value(sessionKey).(*Session)
+	if !ok {
+		panic("session not found")
+	}
+	return v
+}
+
+// SetSession implements SessionManager.
+func (r *redisSessionManager) SetSession(ctx context.Context, s *Session) context.Context {
+	return context.WithValue(ctx, sessionKey, r)
 }
 
 // DeleteSession implements SessionManager.

@@ -15,11 +15,12 @@ type PermissionService interface {
 }
 
 type permission struct {
-	g *gorm.DB
+	g  *gorm.DB
+	sm auth.SessionManager
 }
 
 func (p *permission) CanViewFlowByID(ctx context.Context, fid string) error {
-	s, _ := new(auth.Session).FromContext(ctx)
+	s := p.sm.GetSessionFromContext(ctx)
 	ok, err := orm.NewGormWrapper(p.g.WithContext(ctx).Model(&model.Flow{}).
 		Where("id = ? AND owner_id = ?", fid, s.UserID)).Exists()
 	if err != nil {
@@ -34,6 +35,6 @@ func (p *permission) CanViewFlowByID(ctx context.Context, fid string) error {
 	return nil
 }
 
-func NewPermissionService(g *gorm.DB) PermissionService {
-	return &permission{g: g}
+func NewPermissionService(g *gorm.DB, sm auth.SessionManager) PermissionService {
+	return &permission{g: g, sm: sm}
 }

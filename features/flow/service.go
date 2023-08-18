@@ -25,11 +25,12 @@ type Service interface {
 }
 
 type service struct {
-	g *gorm.DB
+	g  *gorm.DB
+	sm auth.SessionManager
 }
 
-func NewService(g *gorm.DB) Service {
-	return &service{g: g}
+func NewService(g *gorm.DB, sm auth.SessionManager) Service {
+	return &service{g: g, sm: sm}
 }
 
 func (s *service) GetFlowByID(ctx context.Context, fid string) (*FlowObjectResponse, error) {
@@ -49,7 +50,7 @@ func (s *service) GetFlowByID(ctx context.Context, fid string) (*FlowObjectRespo
 }
 
 func (s *service) CreateFlow(ctx context.Context, req *CreateFlowRequest) error {
-	us, _ := new(auth.Session).FromContext(ctx)
+	session := s.sm.GetSessionFromContext(ctx)
 	nodes, err := json.Marshal(req.Nodes)
 	if err != nil {
 		return fmt.Errorf("marshal nodes: %w", err)
@@ -63,7 +64,7 @@ func (s *service) CreateFlow(ctx context.Context, req *CreateFlowRequest) error 
 		Nodes:       string(nodes),
 		Edges:       string(edges),
 		Description: req.Description,
-		OwnerID:     &us.UserID,
+		OwnerID:     &session.UserID,
 	}
 	if err := s.g.WithContext(ctx).Create(m).Error; err != nil {
 		return fmt.Errorf("create flow: %w", err)

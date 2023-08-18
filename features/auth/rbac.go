@@ -23,16 +23,13 @@ type RBAC interface {
 	IsAdmin(ctx context.Context) (bool, error)
 }
 
-func NewRBAC(g *gorm.DB) RBAC {
-	return &rbac{g: g}
-}
-
 type rbac struct {
-	g *gorm.DB
+	g  *gorm.DB
+	sm SessionManager
 }
 
 func (r *rbac) IsAdmin(ctx context.Context) (bool, error) {
-	s, _ := new(Session).FromContext(ctx)
+	s := r.sm.GetSessionFromContext(ctx)
 	if lo.Contains(s.UserRoles, "admin") {
 		return true, nil
 	}
@@ -48,7 +45,7 @@ func (r *rbac) CheckRole(ctx context.Context, role string) error {
 		return nil
 	}
 
-	s, _ := new(Session).FromContext(ctx)
+	s := r.sm.GetSessionFromContext(ctx)
 	if lo.Contains(s.UserRoles, role) {
 		return nil
 	}
@@ -64,7 +61,7 @@ func (r *rbac) CheckPermission(ctx context.Context, permission string) error {
 		return nil
 	}
 
-	s, _ := new(Session).FromContext(ctx)
+	s := r.sm.GetSessionFromContext(ctx)
 	if lo.Contains(s.UserPermissions, permission) {
 		return nil
 	}
@@ -72,4 +69,8 @@ func (r *rbac) CheckPermission(ctx context.Context, permission string) error {
 		UserID: s.UserID,
 		Action: permission,
 	}
+}
+
+func NewRBAC(g *gorm.DB, sm SessionManager) RBAC {
+	return &rbac{g: g, sm: sm}
 }

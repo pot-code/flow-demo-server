@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"gobit-demo/features/auth"
 	"gobit-demo/model"
 	"reflect"
 
@@ -13,50 +14,57 @@ import (
 type AuditLog struct {
 	a       *model.AuditLog
 	g       *gorm.DB
+	sm      auth.SessionManager
 	payload any
 }
 
-func NewAuditLog(g *gorm.DB) *AuditLog {
-	return &AuditLog{a: new(model.AuditLog), g: g}
+func NewAuditLog(g *gorm.DB, sm auth.SessionManager) *AuditLog {
+	return &AuditLog{a: new(model.AuditLog), g: g, sm: sm}
 }
 
-func (b *AuditLog) Subject(subject string) *AuditLog {
-	b.a.Subject = subject
-	return b
+func (a *AuditLog) Subject(subject string) *AuditLog {
+	a.a.Subject = subject
+	return a
 }
 
-func (b *AuditLog) Action(action string) *AuditLog {
-	b.a.Action = action
-	return b
+func (a *AuditLog) Action(action string) *AuditLog {
+	a.a.Action = action
+	return a
 }
 
-func (b *AuditLog) Payload(data any) *AuditLog {
+func (a *AuditLog) Payload(data any) *AuditLog {
 	if reflect.TypeOf(data).Kind() != reflect.Pointer {
 		panic("data must be pointer")
 	}
 
-	b.payload = data
-	return b
+	a.payload = data
+	return a
 }
 
-func (b *AuditLog) Commit(ctx context.Context) error {
-	if b.a.Action == "" && b.a.Subject == "" && b.payload == nil {
+func (a *AuditLog) WithContext(ctx context.Context) *AuditLog {
+	s := a.sm.GetSessionFromContext(ctx)
+	a.a.Subject = s.Username
+	return a
+}
+
+func (a *AuditLog) Commit(ctx context.Context) error {
+	if a.a.Action == "" && a.a.Subject == "" && a.payload == nil {
 		panic("empty audit log")
 	}
 
-	if b.a.Subject == "" {
+	if a.a.Subject == "" {
 		panic("subject cannot be empty")
 	}
 
-	if b.payload != nil {
-		bs, err := json.Marshal(b.payload)
+	if a.payload != nil {
+		bs, err := json.Marshal(a.payload)
 		if err != nil {
 			return fmt.Errorf("marshal data: %w", err)
 		}
-		b.a.Payload = string(bs)
+		a.a.Payload = string(bs)
 	}
 
-	if err := b.g.WithContext(ctx).Create(b.a).Error; err != nil {
+	if err := a.g.WithContext(ctx).Create(a.a).Error; err != nil {
 		return fmt.Errorf("create audit log: %w", err)
 	}
 	return nil

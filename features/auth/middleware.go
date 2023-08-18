@@ -37,7 +37,7 @@ func AuthMiddleware(ts TokenService, sm SessionManager) func(next echo.HandlerFu
 				return api.JsonServerError(c, err.Error())
 			}
 
-			c.SetRequest(c.Request().WithContext(s.WithContext(c.Request().Context())))
+			c.SetRequest(c.Request().WithContext(sm.SetSession(c.Request().Context(), s)))
 			return next(c)
 		}
 	}
