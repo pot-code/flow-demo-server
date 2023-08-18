@@ -41,11 +41,16 @@ func (id *UUID) UnmarshalJSON(b []byte) error {
 // and should not be retained. Their underlying memory is owned by the driver.
 // If retention is necessary, copy their values before the next call to Scan.
 func (id *UUID) Scan(src any) error {
-	u, ok := src.(int64)
-	if !ok {
-		return fmt.Errorf("cannot scan type %T into %T", src, id)
+	switch t := src.(type) {
+	case int64:
+		*id = UUID(t)
+	case []byte:
+		v, err := strconv.ParseUint(string(t), 10, 64)
+		if err != nil {
+			return fmt.Errorf("parse uuid: %w", err)
+		}
+		*id = UUID(v)
 	}
-	*id = UUID(u)
 	return nil
 }
 
