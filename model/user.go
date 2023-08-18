@@ -7,14 +7,13 @@ import (
 )
 
 type User struct {
-	gorm.Model
-	ID       UUID `gorm:"primaryKey;type:bigint"`
-	Name     string
-	Username string `gorm:"uniqueIndex,not null,size:12"`
-	Password string `gorm:"not null"`
-	Mobile   string `gorm:"uniqueIndex,not null,size:11"`
-	Disabled bool
-	Roles    []*Role `gorm:"many2many:user_roles"`
+	ID       UUID    `gorm:"primaryKey;type:BIGINT UNSIGNED" json:"id,omitempty"`
+	Name     string  `json:"name,omitempty"`
+	Username string  `gorm:"uniqueIndex,not null,size:12" json:"username,omitempty"`
+	Password string  `gorm:"not null" json:"password,omitempty"`
+	Mobile   string  `gorm:"uniqueIndex,not null,size:11" json:"mobile,omitempty"`
+	Disabled bool    `json:"disabled,omitempty"`
+	Roles    []*Role `gorm:"many2many:user_roles" json:"roles,omitempty"`
 }
 
 func (u *User) BeforeCreate(tx *gorm.DB) error {
