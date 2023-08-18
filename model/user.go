@@ -1,13 +1,14 @@
 package model
 
 import (
-	"github.com/google/uuid"
+	"gobit-demo/internal/uuid"
+
 	"gorm.io/gorm"
 )
 
 type User struct {
 	gorm.Model
-	ID       uuid.UUID `gorm:"primaryKey;type:char(36)"`
+	ID       UUID `gorm:"primaryKey;type:bigint"`
 	Name     string
 	Username string `gorm:"uniqueIndex,not null,size:12"`
 	Password string `gorm:"not null"`
@@ -17,10 +18,10 @@ type User struct {
 }
 
 func (u *User) BeforeCreate(tx *gorm.DB) error {
-	uid, err := uuid.NewUUID()
+	uid, err := uuid.Snoyflake.NextID()
 	if err != nil {
 		return err
 	}
-	u.ID = uid
+	u.ID = UUID(uid)
 	return nil
 }

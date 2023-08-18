@@ -22,8 +22,8 @@ type Service interface {
 	FindUserByUserName(ctx context.Context, name string) (*LoginUser, error)
 	FindUserByMobile(ctx context.Context, mobile string) (*LoginUser, error)
 	FindUserByCredential(ctx context.Context, data *LoginRequest) (*LoginUser, error)
-	GetUserPermissions(ctx context.Context, uid string) ([]string, error)
-	GetUserRoles(ctx context.Context, uid string) ([]string, error)
+	GetUserPermissions(ctx context.Context, uid model.UUID) ([]string, error)
+	GetUserRoles(ctx context.Context, uid model.UUID) ([]string, error)
 }
 
 type service struct {
@@ -32,7 +32,7 @@ type service struct {
 }
 
 // GetUserPermissions implements Service.
-func (s *service) GetUserPermissions(ctx context.Context, uid string) ([]string, error) {
+func (s *service) GetUserPermissions(ctx context.Context, uid model.UUID) ([]string, error) {
 	var permissions []string
 	if err := s.g.WithContext(ctx).Model(&model.Permission{}).
 		Distinct("permissions.name").
@@ -46,7 +46,7 @@ func (s *service) GetUserPermissions(ctx context.Context, uid string) ([]string,
 }
 
 // GetUserRoles implements Service.
-func (s *service) GetUserRoles(ctx context.Context, uid string) ([]string, error) {
+func (s *service) GetUserRoles(ctx context.Context, uid model.UUID) ([]string, error) {
 	var roles []string
 	if err := s.g.WithContext(ctx).Model(&model.Role{}).
 		Joins("INNER JOIN user_roles ON user_roles.role_id = roles.id").
@@ -138,7 +138,7 @@ func (s *service) FindUserByCredential(ctx context.Context, data *LoginRequest) 
 }
 
 func (u *LoginUser) fromUser(user *model.User) *LoginUser {
-	u.ID = user.ID.String()
+	u.ID = user.ID
 	u.Name = user.Name
 	u.Username = user.Username
 	u.Mobile = user.Mobile
@@ -146,7 +146,7 @@ func (u *LoginUser) fromUser(user *model.User) *LoginUser {
 }
 
 func (u *RegisterUser) fromUser(user *model.User) *RegisterUser {
-	u.ID = user.ID.String()
+	u.ID = user.ID
 	u.Name = user.Name
 	u.Username = user.Username
 	u.Mobile = user.Mobile

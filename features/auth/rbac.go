@@ -3,18 +3,19 @@ package auth
 import (
 	"context"
 	"fmt"
+	"gobit-demo/model"
 
 	"github.com/samber/lo"
 	"gorm.io/gorm"
 )
 
 type UnAuthorizedError struct {
-	UserID string `json:"user_id,omitempty"`
-	Action string `json:"action,omitempty"`
+	UserID model.UUID `json:"user_id,omitempty"`
+	Action string     `json:"action,omitempty"`
 }
 
 func (e UnAuthorizedError) Error() string {
-	return fmt.Sprintf("no permission: user_id=%s, permission=%s", e.UserID, e.Action)
+	return fmt.Sprintf("no permission: user_id=%v, permission=%s", e.UserID, e.Action)
 }
 
 type RBAC interface {

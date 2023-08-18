@@ -5,6 +5,7 @@ import (
 	"context"
 	"encoding/gob"
 	"fmt"
+	"gobit-demo/model"
 	"time"
 
 	"github.com/google/uuid"
@@ -21,17 +22,17 @@ var (
 
 type Session struct {
 	SessionID       string
-	UserID          string
+	UserID          model.UUID
 	Username        string
 	UserPermissions []string
 	UserRoles       []string
 }
 
 type SessionManager interface {
-	GetSession(ctx context.Context, sid string) (*Session, error)
+	GetSessionBySessionID(ctx context.Context, sid string) (*Session, error)
 	GetSessionFromContext(ctx context.Context) *Session
 	SetSession(ctx context.Context, s *Session) context.Context
-	NewSession(ctx context.Context, uid string, username string, permissions []string, roles []string) (*Session, error)
+	NewSession(ctx context.Context, uid model.UUID, username string, permissions []string, roles []string) (*Session, error)
 	DeleteSession(ctx context.Context, sid string) error
 }
 
@@ -44,14 +45,14 @@ type redisSessionManager struct {
 func (s *redisSessionManager) GetSessionFromContext(ctx context.Context) *Session {
 	v, ok := ctx.Value(sessionKey).(*Session)
 	if !ok {
-		panic("session not found")
+		panic("session not found in context")
 	}
 	return v
 }
 
 // SetSession implements SessionManager.
 func (r *redisSessionManager) SetSession(ctx context.Context, s *Session) context.Context {
-	return context.WithValue(ctx, sessionKey, r)
+	return context.WithValue(ctx, sessionKey, s)
 }
 
 // DeleteSession implements SessionManager.
@@ -63,8 +64,8 @@ func (s *redisSessionManager) DeleteSession(ctx context.Context, sid string) err
 	return nil
 }
 
-// GetSession implements SessionManager.
-func (s *redisSessionManager) GetSession(ctx context.Context, sid string) (*Session, error) {
+// GetSessionBySessionID implements SessionManager.
+func (s *redisSessionManager) GetSessionBySessionID(ctx context.Context, sid string) (*Session, error) {
 	key := s.getRedisKey(sid)
 
 	code, err := s.r.Exists(ctx, key).Result()
@@ -90,7 +91,7 @@ func (s *redisSessionManager) GetSession(ctx context.Context, sid string) (*Sess
 // NewSession implements SessionManager.
 func (s *redisSessionManager) NewSession(
 	ctx context.Context,
-	uid string,
+	uid model.UUID,
 	username string,
 	permissions []string,
 	roles []string,

@@ -10,6 +10,7 @@ import (
 
 type AppConfig struct {
 	HttpPort     int
+	NodeID       uint16
 	Logging      Logging
 	Database     Database
 	Cache        Cache
@@ -65,6 +66,7 @@ func LoadConfig() *AppConfig {
 
 	return &AppConfig{
 		HttpPort: viper.GetInt("HTTP_PORT"),
+		NodeID:   viper.GetUint16("NODE_ID"),
 		Logging: Logging{
 			Level: viper.GetString("LOG_LEVEL"),
 		},

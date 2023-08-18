@@ -1,26 +1,27 @@
 package model
 
 import (
-	"github.com/google/uuid"
+	"gobit-demo/internal/uuid"
+
 	"gorm.io/gorm"
 )
 
 type Flow struct {
 	gorm.Model
-	ID          uuid.UUID `gorm:"primaryKey;type:char(36)"`
-	Name        string    `gorm:"index,not null,size:32"`
+	ID          UUID   `gorm:"primaryKey;type:bigint"`
+	Name        string `gorm:"index,not null,size:32"`
 	Description string
 	Nodes       string
 	Edges       string
-	OwnerID     *string
+	OwnerID     *UUID
 	Owner       *User `gorm:"foreignKey:OwnerID"`
 }
 
 func (f *Flow) BeforeCreate(tx *gorm.DB) error {
-	uid, err := uuid.NewUUID()
+	uid, err := uuid.Snoyflake.NextID()
 	if err != nil {
 		return err
 	}
-	f.ID = uid
+	f.ID = UUID(uid)
 	return nil
 }

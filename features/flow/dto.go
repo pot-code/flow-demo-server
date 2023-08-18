@@ -1,6 +1,8 @@
 package flow
 
-import "github.com/google/uuid"
+import (
+	"gobit-demo/model"
+)
 
 type Position struct {
 	X float32 `json:"x" validate:"required"`
@@ -30,19 +32,19 @@ type CreateFlowRequest struct {
 }
 
 type UpdateFlowRequest struct {
-	ID          uuid.UUID `json:"id,omitempty" validate:"required"`
-	Name        string    `json:"name,omitempty" validate:"required,min=1,max=32"`
-	Nodes       []*Node   `json:"nodes,omitempty" validate:"required"`
-	Edges       []*Edge   `json:"edges,omitempty" validate:"required"`
-	Description string    `json:"description,omitempty"`
+	ID          model.UUID `json:"id,omitempty" validate:"required"`
+	Name        string     `json:"name,omitempty" validate:"required,min=1,max=32"`
+	Nodes       []*Node    `json:"nodes,omitempty" validate:"required"`
+	Edges       []*Edge    `json:"edges,omitempty" validate:"required"`
+	Description string     `json:"description,omitempty"`
 }
 
 type FlowObjectResponse struct {
-	ID          uuid.UUID `json:"id,omitempty"`
-	Name        string    `json:"name,omitempty"`
-	Nodes       []*Node   `json:"nodes,omitempty"`
-	Edges       []*Edge   `json:"edges,omitempty"`
-	Description string    `json:"description,omitempty"`
+	ID          model.UUID `json:"id,omitempty"`
+	Name        string     `json:"name,omitempty"`
+	Nodes       []*Node    `json:"nodes,omitempty"`
+	Edges       []*Edge    `json:"edges,omitempty"`
+	Description string     `json:"description,omitempty"`
 }
 
 type ListFlowResponse struct {

@@ -29,7 +29,7 @@ func AuthMiddleware(ts TokenService, sm SessionManager) func(next echo.HandlerFu
 				return api.JsonUnauthorized(c, "token 无效")
 			}
 
-			s, err := sm.GetSession(c.Request().Context(), u.SessionID)
+			s, err := sm.GetSessionBySessionID(c.Request().Context(), u.SessionID)
 			if errors.Is(err, ErrSessionNotFound) {
 				return api.JsonUnauthorized(c, "token 无效")
 			}

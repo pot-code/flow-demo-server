@@ -18,7 +18,7 @@ var (
 )
 
 type Service interface {
-	GetFlowByID(ctx context.Context, fid string) (*FlowObjectResponse, error)
+	GetFlowByID(ctx context.Context, fid model.UUID) (*FlowObjectResponse, error)
 	ListFlow(ctx context.Context, p *pagination.Pagination) ([]*ListFlowResponse, int, error)
 	CreateFlow(ctx context.Context, req *CreateFlowRequest) error
 	UpdateFlow(ctx context.Context, req *UpdateFlowRequest) error
@@ -33,7 +33,7 @@ func NewService(g *gorm.DB, sm auth.SessionManager) Service {
 	return &service{g: g, sm: sm}
 }
 
-func (s *service) GetFlowByID(ctx context.Context, fid string) (*FlowObjectResponse, error) {
+func (s *service) GetFlowByID(ctx context.Context, fid model.UUID) (*FlowObjectResponse, error) {
 	m := new(model.Flow)
 	if err := s.g.WithContext(ctx).Model(&model.Flow{}).Where("id = ?", fid).Take(m).Error; err != nil {
 		return nil, fmt.Errorf("get flow by id: %w", err)

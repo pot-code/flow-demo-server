@@ -1,5 +1,7 @@
 package auth
 
+import "gobit-demo/model"
+
 type CreateUserRequest struct {
 	Name     string `json:"name" validate:"required"`
 	Username string `json:"username" validate:"required"`
@@ -14,14 +16,14 @@ type LoginRequest struct {
 }
 
 type LoginUser struct {
-	ID       string
+	ID       model.UUID
 	Name     string
 	Username string
 	Mobile   string
 }
 
 type RegisterUser struct {
-	ID       string
+	ID       model.UUID
 	Name     string
 	Username string
 	Mobile   string

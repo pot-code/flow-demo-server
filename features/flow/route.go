@@ -6,6 +6,7 @@ import (
 	"gobit-demo/features/auth"
 	"gobit-demo/internal/api"
 	"gobit-demo/internal/validate"
+	"gobit-demo/model"
 
 	"github.com/labstack/echo/v4"
 )
@@ -33,8 +34,8 @@ func (c *route) getByID(e echo.Context) error {
 		return err
 	}
 
-	var fid string
-	if err := echo.PathParamsBinder(e).String("id", &fid).BindError(); err != nil {
+	var fid model.UUID
+	if err := echo.PathParamsBinder(e).JSONUnmarshaler("id", &fid).BindError(); err != nil {
 		return api.NewBindError(err)
 	}
 

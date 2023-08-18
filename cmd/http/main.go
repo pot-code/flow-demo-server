@@ -14,6 +14,7 @@ import (
 	"gobit-demo/internal/logging"
 	"gobit-demo/internal/mq"
 	"gobit-demo/internal/orm"
+	"gobit-demo/internal/uuid"
 	"gobit-demo/internal/validate"
 	"net/http"
 
@@ -24,8 +25,10 @@ import (
 
 func main() {
 	validate.Init()
+
 	cfg := config.LoadConfig()
 	logging.Init(cfg.Logging.Level)
+	uuid.InitSonyflake(cfg.NodeID)
 
 	log.Debug().Any("config", cfg).Msg("config")
 

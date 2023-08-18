@@ -19,6 +19,7 @@ require (
 	github.com/redis/go-redis/v9 v9.0.5
 	github.com/rs/zerolog v1.30.0
 	github.com/samber/lo v1.38.1
+	github.com/sony/sonyflake v1.2.0
 	github.com/spf13/viper v1.16.0
 	golang.org/x/crypto v0.12.0
 	golang.org/x/text v0.12.0
