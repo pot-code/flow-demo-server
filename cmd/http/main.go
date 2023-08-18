@@ -68,11 +68,11 @@ func main() {
 
 	api.NewRouteGroup(e, "/auth", auth.NewRoute(auth.NewService(gd, auth.NewBcryptPasswordHash()), ts, sm, eb))
 	api.NewRouteGroup(e, "/flow", api.RouteFn(func(g *echo.Group) {
-		g.Use(auth.AuthMiddleware(ts, sm))
+		g.Use(auth.AuthMiddleware(ts, sm, cfg.Session.RefreshExp))
 		flow.NewRoute(flow.NewService(gd, sm, flow.NewABAC(gd, sm)), rb, as).Append(g)
 	}))
 	api.NewRouteGroup(e, "/user", api.RouteFn(func(g *echo.Group) {
-		g.Use(auth.AuthMiddleware(ts, sm))
+		g.Use(auth.AuthMiddleware(ts, sm, cfg.Session.RefreshExp))
 		user.NewRoute(user.NewService(gd), rb).Append(g)
 	}))
 

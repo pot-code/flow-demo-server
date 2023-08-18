@@ -3,11 +3,12 @@ package auth
 import (
 	"errors"
 	"gobit-demo/features/api"
+	"time"
 
 	"github.com/labstack/echo/v4"
 )
 
-func AuthMiddleware(ts TokenService, sm SessionManager) func(next echo.HandlerFunc) echo.HandlerFunc {
+func AuthMiddleware(ts TokenService, sm SessionManager, threshold time.Duration) func(next echo.HandlerFunc) echo.HandlerFunc {
 	return func(next echo.HandlerFunc) echo.HandlerFunc {
 		return func(c echo.Context) error {
 			token, _ := ts.FromHttpRequest(c.Request())
@@ -25,6 +26,10 @@ func AuthMiddleware(ts TokenService, sm SessionManager) func(next echo.HandlerFu
 				return api.JsonUnauthorized(c, "token 无效")
 			}
 			if err != nil {
+				return api.JsonServerError(c, err.Error())
+			}
+
+			if err := sm.RefreshSession(c.Request().Context(), s, threshold); err != nil {
 				return api.JsonServerError(c, err.Error())
 			}
 

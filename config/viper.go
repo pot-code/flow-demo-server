@@ -53,8 +53,8 @@ type Token struct {
 }
 
 type Session struct {
-	Secret string
-	Exp    time.Duration
+	Exp        time.Duration
+	RefreshExp time.Duration
 }
 
 func LoadConfig() *AppConfig {
@@ -90,7 +90,8 @@ func LoadConfig() *AppConfig {
 			Key:    viper.GetString("JWT_KEY"),
 		},
 		Session: Session{
-			Exp: viper.GetDuration("SESSION_EXP"),
+			Exp:        viper.GetDuration("SESSION_EXP"),
+			RefreshExp: viper.GetDuration("SESSION_REFRESH_EXP"),
 		},
 	}
 }
