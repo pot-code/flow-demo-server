@@ -58,6 +58,7 @@ func LoadConfig() *AppConfig {
 	viper.SetConfigName(".env")
 	viper.SetConfigType("env")
 	viper.AddConfigPath(".")
+	viper.AutomaticEnv()
 	if err := viper.ReadInConfig(); err != nil {
 		panic(fmt.Errorf("error reading config file: %w", err))
 	}
