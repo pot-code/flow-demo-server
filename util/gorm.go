@@ -1,4 +1,4 @@
-package orm
+package util
 
 import (
 	"gobit-demo/internal/pagination"

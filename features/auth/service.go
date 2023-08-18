@@ -4,8 +4,8 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"gobit-demo/internal/orm"
 	"gobit-demo/model"
+	"gobit-demo/util"
 
 	"gorm.io/gorm"
 )
@@ -88,7 +88,7 @@ func (s *service) CreateUser(ctx context.Context, data *CreateUserRequest) (*mod
 		Mobile:   data.Mobile,
 	}
 	if err := s.g.Transaction(func(tx *gorm.DB) error {
-		exists, err := new(orm.GormUtil).Exists(
+		exists, err := new(util.GormUtil).Exists(
 			tx.WithContext(ctx).Model(&model.User{}).
 				Where(&model.User{Mobile: data.Mobile}).
 				Or(&model.User{Username: data.Username}),

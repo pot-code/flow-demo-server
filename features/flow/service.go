@@ -5,9 +5,9 @@ import (
 	"errors"
 	"fmt"
 	"gobit-demo/features/auth"
-	"gobit-demo/internal/orm"
 	"gobit-demo/internal/pagination"
 	"gobit-demo/model"
+	"gobit-demo/util"
 
 	"gorm.io/gorm"
 )
@@ -26,13 +26,13 @@ type Service interface {
 
 type service struct {
 	g  *gorm.DB
-	p  PermissionService
+	a  ABAC
 	sm auth.SessionManager
 }
 
 // DeleteFlow implements Service.
 func (s *service) DeleteFlow(ctx context.Context, fid model.UUID) error {
-	if err := s.p.CanDeleteFlow(ctx, fid); err != nil {
+	if err := s.a.CanDeleteFlow(ctx, fid); err != nil {
 		return err
 	}
 
@@ -40,7 +40,7 @@ func (s *service) DeleteFlow(ctx context.Context, fid model.UUID) error {
 }
 
 func (s *service) GetFlowByID(ctx context.Context, fid model.UUID) (*model.Flow, error) {
-	if err := s.p.CanViewFlow(ctx, fid); err != nil {
+	if err := s.a.CanViewFlow(ctx, fid); err != nil {
 		return nil, err
 	}
 
@@ -67,7 +67,7 @@ func (s *service) CreateFlow(ctx context.Context, req *CreateFlowRequest) error 
 }
 
 func (s *service) UpdateFlow(ctx context.Context, req *UpdateFlowRequest) error {
-	if err := s.p.CanUpdateFlow(ctx, req.ID); err != nil {
+	if err := s.a.CanUpdateFlow(ctx, req.ID); err != nil {
 		return err
 	}
 
@@ -91,7 +91,7 @@ func (s *service) ListFlow(ctx context.Context, p *pagination.Pagination) ([]*mo
 	)
 
 	if err := s.g.WithContext(ctx).Model(&model.Flow{}).
-		Scopes(new(orm.GormUtil).Pagination(p)).
+		Scopes(new(util.GormUtil).Pagination(p)).
 		Find(&flows).
 		Count(&count).
 		Error; err != nil {
@@ -100,6 +100,6 @@ func (s *service) ListFlow(ctx context.Context, p *pagination.Pagination) ([]*mo
 	return flows, int(count), nil
 }
 
-func NewService(g *gorm.DB, sm auth.SessionManager, p PermissionService) Service {
-	return &service{g: g, sm: sm, p: p}
+func NewService(g *gorm.DB, sm auth.SessionManager, p ABAC) Service {
+	return &service{g: g, sm: sm, a: p}
 }

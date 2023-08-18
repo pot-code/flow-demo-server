@@ -3,11 +3,11 @@ package main
 import (
 	"fmt"
 	"gobit-demo/config"
+	"gobit-demo/features/api"
 	"gobit-demo/features/audit"
 	"gobit-demo/features/auth"
 	"gobit-demo/features/flow"
 	"gobit-demo/features/user"
-	"gobit-demo/internal/api"
 	"gobit-demo/internal/cache"
 	"gobit-demo/internal/db"
 	"gobit-demo/internal/event"
@@ -72,7 +72,7 @@ func main() {
 		auth.NewRoute(auth.NewService(gd, auth.NewBcryptPasswordHash()), ts, sm, eb))
 	api.NewRouteGroup(e, "/flow", api.RouteFn(func(g *echo.Group) {
 		g.Use(auth.AuthMiddleware(ts, sm))
-		flow.NewRoute(flow.NewService(gd, sm, flow.NewPermissionService(gd, sm)), rb, as).Append(g)
+		flow.NewRoute(flow.NewService(gd, sm, flow.NewABAC(gd, sm)), rb, as).Append(g)
 	}))
 	api.NewRouteGroup(e, "/user", api.RouteFn(func(g *echo.Group) {
 		g.Use(auth.AuthMiddleware(ts, sm))

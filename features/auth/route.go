@@ -3,7 +3,7 @@ package auth
 import (
 	"errors"
 	"fmt"
-	"gobit-demo/internal/api"
+	"gobit-demo/features/api"
 	"gobit-demo/internal/event"
 	"gobit-demo/internal/validate"
 	"time"
