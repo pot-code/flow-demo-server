@@ -37,9 +37,7 @@ func main() {
 	gd := orm.NewGormDB(dc, log.Logger)
 	kb := mq.NewKafkaPublisher(cfg.MessageQueue.GetBrokerList(), log.Logger)
 	eb := event.NewKafkaEventBus(kb)
-	ts := auth.NewJwtTokenService(
-		cfg.Token.Secret,
-	)
+	ts := auth.NewJwtTokenService(cfg.Token.Secret)
 	sm := auth.NewRedisSessionManager(rc, cfg.Session.Exp)
 	as := audit.NewService(gd, sm)
 	rb := auth.NewRBAC(gd, sm)
@@ -68,8 +66,7 @@ func main() {
 	}
 	e.Use(api.LoggingMiddleware)
 
-	api.NewRouteGroup(e, "/auth",
-		auth.NewRoute(auth.NewService(gd, auth.NewBcryptPasswordHash()), ts, sm, eb))
+	api.NewRouteGroup(e, "/auth", auth.NewRoute(auth.NewService(gd, auth.NewBcryptPasswordHash()), ts, sm, eb))
 	api.NewRouteGroup(e, "/flow", api.RouteFn(func(g *echo.Group) {
 		g.Use(auth.AuthMiddleware(ts, sm))
 		flow.NewRoute(flow.NewService(gd, sm, flow.NewABAC(gd, sm)), rb, as).Append(g)
