@@ -91,7 +91,7 @@ func (s *service) ListFlow(ctx context.Context, p *pagination.Pagination) ([]*mo
 	)
 
 	if err := s.g.WithContext(ctx).Model(&model.Flow{}).
-		Scopes(new(util.GormUtil).Pagination(p)).
+		Scopes(util.GormUtil.Pagination(p)).
 		Find(&flows).
 		Count(&count).
 		Error; err != nil {
