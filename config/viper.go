@@ -48,6 +48,7 @@ func (m *MessageQueue) GetBrokerList() []string {
 
 type Token struct {
 	Secret string
+	Key    string
 }
 
 type Session struct {
@@ -84,6 +85,7 @@ func LoadConfig() *AppConfig {
 		},
 		Token: Token{
 			Secret: viper.GetString("JWT_SECRET"),
+			Key:    viper.GetString("JWT_KEY"),
 		},
 		Session: Session{
 			Exp: viper.GetDuration("SESSION_EXP"),

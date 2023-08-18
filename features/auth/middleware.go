@@ -3,23 +3,14 @@ package auth
 import (
 	"errors"
 	"gobit-demo/features/api"
-	"strings"
 
 	"github.com/labstack/echo/v4"
 )
 
-func getTokenFromRequest(c echo.Context) string {
-	value := c.Request().Header.Get("Authorization")
-	if strings.HasPrefix(value, "Bearer ") {
-		return value[7:]
-	}
-	return ""
-}
-
 func AuthMiddleware(ts TokenService, sm SessionManager) func(next echo.HandlerFunc) echo.HandlerFunc {
 	return func(next echo.HandlerFunc) echo.HandlerFunc {
 		return func(c echo.Context) error {
-			token := getTokenFromRequest(c)
+			token, _ := ts.FromHttpRequest(c.Request())
 			if token == "" {
 				return api.JsonUnauthenticated(c, "未登录")
 			}

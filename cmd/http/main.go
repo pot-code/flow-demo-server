@@ -37,7 +37,7 @@ func main() {
 	gd := orm.NewGormDB(dc, log.Logger)
 	kb := mq.NewKafkaPublisher(cfg.MessageQueue.GetBrokerList(), log.Logger)
 	eb := event.NewKafkaEventBus(kb)
-	ts := auth.NewJwtTokenService(cfg.Token.Secret)
+	ts := auth.NewJwtTokenService(cfg.Token.Secret, cfg.Token.Key)
 	sm := auth.NewRedisSessionManager(rc, cfg.Session.Exp)
 	as := audit.NewService(gd, sm)
 	rb := auth.NewRBAC(gd, sm)
@@ -53,7 +53,7 @@ func main() {
 			log.Debug().Err(err).Msg("bind error")
 			api.JsonBadRequest(c, "数据解析失败，请检查输入")
 		case *auth.UnAuthorizedError:
-			api.JsonUnauthorized(c, "权限不足")
+			api.JsonUnauthorized(c, "无权限")
 		case *echo.HTTPError:
 			api.Json(c, e.Code, map[string]any{
 				"code": e.Code,

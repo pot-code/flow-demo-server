@@ -69,6 +69,8 @@ func (c *route) login(e echo.Context) error {
 	if err != nil {
 		return fmt.Errorf("generate token: %w", err)
 	}
+
+	c.ts.WithHttpResponse(e.Response(), token)
 	return api.JsonData(e, map[string]any{
 		"token": token,
 	})
@@ -102,7 +104,7 @@ func (c *route) register(e echo.Context) error {
 }
 
 func (c *route) logout(e echo.Context) error {
-	token := getTokenFromRequest(e)
+	token, _ := c.ts.FromHttpRequest(e.Request())
 	if token == "" {
 		return nil
 	}
