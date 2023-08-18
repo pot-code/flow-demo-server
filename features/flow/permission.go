@@ -11,7 +11,9 @@ import (
 )
 
 type PermissionService interface {
-	CanViewFlowByID(ctx context.Context, fid model.UUID) error
+	CanViewFlow(ctx context.Context, fid model.UUID) error
+	CanUpdateFlow(ctx context.Context, fid model.UUID) error
+	CanDeleteFlow(ctx context.Context, fid model.UUID) error
 }
 
 type permission struct {
@@ -19,17 +21,25 @@ type permission struct {
 	sm auth.SessionManager
 }
 
-func (p *permission) CanViewFlowByID(ctx context.Context, fid model.UUID) error {
+// CanDeleteFlow implements PermissionService.
+func (p *permission) CanDeleteFlow(ctx context.Context, fid model.UUID) error {
+	return p.CanViewFlow(ctx, fid)
+}
+
+func (p *permission) CanUpdateFlow(ctx context.Context, fid model.UUID) error {
+	return p.CanViewFlow(ctx, fid)
+}
+
+func (p *permission) CanViewFlow(ctx context.Context, fid model.UUID) error {
 	s := p.sm.GetSessionFromContext(ctx)
-	ok, err := orm.NewGormWrapper(p.g.WithContext(ctx).Model(&model.Flow{}).
-		Where("id = ? AND owner_id = ?", fid, s.UserID)).Exists()
+	ok, err := new(orm.GormUtil).Exists(p.g.WithContext(ctx).Model(&model.Flow{}).Where("id = ? AND owner_id = ?", fid, s.UserID))
 	if err != nil {
 		return fmt.Errorf("check flow exists by id: %w", err)
 	}
 	if !ok {
 		return &auth.UnAuthorizedError{
 			UserID: s.UserID,
-			Action: fmt.Sprintf("view flow %s", fid),
+			Action: fmt.Sprintf("view flow %v", fid),
 		}
 	}
 	return nil

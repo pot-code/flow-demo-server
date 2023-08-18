@@ -18,10 +18,10 @@ var (
 )
 
 type Service interface {
-	CreateUser(ctx context.Context, data *CreateUserRequest) (*RegisterUser, error)
-	FindUserByUserName(ctx context.Context, name string) (*LoginUser, error)
-	FindUserByMobile(ctx context.Context, mobile string) (*LoginUser, error)
-	FindUserByCredential(ctx context.Context, data *LoginRequest) (*LoginUser, error)
+	CreateUser(ctx context.Context, data *CreateUserRequest) (*model.User, error)
+	FindUserByUserName(ctx context.Context, name string) (*model.User, error)
+	FindUserByMobile(ctx context.Context, mobile string) (*model.User, error)
+	FindUserByCredential(ctx context.Context, data *LoginRequest) (*model.User, error)
 	GetUserPermissions(ctx context.Context, uid model.UUID) ([]string, error)
 	GetUserRoles(ctx context.Context, uid model.UUID) ([]string, error)
 }
@@ -57,8 +57,8 @@ func (s *service) GetUserRoles(ctx context.Context, uid model.UUID) ([]string, e
 	return roles, nil
 }
 
-func (s *service) FindUserByUserName(ctx context.Context, username string) (*LoginUser, error) {
-	user := new(LoginUser)
+func (s *service) FindUserByUserName(ctx context.Context, username string) (*model.User, error) {
+	user := new(model.User)
 	err := s.g.WithContext(ctx).Model(&model.User{}).Where(&model.User{Username: username}).Take(user).Error
 	if errors.Is(err, gorm.ErrRecordNotFound) {
 		return nil, ErrUserNotFound
@@ -69,8 +69,8 @@ func (s *service) FindUserByUserName(ctx context.Context, username string) (*Log
 	return user, err
 }
 
-func (s *service) FindUserByMobile(ctx context.Context, mobile string) (*LoginUser, error) {
-	user := new(LoginUser)
+func (s *service) FindUserByMobile(ctx context.Context, mobile string) (*model.User, error) {
+	user := new(model.User)
 	err := s.g.WithContext(ctx).Model(&model.User{}).Where(&model.User{Mobile: mobile}).Take(user).Error
 	if errors.Is(err, gorm.ErrRecordNotFound) {
 		return nil, ErrUserNotFound
@@ -81,16 +81,18 @@ func (s *service) FindUserByMobile(ctx context.Context, mobile string) (*LoginUs
 	return user, err
 }
 
-func (s *service) CreateUser(ctx context.Context, data *CreateUserRequest) (*RegisterUser, error) {
-	user := model.User{
+func (s *service) CreateUser(ctx context.Context, data *CreateUserRequest) (*model.User, error) {
+	user := &model.User{
 		Name:     data.Name,
 		Username: data.Username,
 		Mobile:   data.Mobile,
 	}
 	if err := s.g.Transaction(func(tx *gorm.DB) error {
-		exists, err := orm.NewGormWrapper(tx.WithContext(ctx).Model(&model.User{}).
-			Where(&model.User{Mobile: data.Mobile}).
-			Or(&model.User{Username: data.Username})).Exists()
+		exists, err := new(orm.GormUtil).Exists(
+			tx.WithContext(ctx).Model(&model.User{}).
+				Where(&model.User{Mobile: data.Mobile}).
+				Or(&model.User{Username: data.Username}),
+		)
 		if err != nil {
 			return fmt.Errorf("check duplicate user: %w", err)
 		}
@@ -104,7 +106,7 @@ func (s *service) CreateUser(ctx context.Context, data *CreateUserRequest) (*Reg
 		}
 		user.Password = h
 
-		if err = tx.WithContext(ctx).Create(&user).Error; err != nil {
+		if err = tx.WithContext(ctx).Create(user).Error; err != nil {
 			return fmt.Errorf("create user: %w", err)
 		}
 		return nil
@@ -112,10 +114,10 @@ func (s *service) CreateUser(ctx context.Context, data *CreateUserRequest) (*Reg
 		return nil, err
 	}
 
-	return new(RegisterUser).fromUser(&user), nil
+	return user, nil
 }
 
-func (s *service) FindUserByCredential(ctx context.Context, data *LoginRequest) (*LoginUser, error) {
+func (s *service) FindUserByCredential(ctx context.Context, data *LoginRequest) (*model.User, error) {
 	user := new(model.User)
 	if err := s.g.WithContext(ctx).Where(&model.User{Mobile: data.Mobile}).
 		Or(&model.User{Username: data.Username}).
@@ -134,23 +136,7 @@ func (s *service) FindUserByCredential(ctx context.Context, data *LoginRequest) 
 		return nil, ErrIncorrectCredentials
 	}
 
-	return new(LoginUser).fromUser(user), nil
-}
-
-func (u *LoginUser) fromUser(user *model.User) *LoginUser {
-	u.ID = user.ID
-	u.Name = user.Name
-	u.Username = user.Username
-	u.Mobile = user.Mobile
-	return u
-}
-
-func (u *RegisterUser) fromUser(user *model.User) *RegisterUser {
-	u.ID = user.ID
-	u.Name = user.Name
-	u.Username = user.Username
-	u.Mobile = user.Mobile
-	return u
+	return user, nil
 }
 
 func NewService(g *gorm.DB, h PasswordHash) Service {

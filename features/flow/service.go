@@ -2,7 +2,6 @@ package flow
 
 import (
 	"context"
-	"encoding/json"
 	"errors"
 	"fmt"
 	"gobit-demo/features/auth"
@@ -18,51 +17,46 @@ var (
 )
 
 type Service interface {
-	GetFlowByID(ctx context.Context, fid model.UUID) (*FlowObjectResponse, error)
-	ListFlow(ctx context.Context, p *pagination.Pagination) ([]*ListFlowResponse, int, error)
+	GetFlowByID(ctx context.Context, fid model.UUID) (*model.Flow, error)
+	ListFlow(ctx context.Context, p *pagination.Pagination) ([]*model.Flow, int, error)
 	CreateFlow(ctx context.Context, req *CreateFlowRequest) error
 	UpdateFlow(ctx context.Context, req *UpdateFlowRequest) error
+	DeleteFlow(ctx context.Context, fid model.UUID) error
 }
 
 type service struct {
 	g  *gorm.DB
+	p  PermissionService
 	sm auth.SessionManager
 }
 
-func NewService(g *gorm.DB, sm auth.SessionManager) Service {
-	return &service{g: g, sm: sm}
+// DeleteFlow implements Service.
+func (s *service) DeleteFlow(ctx context.Context, fid model.UUID) error {
+	if err := s.p.CanDeleteFlow(ctx, fid); err != nil {
+		return err
+	}
+
+	return s.g.WithContext(ctx).Model(&model.Flow{}).Where("id = ?", fid).Delete(&model.Flow{}).Error
 }
 
-func (s *service) GetFlowByID(ctx context.Context, fid model.UUID) (*FlowObjectResponse, error) {
+func (s *service) GetFlowByID(ctx context.Context, fid model.UUID) (*model.Flow, error) {
+	if err := s.p.CanViewFlow(ctx, fid); err != nil {
+		return nil, err
+	}
+
 	m := new(model.Flow)
 	if err := s.g.WithContext(ctx).Model(&model.Flow{}).Where("id = ?", fid).Take(m).Error; err != nil {
 		return nil, fmt.Errorf("get flow by id: %w", err)
 	}
-
-	o := new(FlowObjectResponse)
-	if err := json.Unmarshal([]byte(m.Nodes), &o.Nodes); err != nil {
-		return nil, fmt.Errorf("unmarshal nodes: %w", err)
-	}
-	if err := json.Unmarshal([]byte(m.Edges), &o.Edges); err != nil {
-		return nil, fmt.Errorf("unmarshal edges: %w", err)
-	}
-	return o, nil
+	return m, nil
 }
 
 func (s *service) CreateFlow(ctx context.Context, req *CreateFlowRequest) error {
 	session := s.sm.GetSessionFromContext(ctx)
-	nodes, err := json.Marshal(req.Nodes)
-	if err != nil {
-		return fmt.Errorf("marshal nodes: %w", err)
-	}
-	edges, err := json.Marshal(req.Edges)
-	if err != nil {
-		return fmt.Errorf("marshal edges: %w", err)
-	}
 	m := &model.Flow{
 		Name:        req.Name,
-		Nodes:       string(nodes),
-		Edges:       string(edges),
+		Nodes:       req.Edges,
+		Edges:       req.Nodes,
 		Description: req.Description,
 		OwnerID:     &session.UserID,
 	}
@@ -73,19 +67,15 @@ func (s *service) CreateFlow(ctx context.Context, req *CreateFlowRequest) error 
 }
 
 func (s *service) UpdateFlow(ctx context.Context, req *UpdateFlowRequest) error {
-	nodes, err := json.Marshal(req.Nodes)
-	if err != nil {
-		return fmt.Errorf("marshal nodes: %w", err)
+	if err := s.p.CanUpdateFlow(ctx, req.ID); err != nil {
+		return err
 	}
-	edges, err := json.Marshal(req.Edges)
-	if err != nil {
-		return fmt.Errorf("marshal edges: %w", err)
-	}
+
 	m := &model.Flow{
 		ID:          req.ID,
 		Name:        req.Name,
-		Nodes:       string(nodes),
-		Edges:       string(edges),
+		Nodes:       req.Edges,
+		Edges:       req.Nodes,
 		Description: req.Description,
 	}
 	if err := s.g.WithContext(ctx).Model(&model.Flow{}).Where(&model.Flow{ID: req.ID}).Updates(m).Error; err != nil {
@@ -94,18 +84,22 @@ func (s *service) UpdateFlow(ctx context.Context, req *UpdateFlowRequest) error 
 	return nil
 }
 
-func (s *service) ListFlow(ctx context.Context, p *pagination.Pagination) ([]*ListFlowResponse, int, error) {
+func (s *service) ListFlow(ctx context.Context, p *pagination.Pagination) ([]*model.Flow, int, error) {
 	var (
-		flows []*ListFlowResponse
+		flows []*model.Flow
 		count int64
 	)
 
-	if err := orm.NewGormWrapper(s.g.WithContext(ctx).Model(&model.Flow{})).
-		Paginate(p).
+	if err := s.g.WithContext(ctx).Model(&model.Flow{}).
+		Scopes(new(orm.GormUtil).Pagination(p)).
 		Find(&flows).
 		Count(&count).
 		Error; err != nil {
 		return nil, 0, fmt.Errorf("query flow list: %w", err)
 	}
 	return flows, int(count), nil
+}
+
+func NewService(g *gorm.DB, sm auth.SessionManager, p PermissionService) Service {
+	return &service{g: g, sm: sm, p: p}
 }

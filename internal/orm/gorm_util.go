@@ -6,19 +6,15 @@ import (
 	"gorm.io/gorm"
 )
 
-type gormWrapper struct {
-	*gorm.DB
+type GormUtil struct{}
+
+func (s *GormUtil) Pagination(p *pagination.Pagination) func(*gorm.DB) *gorm.DB {
+	return func(d *gorm.DB) *gorm.DB {
+		return d.Limit(p.PageSize).Offset((p.Page - 1) * p.PageSize)
+	}
 }
 
-func NewGormWrapper(db *gorm.DB) *gormWrapper {
-	return &gormWrapper{db}
-}
-
-func (g *gormWrapper) Paginate(p *pagination.Pagination) *gorm.DB {
-	return g.Limit(p.PageSize).Offset((p.Page - 1) * p.PageSize)
-}
-
-func (g *gormWrapper) Exists() (bool, error) {
+func (s *GormUtil) Exists(g *gorm.DB) (bool, error) {
 	var result bool
 	if err := g.Select("true").Scan(&result).Error; err != nil {
 		return false, err

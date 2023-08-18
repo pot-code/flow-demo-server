@@ -14,12 +14,11 @@ import (
 type route struct {
 	s  Service
 	r  auth.RBAC
-	p  PermissionService
 	as audit.Service
 }
 
-func NewRoute(s Service, r auth.RBAC, p PermissionService, as audit.Service) api.Route {
-	return &route{s: s, r: r, p: p, as: as}
+func NewRoute(s Service, r auth.RBAC, as audit.Service) api.Route {
+	return &route{s: s, r: r, as: as}
 }
 
 func (c *route) Append(g *echo.Group) {
@@ -27,6 +26,7 @@ func (c *route) Append(g *echo.Group) {
 	g.GET("", c.list)
 	g.POST("", c.create)
 	g.PUT("/:id", c.update)
+	g.DELETE("/:id", c.delete)
 }
 
 func (c *route) getByID(e echo.Context) error {
@@ -37,10 +37,6 @@ func (c *route) getByID(e echo.Context) error {
 	var fid model.UUID
 	if err := echo.PathParamsBinder(e).JSONUnmarshaler("id", &fid).BindError(); err != nil {
 		return api.NewBindError(err)
-	}
-
-	if err := c.p.CanViewFlowByID(e.Request().Context(), fid); err != nil {
-		return err
 	}
 
 	o, err := c.s.GetFlowByID(e.Request().Context(), fid)
@@ -88,6 +84,19 @@ func (c *route) update(e echo.Context) error {
 	}
 
 	return c.s.UpdateFlow(e.Request().Context(), req)
+}
+
+func (c *route) delete(e echo.Context) error {
+	if err := c.r.CheckPermission(e.Request().Context(), "flow:delete"); err != nil {
+		return err
+	}
+
+	var fid model.UUID
+	if err := echo.PathParamsBinder(e).JSONUnmarshaler("id", &fid).BindError(); err != nil {
+		return api.NewBindError(err)
+	}
+
+	return c.s.DeleteFlow(e.Request().Context(), fid)
 }
 
 func (c *route) list(e echo.Context) error {

@@ -11,7 +11,7 @@ import (
 )
 
 type Service interface {
-	ListUser(ctx context.Context, p *pagination.Pagination) ([]*ListUserResponse, int, error)
+	ListUser(ctx context.Context, p *pagination.Pagination) ([]*model.User, int, error)
 }
 
 type service struct {
@@ -22,14 +22,14 @@ func NewService(g *gorm.DB) *service {
 	return &service{g: g}
 }
 
-func (s *service) ListUser(ctx context.Context, p *pagination.Pagination) ([]*ListUserResponse, int, error) {
+func (s *service) ListUser(ctx context.Context, p *pagination.Pagination) ([]*model.User, int, error) {
 	var (
-		users []*ListUserResponse
+		users []*model.User
 		count int64
 	)
 
-	if err := orm.NewGormWrapper(s.g.WithContext(ctx).Model(&model.User{})).
-		Paginate(p).
+	if err := s.g.WithContext(ctx).Scopes(new(orm.GormUtil).Pagination(p)).
+		Select("id", "name", "username", "mobile", "disabled").
 		Find(&users).
 		Count(&count).
 		Error; err != nil {
