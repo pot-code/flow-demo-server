@@ -76,7 +76,7 @@ func main() {
 		user.NewRoute(user.NewService(gd), rb).Append(g)
 	}))
 
-	if err := e.Start(fmt.Sprintf(":%d", cfg.HttpPort)); err != http.ErrServerClosed {
+	if err := e.Start(fmt.Sprintf("%s:%d", cfg.Host, cfg.HttpPort)); err != http.ErrServerClosed {
 		log.Err(err).Msg("error starting server")
 	}
 }

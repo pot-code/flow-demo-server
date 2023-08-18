@@ -9,6 +9,7 @@ import (
 )
 
 type AppConfig struct {
+	Host         string
 	HttpPort     int
 	NodeID       uint16
 	Logging      Logging
@@ -66,6 +67,7 @@ func LoadConfig() *AppConfig {
 	}
 
 	return &AppConfig{
+		Host:     viper.GetString("HOSTNAME"),
 		HttpPort: viper.GetInt("HTTP_PORT"),
 		NodeID:   viper.GetUint16("NODE_ID"),
 		Logging: Logging{
