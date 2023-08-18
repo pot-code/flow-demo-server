@@ -43,7 +43,6 @@ func (c *route) getByID(e echo.Context) error {
 	if err != nil {
 		return err
 	}
-
 	return api.JsonData(e, o)
 }
 
@@ -67,6 +66,7 @@ func (c *route) create(e echo.Context) error {
 	if err != nil {
 		return err
 	}
+
 	return c.as.NewAuditLog().WithContext(e.Request().Context()).Action("创建流程").Payload(req).Commit(e.Request().Context())
 }
 
@@ -83,7 +83,11 @@ func (c *route) update(e echo.Context) error {
 		return err
 	}
 
-	return c.s.UpdateFlow(e.Request().Context(), req)
+	if err := c.s.UpdateFlow(e.Request().Context(), req); err != nil {
+		return err
+	}
+
+	return c.as.NewAuditLog().WithContext(e.Request().Context()).Action("更新流程").Payload(req).Commit(e.Request().Context())
 }
 
 func (c *route) delete(e echo.Context) error {
@@ -95,7 +99,6 @@ func (c *route) delete(e echo.Context) error {
 	if err := echo.PathParamsBinder(e).JSONUnmarshaler("id", &fid).BindError(); err != nil {
 		return api.NewBindError(err)
 	}
-
 	return c.s.DeleteFlow(e.Request().Context(), fid)
 }
 

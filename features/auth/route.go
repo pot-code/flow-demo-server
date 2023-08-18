@@ -69,7 +69,6 @@ func (c *route) login(e echo.Context) error {
 	if err != nil {
 		return fmt.Errorf("generate token: %w", err)
 	}
-
 	return api.JsonData(e, map[string]any{
 		"token": token,
 	})
@@ -112,6 +111,5 @@ func (c *route) logout(e echo.Context) error {
 	if err != nil {
 		return api.JsonUnauthorized(e, "token 无效")
 	}
-
 	return c.sm.DeleteSession(e.Request().Context(), td.SessionID)
 }

@@ -34,6 +34,5 @@ func (c *route) list(e echo.Context) error {
 	if err != nil {
 		return err
 	}
-
 	return api.JsonPaginationData(e, p, count, users)
 }
