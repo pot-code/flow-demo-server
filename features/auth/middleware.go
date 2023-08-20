@@ -15,7 +15,6 @@ func AuthMiddleware(ts TokenService, sm SessionManager, threshold time.Duration)
 			if token == "" {
 				return api.JsonUnauthenticated(c, "未登录")
 			}
-
 			u, err := ts.Verify(token)
 			if err != nil {
 				return api.JsonUnauthorized(c, "token 无效")

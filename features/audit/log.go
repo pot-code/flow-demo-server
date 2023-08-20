@@ -51,11 +51,9 @@ func (a *AuditLog) Commit(ctx context.Context) error {
 	if a.a.Action == "" && a.a.Subject == "" && a.payload == nil {
 		panic("empty audit log")
 	}
-
 	if a.a.Subject == "" {
 		panic("subject cannot be empty")
 	}
-
 	if a.payload != nil {
 		bs, err := json.Marshal(a.payload)
 		if err != nil {

@@ -59,7 +59,6 @@ func (c *route) login(e echo.Context) error {
 	if err != nil {
 		return err
 	}
-
 	s, err := c.sm.NewSession(e.Request().Context(), user.ID, user.Username, p, r)
 	if err != nil {
 		return fmt.Errorf("create session: %w", err)
@@ -69,7 +68,6 @@ func (c *route) login(e echo.Context) error {
 	if err != nil {
 		return fmt.Errorf("generate token: %w", err)
 	}
-
 	c.ts.WithHttpResponse(e.Response(), token)
 	return api.JsonData(e, map[string]any{
 		"token": token,
