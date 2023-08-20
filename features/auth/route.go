@@ -39,13 +39,13 @@ func (c *route) login(e echo.Context) error {
 
 	user, err := c.us.FindUserByCredential(e.Request().Context(), data)
 	if errors.Is(err, ErrUserNotFound) {
-		return api.JsonUnauthenticated(e, err.Error())
+		return api.JsonUnauthorized(e, err.Error())
 	}
 	if errors.Is(err, ErrIncorrectCredentials) {
-		return api.JsonUnauthenticated(e, err.Error())
+		return api.JsonUnauthorized(e, err.Error())
 	}
 	if errors.Is(err, ErrUserDisabled) {
-		return api.JsonUnauthenticated(e, err.Error())
+		return api.JsonUnauthorized(e, err.Error())
 	}
 	if err != nil {
 		return err
@@ -109,7 +109,7 @@ func (c *route) logout(e echo.Context) error {
 
 	td, err := c.ts.Verify(token)
 	if err != nil {
-		return api.JsonUnauthorized(e, "token 无效")
+		return api.JsonNoPermission(e, "token 无效")
 	}
 	return c.sm.DeleteSession(e.Request().Context(), td.SessionID)
 }

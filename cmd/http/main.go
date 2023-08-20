@@ -53,7 +53,7 @@ func main() {
 			log.Debug().Err(err).Msg("bind error")
 			api.JsonBadRequest(c, "数据解析失败，请检查输入")
 		case *auth.UnAuthorizedError:
-			api.JsonUnauthorized(c, "无权限")
+			api.JsonNoPermission(c, "无权限")
 		case *echo.HTTPError:
 			api.Json(c, e.Code, map[string]any{
 				"code": e.Code,

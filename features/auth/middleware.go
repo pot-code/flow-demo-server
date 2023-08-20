@@ -13,7 +13,7 @@ func AuthMiddleware(ts TokenService, sm SessionManager, threshold time.Duration)
 		return func(c echo.Context) error {
 			token, _ := ts.FromHttpRequest(c.Request())
 			if token == "" {
-				return api.JsonUnauthenticated(c, "未登录")
+				return api.JsonUnauthorized(c, "未登录")
 			}
 			u, err := ts.Verify(token)
 			if err != nil {

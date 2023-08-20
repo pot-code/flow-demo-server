@@ -52,7 +52,7 @@ func JsonServerError(c echo.Context, msg string) error {
 	)
 }
 
-func JsonUnauthorized(c echo.Context, msg string) error {
+func JsonNoPermission(c echo.Context, msg string) error {
 	return Json(c, http.StatusForbidden,
 		response{
 			Code: http.StatusForbidden,
@@ -61,7 +61,7 @@ func JsonUnauthorized(c echo.Context, msg string) error {
 	)
 }
 
-func JsonUnauthenticated(c echo.Context, msg string) error {
+func JsonUnauthorized(c echo.Context, msg string) error {
 	return Json(c, http.StatusUnauthorized,
 		response{
 			Code: http.StatusUnauthorized,
