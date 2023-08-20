@@ -123,7 +123,7 @@ func (s *service) FindUserByCredential(ctx context.Context, data *LoginRequest) 
 		Or(&model.User{Username: data.Username}).
 		Take(user).Error; err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
-			return nil, ErrUserNotFound
+			return nil, ErrIncorrectCredentials
 		}
 		return nil, err
 	}
