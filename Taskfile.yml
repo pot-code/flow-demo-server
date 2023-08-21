@@ -7,6 +7,18 @@ env:
   PROJECT_NAME: gobit
 
 tasks:
+  docker:up:
+    dir: ./docker
+    cmds:
+      - docker compose -p $PROJECT_NAME --env-file ../.env up -d
+  docker:down:
+    dir: ./docker
+    cmds:
+      - docker compose -p $PROJECT_NAME --env-file ../.env down
+  docker:stop:
+    dir: ./docker
+    cmds:
+      - docker compose -p $PROJECT_NAME --env-file ../.env stop
   build:http:
     cmds:
       - go build -v -o ./dist/app ./cmd/http
@@ -26,19 +38,6 @@ tasks:
   migrate:
     cmds:
       - go run ./cmd/migrate
-  docker:up:
-    dir: ./docker
-    cmds:
-      - docker compose -p $PROJECT_NAME --env-file ../.env up -d
-  docker:down:
-    dir: ./docker
-    cmds:
-      - docker compose -p $PROJECT_NAME --env-file ../.env down
-  docker:stop:
-    dir: ./docker
-    cmds:
-      - docker compose -p $PROJECT_NAME --env-file ../.env stop
-
   dev:
     cmds:
       - task: build:http:dev
