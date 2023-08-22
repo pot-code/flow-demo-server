@@ -18,8 +18,8 @@ var (
 
 type Service interface {
 	GetFlowByID(ctx context.Context, fid model.UUID) (*model.Flow, error)
-	ListFlow(ctx context.Context, p *pagination.Pagination) ([]*model.Flow, int, error)
-	CreateFlow(ctx context.Context, req *CreateFlowRequest) error
+	ListFlowByOwner(ctx context.Context, p *pagination.Pagination) ([]*model.Flow, int, error)
+	CreateFlow(ctx context.Context, req *CreateFlowRequest) (*model.Flow, error)
 	UpdateFlow(ctx context.Context, req *UpdateFlowRequest) error
 	DeleteFlow(ctx context.Context, fid model.UUID) error
 }
@@ -51,7 +51,7 @@ func (s *service) GetFlowByID(ctx context.Context, fid model.UUID) (*model.Flow,
 	return m, nil
 }
 
-func (s *service) CreateFlow(ctx context.Context, req *CreateFlowRequest) error {
+func (s *service) CreateFlow(ctx context.Context, req *CreateFlowRequest) (*model.Flow, error) {
 	session := s.sm.GetSessionFromContext(ctx)
 	m := &model.Flow{
 		Name:        req.Name,
@@ -61,9 +61,9 @@ func (s *service) CreateFlow(ctx context.Context, req *CreateFlowRequest) error 
 		OwnerID:     &session.UserID,
 	}
 	if err := s.g.WithContext(ctx).Create(m).Error; err != nil {
-		return fmt.Errorf("create flow: %w", err)
+		return nil, fmt.Errorf("create flow: %w", err)
 	}
-	return nil
+	return m, nil
 }
 
 func (s *service) UpdateFlow(ctx context.Context, req *UpdateFlowRequest) error {
@@ -84,14 +84,17 @@ func (s *service) UpdateFlow(ctx context.Context, req *UpdateFlowRequest) error 
 	return nil
 }
 
-func (s *service) ListFlow(ctx context.Context, p *pagination.Pagination) ([]*model.Flow, int, error) {
+func (s *service) ListFlowByOwner(ctx context.Context, p *pagination.Pagination) ([]*model.Flow, int, error) {
 	var (
 		flows []*model.Flow
 		count int64
 	)
 
+	u := s.sm.GetSessionFromContext(ctx)
 	if err := s.g.WithContext(ctx).Model(&model.Flow{}).
 		Scopes(util.GormUtil.Pagination(p)).
+		Select("id", "name", "owner_id", "created_at").
+		Where("owner_id = ?", u.UserID).
 		Find(&flows).
 		Count(&count).
 		Error; err != nil {

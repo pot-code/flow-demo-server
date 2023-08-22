@@ -59,11 +59,15 @@ func (c *route) create(e echo.Context) error {
 		return err
 	}
 
-	err := c.s.CreateFlow(e.Request().Context(), req)
+	m, err := c.s.CreateFlow(e.Request().Context(), req)
 	if errors.Is(err, ErrDuplicatedFlow) {
 		return api.JsonBusinessError(e, err.Error())
 	}
 	if err != nil {
+		return err
+	}
+
+	if err := api.JsonData(e, m); err != nil {
 		return err
 	}
 
@@ -112,7 +116,7 @@ func (c *route) list(e echo.Context) error {
 		return err
 	}
 
-	data, count, err := c.s.ListFlow(e.Request().Context(), p)
+	data, count, err := c.s.ListFlowByOwner(e.Request().Context(), p)
 	if err != nil {
 		return err
 	}
