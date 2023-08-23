@@ -26,6 +26,7 @@ func (c *route) Append(g *echo.Group) {
 	g.POST("/login", c.login)
 	g.PUT("/logout", c.logout)
 	g.POST("/register", c.register)
+	g.GET("/isAuthenticated", c.isAuthenticated)
 }
 
 func (c *route) login(e echo.Context) error {
@@ -112,4 +113,22 @@ func (c *route) logout(e echo.Context) error {
 		return api.JsonNoPermission(e, "token 无效")
 	}
 	return c.sm.DeleteSession(e.Request().Context(), td.SessionID)
+}
+
+func (c *route) isAuthenticated(e echo.Context) error {
+	token, _ := c.ts.FromHttpRequest(e.Request())
+	if token == "" {
+		return api.JsonUnauthorized(e, "未登录")
+	}
+
+	td, err := c.ts.Verify(token)
+	if err != nil {
+		return api.JsonUnauthorized(e, "token 无效")
+	}
+
+	_, err = c.sm.GetSessionBySessionID(e.Request().Context(), td.SessionID)
+	if errors.Is(err, ErrSessionNotFound) {
+		return api.JsonUnauthorized(e, "token 无效")
+	}
+	return err
 }
