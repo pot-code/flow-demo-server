@@ -38,6 +38,9 @@ tasks:
   migrate:
     cmds:
       - go run ./cmd/migrate
+  seed:
+    cmds:
+      - go run ./cmd/seed
   dev:
     cmds:
       - task: build:http:dev

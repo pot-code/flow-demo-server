@@ -12,12 +12,19 @@ type AppConfig struct {
 	Host         string
 	HttpPort     int
 	NodeID       uint16
+	Admin        Admin
 	Logging      Logging
 	Database     Database
 	Cache        Cache
 	MessageQueue MessageQueue
 	Token        Token
 	Session      Session
+}
+
+type Admin struct {
+	Name     string
+	Username string
+	Password string
 }
 
 type Logging struct {
@@ -70,6 +77,11 @@ func LoadConfig() *AppConfig {
 		Host:     viper.GetString("HOSTNAME"),
 		HttpPort: viper.GetInt("HTTP_PORT"),
 		NodeID:   viper.GetUint16("NODE_ID"),
+		Admin: Admin{
+			Name:     viper.GetString("ADMIN_NAME"),
+			Username: viper.GetString("ADMIN_USERNAME"),
+			Password: viper.GetString("ADMIN_PASSWORD"),
+		},
 		Logging: Logging{
 			Level: viper.GetString("LOG_LEVEL"),
 		},

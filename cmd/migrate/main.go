@@ -24,6 +24,6 @@ func main() {
 		&model.Permission{},
 		&model.Flow{},
 	); err != nil {
-		log.Fatal().Err(err).Msg("error migrating schema")
+		log.Fatal().Err(err).Msg("migrate database")
 	}
 }

@@ -139,6 +139,6 @@ func (s *service) FindUserByCredential(ctx context.Context, data *LoginRequest) 
 	return user, nil
 }
 
-func NewService(g *gorm.DB, h PasswordHash) Service {
-	return &service{g: g, h: h}
+func NewService(g *gorm.DB) Service {
+	return &service{g: g, h: NewBcryptPasswordHash()}
 }
