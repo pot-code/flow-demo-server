@@ -34,7 +34,7 @@ func (c *route) login(e echo.Context) error {
 		return err
 	}
 
-	user, err := c.us.FindUserByCredential(e.Request().Context(), data)
+	user, err := c.us.Login(e.Request().Context(), data)
 	if errors.Is(err, ErrUserNotFound) {
 		return api.JsonUnauthorized(e, err.Error())
 	}
@@ -48,19 +48,10 @@ func (c *route) login(e echo.Context) error {
 		return err
 	}
 
-	p, err := c.us.GetUserPermissions(e.Request().Context(), user.ID)
-	if err != nil {
-		return err
-	}
-	r, err := c.us.GetUserRoles(e.Request().Context(), user.ID)
-	if err != nil {
-		return err
-	}
-	s, err := c.sm.NewSession(e.Request().Context(), user.ID, user.Username, p, r)
+	s, err := c.sm.NewSession(e.Request().Context(), user.ID, user.Username, user.Permissions, user.Roles)
 	if err != nil {
 		return fmt.Errorf("create session: %w", err)
 	}
-
 	token, err := c.ts.GenerateToken(&TokenData{s.SessionID})
 	if err != nil {
 		return fmt.Errorf("generate token: %w", err)

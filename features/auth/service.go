@@ -21,7 +21,7 @@ type Service interface {
 	CreateUser(ctx context.Context, data *CreateUserRequest) (*model.User, error)
 	FindUserByUserName(ctx context.Context, name string) (*model.User, error)
 	FindUserByMobile(ctx context.Context, mobile string) (*model.User, error)
-	FindUserByCredential(ctx context.Context, data *LoginRequest) (*model.User, error)
+	Login(ctx context.Context, data *LoginRequest) (*LoginUser, error)
 	GetUserPermissions(ctx context.Context, uid model.UUID) ([]string, error)
 	GetUserRoles(ctx context.Context, uid model.UUID) ([]string, error)
 }
@@ -117,26 +117,47 @@ func (s *service) CreateUser(ctx context.Context, data *CreateUserRequest) (*mod
 	return user, nil
 }
 
-func (s *service) FindUserByCredential(ctx context.Context, data *LoginRequest) (*model.User, error) {
-	user := new(model.User)
-	if err := s.g.WithContext(ctx).Where(&model.User{Mobile: data.Mobile}).
-		Or(&model.User{Username: data.Username}).
-		Take(user).Error; err != nil {
+func (s *service) Login(ctx context.Context, data *LoginRequest) (*LoginUser, error) {
+	u := new(LoginUser)
+	if err := s.g.Transaction(func(tx *gorm.DB) error {
+		m := new(model.User)
+		err := s.g.WithContext(ctx).Where(&model.User{Mobile: data.Mobile}).
+			Or(&model.User{Username: data.Username}).Take(m).Error
 		if errors.Is(err, gorm.ErrRecordNotFound) {
-			return nil, ErrIncorrectCredentials
+			return ErrIncorrectCredentials
 		}
+		if err != nil {
+			return fmt.Errorf("find user: %w", err)
+		}
+
+		if m.Disabled {
+			return ErrUserDisabled
+		}
+
+		if err := s.h.VerifyPassword(data.Password, m.Password); err != nil {
+			return ErrIncorrectCredentials
+		}
+
+		p, err := s.GetUserPermissions(ctx, m.ID)
+		if err != nil {
+			return fmt.Errorf("get user permissions: %w", err)
+		}
+
+		r, err := s.GetUserRoles(ctx, m.ID)
+		if err != nil {
+			return fmt.Errorf("get user roles: %w", err)
+		}
+
+		u.Permissions = p
+		u.Roles = r
+		u.ID = m.ID
+		u.Username = m.Username
+
+		return nil
+	}); err != nil {
 		return nil, err
 	}
-
-	if user.Disabled {
-		return nil, ErrUserDisabled
-	}
-
-	if err := s.h.VerifyPassword(data.Password, user.Password); err != nil {
-		return nil, ErrIncorrectCredentials
-	}
-
-	return user, nil
+	return u, nil
 }
 
 func NewService(g *gorm.DB) Service {
