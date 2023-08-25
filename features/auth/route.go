@@ -18,10 +18,6 @@ type route struct {
 	eb event.EventBus
 }
 
-func NewRoute(us Service, ts TokenService, sm SessionManager, eb event.EventBus) api.Route {
-	return &route{us: us, ts: ts, sm: sm, eb: eb}
-}
-
 func (c *route) Append(g *echo.Group) {
 	g.POST("/login", c.login)
 	g.PUT("/logout", c.logout)
@@ -131,4 +127,8 @@ func (c *route) isAuthenticated(e echo.Context) error {
 		return api.JsonUnauthorized(e, "token 无效")
 	}
 	return err
+}
+
+func NewRoute(us Service, ts TokenService, sm SessionManager, eb event.EventBus) api.Route {
+	return &route{us: us, ts: ts, sm: sm, eb: eb}
 }

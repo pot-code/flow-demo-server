@@ -5,8 +5,10 @@ import (
 	"gobit-demo/features/api"
 	"gobit-demo/features/audit"
 	"gobit-demo/features/auth"
+	"gobit-demo/internal/event"
 	"gobit-demo/internal/validate"
 	"gobit-demo/model"
+	"time"
 
 	"github.com/labstack/echo/v4"
 )
@@ -14,11 +16,8 @@ import (
 type route struct {
 	s  Service
 	r  auth.RBAC
+	eb event.EventBus
 	as audit.Service
-}
-
-func NewRoute(s Service, r auth.RBAC, as audit.Service) api.Route {
-	return &route{s: s, r: r, as: as}
 }
 
 func (c *route) Append(g *echo.Group) {
@@ -71,6 +70,13 @@ func (c *route) create(e echo.Context) error {
 		return err
 	}
 
+	c.eb.Publish(&CreateFlowEvent{
+		FlowID:    m.ID,
+		FlowName:  m.Name,
+		OwnerID:   *m.OwnerID,
+		Timestamp: time.Now().UnixMilli(),
+	})
+
 	return c.as.NewAuditLog().WithContext(e.Request().Context()).Action("创建流程").Payload(req).Commit(e.Request().Context())
 }
 
@@ -103,6 +109,7 @@ func (c *route) delete(e echo.Context) error {
 	if err := echo.PathParamsBinder(e).JSONUnmarshaler("id", &fid).BindError(); err != nil {
 		return api.NewBindError(err)
 	}
+
 	return c.s.DeleteFlow(e.Request().Context(), fid)
 }
 
@@ -121,4 +128,8 @@ func (c *route) list(e echo.Context) error {
 		return err
 	}
 	return api.JsonPaginationData(e, p, count, data)
+}
+
+func NewRoute(s Service, r auth.RBAC, as audit.Service, eb event.EventBus) api.Route {
+	return &route{s: s, r: r, as: as, eb: eb}
 }

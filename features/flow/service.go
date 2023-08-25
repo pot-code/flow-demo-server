@@ -36,7 +36,7 @@ func (s *service) DeleteFlow(ctx context.Context, fid model.UUID) error {
 		return err
 	}
 
-	return s.g.WithContext(ctx).Model(&model.Flow{}).Where("id = ?", fid).Delete(&model.Flow{}).Error
+	return s.g.WithContext(ctx).Where("id = ?", fid).Delete(&model.Flow{}).Error
 }
 
 func (s *service) GetFlowByID(ctx context.Context, fid model.UUID) (*model.Flow, error) {

@@ -12,10 +12,6 @@ type route struct {
 	r auth.RBAC
 }
 
-func NewRoute(s Service, r auth.RBAC) api.Route {
-	return &route{s: s, r: r}
-}
-
 func (c *route) Append(g *echo.Group) {
 	g.GET("", c.list)
 }
@@ -35,4 +31,8 @@ func (c *route) list(e echo.Context) error {
 		return err
 	}
 	return api.JsonPaginationData(e, p, count, users)
+}
+
+func NewRoute(s Service, r auth.RBAC) api.Route {
+	return &route{s: s, r: r}
 }
