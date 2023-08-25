@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"gobit-demo/internal/pagination"
 	"gobit-demo/model"
-	"gobit-demo/util"
+	"gobit-demo/pkg/orm"
 
 	"gorm.io/gorm"
 )
@@ -28,7 +28,7 @@ func (s *service) ListUser(ctx context.Context, p *pagination.Pagination) ([]*mo
 		count int64
 	)
 
-	if err := s.g.WithContext(ctx).Scopes(util.GormUtil.Pagination(p)).
+	if err := s.g.WithContext(ctx).Scopes(orm.Pagination(p)).
 		Select("id", "name", "username", "mobile", "disabled").
 		Find(&users).
 		Count(&count).

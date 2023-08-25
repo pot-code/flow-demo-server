@@ -2,7 +2,7 @@ package auth
 
 import (
 	"errors"
-	"gobit-demo/features/api"
+	"gobit-demo/pkg/api"
 	"time"
 
 	"github.com/labstack/echo/v4"

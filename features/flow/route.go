@@ -2,12 +2,12 @@ package flow
 
 import (
 	"errors"
-	"gobit-demo/features/api"
 	"gobit-demo/features/audit"
 	"gobit-demo/features/auth"
 	"gobit-demo/internal/event"
 	"gobit-demo/internal/validate"
 	"gobit-demo/model"
+	"gobit-demo/pkg/api"
 	"time"
 
 	"github.com/labstack/echo/v4"

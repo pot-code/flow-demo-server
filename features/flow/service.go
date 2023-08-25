@@ -7,7 +7,7 @@ import (
 	"gobit-demo/features/auth"
 	"gobit-demo/internal/pagination"
 	"gobit-demo/model"
-	"gobit-demo/util"
+	"gobit-demo/pkg/orm"
 
 	"gorm.io/gorm"
 )
@@ -92,7 +92,7 @@ func (s *service) ListFlowByOwner(ctx context.Context, p *pagination.Pagination)
 
 	u := s.sm.GetSessionFromContext(ctx)
 	if err := s.g.WithContext(ctx).Model(&model.Flow{}).
-		Scopes(util.GormUtil.Pagination(p)).
+		Scopes(orm.Pagination(p)).
 		Select("id", "name", "owner_id", "created_at").
 		Where("owner_id = ?", u.UserID).
 		Find(&flows).

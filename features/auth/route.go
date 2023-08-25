@@ -3,9 +3,9 @@ package auth
 import (
 	"errors"
 	"fmt"
-	"gobit-demo/features/api"
 	"gobit-demo/internal/event"
 	"gobit-demo/internal/validate"
+	"gobit-demo/pkg/api"
 	"time"
 
 	"github.com/labstack/echo/v4"

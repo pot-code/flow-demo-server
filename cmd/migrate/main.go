@@ -23,6 +23,7 @@ func main() {
 		&model.Role{},
 		&model.Permission{},
 		&model.Flow{},
+		&model.Notification{},
 	); err != nil {
 		log.Fatal().Err(err).Msg("migrate database")
 	}

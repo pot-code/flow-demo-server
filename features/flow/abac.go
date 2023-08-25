@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"gobit-demo/features/auth"
 	"gobit-demo/model"
-	"gobit-demo/util"
+	"gobit-demo/pkg/orm"
 
 	"gorm.io/gorm"
 )
@@ -32,7 +32,7 @@ func (p *abac) CanUpdateFlow(ctx context.Context, fid model.UUID) error {
 
 func (p *abac) CanViewFlow(ctx context.Context, fid model.UUID) error {
 	s := p.sm.GetSessionFromContext(ctx)
-	ok, err := util.GormUtil.Exists(p.g.WithContext(ctx).Model(&model.Flow{}).Where("id = ? AND owner_id = ?", fid, s.UserID))
+	ok, err := orm.Exists(p.g.WithContext(ctx).Model(&model.Flow{}).Where("id = ? AND owner_id = ?", fid, s.UserID))
 	if err != nil {
 		return fmt.Errorf("check flow exists by id: %w", err)
 	}

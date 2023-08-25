@@ -3,7 +3,6 @@ package main
 import (
 	"fmt"
 	"gobit-demo/config"
-	"gobit-demo/features/api"
 	"gobit-demo/features/audit"
 	"gobit-demo/features/auth"
 	"gobit-demo/features/flow"
@@ -16,6 +15,7 @@ import (
 	"gobit-demo/internal/orm"
 	"gobit-demo/internal/uuid"
 	"gobit-demo/internal/validate"
+	"gobit-demo/pkg/api"
 	"net/http"
 
 	"github.com/labstack/echo/v4"
