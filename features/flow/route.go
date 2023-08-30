@@ -2,22 +2,17 @@ package flow
 
 import (
 	"errors"
-	"gobit-demo/features/audit"
 	"gobit-demo/features/auth"
-	"gobit-demo/internal/event"
 	"gobit-demo/internal/validate"
 	"gobit-demo/model"
 	"gobit-demo/pkg/api"
-	"time"
 
 	"github.com/labstack/echo/v4"
 )
 
 type route struct {
-	s  Service
-	r  auth.RBAC
-	eb event.EventBus
-	as audit.Service
+	s Service
+	r auth.RBAC
 }
 
 func (c *route) Append(g *echo.Group) {
@@ -66,18 +61,7 @@ func (c *route) create(e echo.Context) error {
 		return err
 	}
 
-	if err := api.JsonData(e, m); err != nil {
-		return err
-	}
-
-	c.eb.Publish(&CreateFlowEvent{
-		FlowID:    m.ID,
-		FlowName:  m.Name,
-		OwnerID:   *m.OwnerID,
-		Timestamp: time.Now().UnixMilli(),
-	})
-
-	return c.as.NewAuditLog().WithContext(e.Request().Context()).Action("创建流程").Payload(req).Commit(e.Request().Context())
+	return api.JsonData(e, m)
 }
 
 func (c *route) update(e echo.Context) error {
@@ -93,11 +77,8 @@ func (c *route) update(e echo.Context) error {
 		return err
 	}
 
-	if err := c.s.UpdateFlow(e.Request().Context(), req); err != nil {
-		return err
-	}
+	return c.s.UpdateFlow(e.Request().Context(), req)
 
-	return c.as.NewAuditLog().WithContext(e.Request().Context()).Action("更新流程").Payload(req).Commit(e.Request().Context())
 }
 
 func (c *route) delete(e echo.Context) error {
@@ -130,6 +111,6 @@ func (c *route) list(e echo.Context) error {
 	return api.JsonPaginationData(e, p, count, data)
 }
 
-func NewRoute(s Service, r auth.RBAC, as audit.Service, eb event.EventBus) api.Route {
-	return &route{s: s, r: r, as: as, eb: eb}
+func NewRoute(s Service, r auth.RBAC) api.Route {
+	return &route{s: s, r: r}
 }

@@ -4,10 +4,13 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"gobit-demo/features/audit"
 	"gobit-demo/features/auth"
+	"gobit-demo/internal/event"
 	"gobit-demo/internal/pagination"
 	"gobit-demo/model"
 	"gobit-demo/pkg/orm"
+	"time"
 
 	"gorm.io/gorm"
 )
@@ -27,6 +30,8 @@ type Service interface {
 type service struct {
 	g  *gorm.DB
 	a  ABAC
+	as audit.Service
+	eb event.EventBus
 	sm auth.SessionManager
 }
 
@@ -36,7 +41,11 @@ func (s *service) DeleteFlow(ctx context.Context, fid model.UUID) error {
 		return err
 	}
 
-	return s.g.WithContext(ctx).Where("id = ?", fid).Delete(&model.Flow{}).Error
+	if err := s.g.WithContext(ctx).Delete(&model.Flow{}, fid).Error; err != nil {
+		return fmt.Errorf("delete flow by id: %w", err)
+	}
+
+	return s.as.NewAuditLog().WithContext(ctx).Action("删除流程").Payload(fid).Commit(ctx)
 }
 
 func (s *service) GetFlowByID(ctx context.Context, fid model.UUID) (*model.Flow, error) {
@@ -63,6 +72,18 @@ func (s *service) CreateFlow(ctx context.Context, req *CreateFlowRequest) (*mode
 	if err := s.g.WithContext(ctx).Create(m).Error; err != nil {
 		return nil, fmt.Errorf("create flow: %w", err)
 	}
+
+	s.eb.Publish(&CreateFlowEvent{
+		FlowID:    m.ID,
+		FlowName:  m.Name,
+		OwnerID:   *m.OwnerID,
+		Timestamp: time.Now().UnixMilli(),
+	})
+
+	if err := s.as.NewAuditLog().WithContext(ctx).Action("创建流程").Payload(req).Commit(ctx); err != nil {
+		return nil, err
+	}
+
 	return m, nil
 }
 
@@ -103,6 +124,6 @@ func (s *service) ListFlowByOwner(ctx context.Context, p *pagination.Pagination)
 	return flows, int(count), nil
 }
 
-func NewService(g *gorm.DB, sm auth.SessionManager, p ABAC) Service {
-	return &service{g: g, sm: sm, a: p}
+func NewService(g *gorm.DB, sm auth.SessionManager, p ABAC, eb event.EventBus, as audit.Service) Service {
+	return &service{g: g, sm: sm, a: p, as: as, eb: eb}
 }
