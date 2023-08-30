@@ -1,10 +1,13 @@
 package model
 
-import "gorm.io/gorm"
+import (
+	"time"
+)
 
 type AuditLog struct {
-	gorm.Model
-	Subject string
-	Action  string
-	Payload string
+	ID        uint64 `gorm:"primaryKey,autoIncrement" json:"id,omitempty"`
+	Subject   string
+	Action    string
+	Payload   string
+	CreatedAt time.Time `gorm:"autoCreateTime" json:"created_at,omitempty"`
 }

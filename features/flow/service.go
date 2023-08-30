@@ -45,7 +45,11 @@ func (s *service) DeleteFlow(ctx context.Context, fid model.UUID) error {
 		return fmt.Errorf("delete flow by id: %w", err)
 	}
 
-	return s.as.NewAuditLog().WithContext(ctx).Action("删除流程").Payload(fid).Commit(ctx)
+	return s.as.NewAuditLog().UseContext(ctx).Action("删除流程").Payload(
+		map[string]interface{}{
+			"flow_id": fid,
+		},
+	).Commit(ctx)
 }
 
 func (s *service) GetFlowByID(ctx context.Context, fid model.UUID) (*model.Flow, error) {
@@ -80,7 +84,7 @@ func (s *service) CreateFlow(ctx context.Context, req *CreateFlowRequest) (*mode
 		Timestamp: time.Now().UnixMilli(),
 	})
 
-	if err := s.as.NewAuditLog().WithContext(ctx).Action("创建流程").Payload(req).Commit(ctx); err != nil {
+	if err := s.as.NewAuditLog().UseContext(ctx).Action("创建流程").Payload(req).Commit(ctx); err != nil {
 		return nil, err
 	}
 

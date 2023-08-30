@@ -6,7 +6,6 @@ import (
 	"fmt"
 	"gobit-demo/features/auth"
 	"gobit-demo/model"
-	"reflect"
 
 	"gorm.io/gorm"
 )
@@ -33,15 +32,11 @@ func (a *AuditLog) Action(action string) *AuditLog {
 }
 
 func (a *AuditLog) Payload(data any) *AuditLog {
-	if reflect.TypeOf(data).Kind() != reflect.Pointer {
-		panic("data must be pointer")
-	}
-
 	a.payload = data
 	return a
 }
 
-func (a *AuditLog) WithContext(ctx context.Context) *AuditLog {
+func (a *AuditLog) UseContext(ctx context.Context) *AuditLog {
 	s := a.sm.GetSessionFromContext(ctx)
 	a.a.Subject = s.Username
 	return a
