@@ -24,8 +24,7 @@ import (
 )
 
 func main() {
-	validate.Init()
-
+	va := validate.New()
 	cfg := config.LoadConfig()
 	logging.Init(cfg.Logging.Level)
 	uuid.InitSonyflake(cfg.NodeID)
@@ -66,10 +65,10 @@ func main() {
 	}
 	e.Use(api.LoggingMiddleware)
 
-	api.NewRouteGroup(e, "/auth", auth.NewRoute(auth.NewService(gd), ts, sm, eb))
+	api.NewRouteGroup(e, "/auth", auth.NewRoute(auth.NewService(gd), ts, sm, eb, va))
 	api.NewRouteGroup(e, "/flow", api.RouteFn(func(g *echo.Group) {
 		g.Use(auth.AuthMiddleware(ts, sm, cfg.Session.RefreshExp))
-		flow.NewRoute(flow.NewService(gd, sm, flow.NewABAC(gd, sm), eb, as), rb).Append(g)
+		flow.NewRoute(flow.NewService(gd, sm, flow.NewABAC(gd, sm), eb, as), rb, va).Append(g)
 	}))
 	api.NewRouteGroup(e, "/user", api.RouteFn(func(g *echo.Group) {
 		g.Use(auth.AuthMiddleware(ts, sm, cfg.Session.RefreshExp))

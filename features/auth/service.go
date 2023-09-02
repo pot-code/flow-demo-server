@@ -121,7 +121,7 @@ func (s *service) Login(ctx context.Context, data *LoginRequest) (*LoginUser, er
 	u := new(LoginUser)
 	if err := s.g.Transaction(func(tx *gorm.DB) error {
 		m := new(model.User)
-		err := s.g.WithContext(ctx).Where(&model.User{Mobile: data.Mobile}).
+		err := tx.WithContext(ctx).Where(&model.User{Mobile: data.Mobile}).
 			Or(&model.User{Username: data.Username}).Take(m).Error
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			return ErrIncorrectCredentials

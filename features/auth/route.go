@@ -16,6 +16,7 @@ type route struct {
 	ts TokenService
 	sm SessionManager
 	eb event.EventBus
+	v  validate.Validator
 }
 
 func (c *route) Append(g *echo.Group) {
@@ -30,7 +31,7 @@ func (c *route) login(e echo.Context) error {
 	if err := api.Bind(e, data); err != nil {
 		return err
 	}
-	if err := validate.Validator.Struct(data); err != nil {
+	if err := c.v.Struct(data); err != nil {
 		return err
 	}
 
@@ -67,7 +68,7 @@ func (c *route) register(e echo.Context) error {
 	if err := api.Bind(e, data); err != nil {
 		return err
 	}
-	if err := validate.Validator.Struct(data); err != nil {
+	if err := c.v.Struct(data); err != nil {
 		return err
 	}
 
@@ -120,6 +121,6 @@ func (c *route) isAuthenticated(e echo.Context) error {
 	return err
 }
 
-func NewRoute(us Service, ts TokenService, sm SessionManager, eb event.EventBus) api.Route {
-	return &route{us: us, ts: ts, sm: sm, eb: eb}
+func NewRoute(us Service, ts TokenService, sm SessionManager, eb event.EventBus, v validate.Validator) api.Route {
+	return &route{us: us, ts: ts, sm: sm, eb: eb, v: v}
 }

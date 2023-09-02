@@ -9,10 +9,12 @@ import (
 	"golang.org/x/text/language"
 )
 
-var Validator *validate.Validator
+type Validator interface {
+	Struct(any) validate.ValidationError
+}
 
-func Init() {
-	Validator = validate.New().RegisterLocale(language.SimplifiedChinese, zh.New(), func(v *v10.Validate, t ut.Translator) error {
+func New() Validator {
+	return validate.New().RegisterLocale(language.SimplifiedChinese, zh.New(), func(v *v10.Validate, t ut.Translator) error {
 		return zh_translation.RegisterDefaultTranslations(v, t)
 	}).DefaultLocale(language.SimplifiedChinese).Build()
 }

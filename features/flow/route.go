@@ -13,6 +13,7 @@ import (
 type route struct {
 	s Service
 	r auth.RBAC
+	v validate.Validator
 }
 
 func (c *route) Append(g *echo.Group) {
@@ -49,7 +50,7 @@ func (c *route) create(e echo.Context) error {
 	if err := api.Bind(e, req); err != nil {
 		return err
 	}
-	if err := validate.Validator.Struct(req); err != nil {
+	if err := c.v.Struct(req); err != nil {
 		return err
 	}
 
@@ -73,7 +74,7 @@ func (c *route) update(e echo.Context) error {
 	if err := api.Bind(e, req); err != nil {
 		return err
 	}
-	if err := validate.Validator.Struct(req); err != nil {
+	if err := c.v.Struct(req); err != nil {
 		return err
 	}
 
@@ -111,6 +112,6 @@ func (c *route) list(e echo.Context) error {
 	return api.JsonPaginationData(e, p, count, data)
 }
 
-func NewRoute(s Service, r auth.RBAC) api.Route {
-	return &route{s: s, r: r}
+func NewRoute(s Service, r auth.RBAC, v validate.Validator) api.Route {
+	return &route{s: s, r: r, v: v}
 }
