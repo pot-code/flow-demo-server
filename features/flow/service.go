@@ -28,16 +28,16 @@ type Service interface {
 }
 
 type service struct {
-	g  *gorm.DB
-	a  ABAC
-	as audit.Service
-	eb event.EventBus
-	sm auth.SessionManager
+	g    *gorm.DB
+	abac ABAC
+	as   audit.Service
+	eb   event.EventBus
+	sm   auth.SessionManager
 }
 
 // DeleteFlow implements Service.
 func (s *service) DeleteFlow(ctx context.Context, fid model.UUID) error {
-	if err := s.a.CanDeleteFlow(ctx, fid); err != nil {
+	if err := s.abac.CanDeleteFlow(ctx, fid); err != nil {
 		return err
 	}
 
@@ -53,7 +53,7 @@ func (s *service) DeleteFlow(ctx context.Context, fid model.UUID) error {
 }
 
 func (s *service) GetFlowByID(ctx context.Context, fid model.UUID) (*model.Flow, error) {
-	if err := s.a.CanViewFlow(ctx, fid); err != nil {
+	if err := s.abac.CanViewFlow(ctx, fid); err != nil {
 		return nil, err
 	}
 
@@ -92,7 +92,7 @@ func (s *service) CreateFlow(ctx context.Context, req *CreateFlowRequest) (*mode
 }
 
 func (s *service) UpdateFlow(ctx context.Context, req *UpdateFlowRequest) error {
-	if err := s.a.CanUpdateFlow(ctx, req.ID); err != nil {
+	if err := s.abac.CanUpdateFlow(ctx, req.ID); err != nil {
 		return err
 	}
 
@@ -128,6 +128,11 @@ func (s *service) ListFlowByOwner(ctx context.Context, p *pagination.Pagination)
 	return flows, int(count), nil
 }
 
-func NewService(g *gorm.DB, sm auth.SessionManager, p ABAC, eb event.EventBus, as audit.Service) Service {
-	return &service{g: g, sm: sm, a: p, as: as, eb: eb}
+func NewService(
+	g *gorm.DB,
+	sm auth.SessionManager,
+	eb event.EventBus,
+	as audit.Service,
+) Service {
+	return &service{g: g, sm: sm, abac: NewABAC(g, sm), as: as, eb: eb}
 }
