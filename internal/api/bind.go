@@ -1,8 +1,6 @@
 package api
 
 import (
-	"reflect"
-
 	"github.com/labstack/echo/v4"
 )
 
@@ -23,10 +21,6 @@ func (e *BindError) Unwrap() error {
 }
 
 func Bind(c echo.Context, v any) error {
-	if reflect.TypeOf(v).Kind() != reflect.Pointer {
-		panic("v must be pointer")
-	}
-
 	if err := c.Bind(v); err != nil {
 		return NewBindError(err)
 	}
