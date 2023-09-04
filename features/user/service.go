@@ -3,9 +3,9 @@ package user
 import (
 	"context"
 	"fmt"
+	"gobit-demo/internal/orm"
 	"gobit-demo/internal/pagination"
 	"gobit-demo/model"
-	"gobit-demo/pkg/orm"
 
 	"gorm.io/gorm"
 )

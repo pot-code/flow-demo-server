@@ -5,6 +5,7 @@ import (
 	"gobit-demo/config"
 	"gobit-demo/features/auth"
 	"gobit-demo/internal/db"
+	"gobit-demo/internal/event"
 	"gobit-demo/internal/logging"
 	"gobit-demo/internal/orm"
 	"gobit-demo/internal/uuid"
@@ -12,6 +13,10 @@ import (
 
 	"github.com/rs/zerolog/log"
 )
+
+type eventBus struct{}
+
+func (e *eventBus) Publish(event event.Event) {}
 
 func main() {
 	cfg := config.LoadConfig()
@@ -55,7 +60,7 @@ func main() {
 		log.Err(err).Msg("seed roles")
 	}
 
-	us := auth.NewService(g)
+	us := auth.NewService(g, (*eventBus)(nil))
 	user := &auth.CreateUserRequest{
 		Name:     cfg.Admin.Name,
 		Username: cfg.Admin.Username,

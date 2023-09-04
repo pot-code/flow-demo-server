@@ -4,8 +4,8 @@ import (
 	"context"
 	"fmt"
 	"gobit-demo/features/auth"
+	"gobit-demo/internal/orm"
 	"gobit-demo/model"
-	"gobit-demo/pkg/orm"
 
 	"gorm.io/gorm"
 )

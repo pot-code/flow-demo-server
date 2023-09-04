@@ -4,8 +4,10 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"gobit-demo/internal/event"
+	"gobit-demo/internal/orm"
 	"gobit-demo/model"
-	"gobit-demo/pkg/orm"
+	"time"
 
 	"gorm.io/gorm"
 )
@@ -27,8 +29,9 @@ type Service interface {
 }
 
 type service struct {
-	g *gorm.DB
-	h PasswordHash
+	g  *gorm.DB
+	h  PasswordHash
+	eb event.EventBus
 }
 
 // GetUserPermissions implements Service.
@@ -114,6 +117,13 @@ func (s *service) CreateUser(ctx context.Context, data *CreateUserRequest) (*mod
 		return nil, err
 	}
 
+	s.eb.Publish(&UserCreatedEvent{
+		UserID:    user.ID,
+		Username:  user.Username,
+		Mobile:    user.Mobile,
+		Timestamp: time.Now().UnixMilli(),
+	})
+
 	return user, nil
 }
 
@@ -160,6 +170,6 @@ func (s *service) Login(ctx context.Context, data *LoginRequest) (*LoginUser, er
 	return u, nil
 }
 
-func NewService(g *gorm.DB) Service {
-	return &service{g: g, h: NewBcryptPasswordHash()}
+func NewService(g *gorm.DB, eb event.EventBus) Service {
+	return &service{g: g, h: NewBcryptPasswordHash(), eb: eb}
 }

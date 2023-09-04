@@ -3,10 +3,8 @@ package auth
 import (
 	"errors"
 	"fmt"
-	"gobit-demo/internal/event"
+	"gobit-demo/internal/api"
 	"gobit-demo/internal/validate"
-	"gobit-demo/pkg/api"
-	"time"
 
 	"github.com/labstack/echo/v4"
 )
@@ -15,7 +13,6 @@ type route struct {
 	us Service
 	ts TokenService
 	sm SessionManager
-	eb event.EventBus
 	v  validate.Validator
 }
 
@@ -72,22 +69,11 @@ func (c *route) register(e echo.Context) error {
 		return err
 	}
 
-	u, err := c.us.CreateUser(e.Request().Context(), data)
+	_, err := c.us.CreateUser(e.Request().Context(), data)
 	if errors.Is(err, ErrDuplicatedUser) {
 		return api.JsonBusinessError(e, err.Error())
 	}
-	if err != nil {
-		return fmt.Errorf("create user: %w", err)
-	}
-
-	c.eb.Publish(&UserCreatedEvent{
-		UserID:    u.ID,
-		Username:  u.Username,
-		Mobile:    u.Mobile,
-		Timestamp: time.Now().UnixMilli(),
-	})
-
-	return nil
+	return err
 }
 
 func (c *route) logout(e echo.Context) error {
@@ -121,6 +107,6 @@ func (c *route) isAuthenticated(e echo.Context) error {
 	return err
 }
 
-func NewRoute(us Service, ts TokenService, sm SessionManager, eb event.EventBus, v validate.Validator) api.Route {
-	return &route{us: us, ts: ts, sm: sm, eb: eb, v: v}
+func NewRoute(us Service, ts TokenService, sm SessionManager, v validate.Validator) api.Route {
+	return &route{us: us, ts: ts, sm: sm, v: v}
 }

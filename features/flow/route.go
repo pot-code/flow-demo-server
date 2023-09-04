@@ -3,9 +3,9 @@ package flow
 import (
 	"errors"
 	"gobit-demo/features/auth"
+	"gobit-demo/internal/api"
 	"gobit-demo/internal/validate"
 	"gobit-demo/model"
-	"gobit-demo/pkg/api"
 
 	"github.com/labstack/echo/v4"
 )

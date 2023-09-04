@@ -7,9 +7,9 @@ import (
 	"gobit-demo/features/audit"
 	"gobit-demo/features/auth"
 	"gobit-demo/internal/event"
+	"gobit-demo/internal/orm"
 	"gobit-demo/internal/pagination"
 	"gobit-demo/model"
-	"gobit-demo/pkg/orm"
 	"time"
 
 	"gorm.io/gorm"
