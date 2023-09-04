@@ -1,4 +1,4 @@
-version: '3.7'
+version: "3.7"
 services:
   kafka-server:
     image: bitnami/kafka:3.5
@@ -19,16 +19,16 @@ services:
       KAFKA_CFG_CONTROLLER_QUORUM_VOTERS: 0@kafka-server:9093
       KAFKA_CFG_ADVERTISED_LISTENERS: INTERNAL://kafka-server:9092,EXTERNAL://localhost:9094
 
-  kafka-console:
-    image: docker.redpanda.com/redpandadata/console:latest
-    ports:
-      - 8080:8080
-    networks:
-      - intranet
-    depends_on:
-      - kafka-server
-    environment:
-      KAFKA_BROKERS: kafka-server:9092
+  # kafka-console:
+  #   image: docker.redpanda.com/redpandadata/console:latest
+  #   ports:
+  #     - 8080:8080
+  #   networks:
+  #     - intranet
+  #   depends_on:
+  #     - kafka-server
+  #   environment:
+  #     KAFKA_BROKERS: kafka-server:9092
 
   mysql:
     image: mysql:8
