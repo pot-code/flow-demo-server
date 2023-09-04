@@ -21,7 +21,7 @@ type User struct {
 }
 
 func (u *User) BeforeCreate(tx *gorm.DB) error {
-	uid, err := uuid.Snoyflake.NextID()
+	uid, err := uuid.Sonyflake.NextID()
 	if err != nil {
 		return err
 	}

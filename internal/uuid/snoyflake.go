@@ -7,7 +7,7 @@ import (
 	"github.com/sony/sonyflake"
 )
 
-var Snoyflake *sonyflake.Sonyflake
+var Sonyflake *sonyflake.Sonyflake
 
 func InitSonyflake(nodeId uint16) {
 	s, err := sonyflake.New(sonyflake.Settings{
@@ -19,5 +19,5 @@ func InitSonyflake(nodeId uint16) {
 	if err != nil {
 		panic(fmt.Errorf("error creating sonyflake: %w", err))
 	}
-	Snoyflake = s
+	Sonyflake = s
 }
