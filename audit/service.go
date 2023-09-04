@@ -1,7 +1,7 @@
 package audit
 
 import (
-	"gobit-demo/features/auth"
+	"gobit-demo/auth"
 
 	"gorm.io/gorm"
 )

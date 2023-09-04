@@ -3,7 +3,7 @@ package flow
 import (
 	"context"
 	"fmt"
-	"gobit-demo/features/auth"
+	"gobit-demo/auth"
 	"gobit-demo/internal/orm"
 	"gobit-demo/model"
 

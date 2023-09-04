@@ -1,7 +1,7 @@
 package user
 
 import (
-	"gobit-demo/features/auth"
+	"gobit-demo/auth"
 	"gobit-demo/internal/api"
 
 	"github.com/labstack/echo/v4"

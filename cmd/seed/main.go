@@ -2,8 +2,8 @@ package main
 
 import (
 	"context"
+	"gobit-demo/auth"
 	"gobit-demo/config"
-	"gobit-demo/features/auth"
 	"gobit-demo/internal/db"
 	"gobit-demo/internal/event"
 	"gobit-demo/internal/logging"

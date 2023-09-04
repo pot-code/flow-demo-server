@@ -2,9 +2,9 @@ package main
 
 import (
 	"fmt"
+	"gobit-demo/audit"
+	"gobit-demo/auth"
 	"gobit-demo/config"
-	"gobit-demo/features/audit"
-	"gobit-demo/features/auth"
 	"gobit-demo/features/flow"
 	"gobit-demo/features/user"
 	"gobit-demo/internal/api"

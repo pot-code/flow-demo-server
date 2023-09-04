@@ -2,7 +2,7 @@ package flow
 
 import (
 	"errors"
-	"gobit-demo/features/auth"
+	"gobit-demo/auth"
 	"gobit-demo/internal/api"
 	"gobit-demo/internal/validate"
 	"gobit-demo/model"
