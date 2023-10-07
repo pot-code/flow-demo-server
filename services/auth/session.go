@@ -23,7 +23,7 @@ var (
 
 type Session struct {
 	SessionID       string
-	UserID          model.UUID
+	UserID          model.ID
 	Username        string
 	UserPermissions []string
 	UserRoles       []string
@@ -34,7 +34,7 @@ type SessionManager interface {
 	GetSessionBySessionID(ctx context.Context, sid string) (*Session, error)
 	GetSessionFromContext(ctx context.Context) *Session
 	SetSession(ctx context.Context, s *Session) context.Context
-	NewSession(ctx context.Context, uid model.UUID, username string, permissions []string, roles []string) (*Session, error)
+	NewSession(ctx context.Context, uid model.ID, username string, permissions []string, roles []string) (*Session, error)
 	DeleteSession(ctx context.Context, sid string) error
 	RefreshSession(ctx context.Context, s *Session, threshold time.Duration) error
 }
@@ -108,7 +108,7 @@ func (sm *redisSessionManager) GetSessionBySessionID(ctx context.Context, sid st
 // NewSession implements SessionManager.
 func (sm *redisSessionManager) NewSession(
 	ctx context.Context,
-	uid model.UUID,
+	uid model.ID,
 	username string,
 	permissions []string,
 	roles []string,

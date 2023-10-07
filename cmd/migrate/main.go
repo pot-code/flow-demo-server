@@ -2,9 +2,9 @@ package main
 
 import (
 	"gobit-demo/config"
-	"gobit-demo/internal/db"
-	"gobit-demo/internal/logging"
-	"gobit-demo/internal/orm"
+	"gobit-demo/infra/db"
+	"gobit-demo/infra/logging"
+	"gobit-demo/infra/orm"
 	"gobit-demo/model"
 
 	"github.com/rs/zerolog/log"

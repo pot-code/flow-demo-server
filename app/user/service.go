@@ -3,8 +3,8 @@ package user
 import (
 	"context"
 	"fmt"
-	"gobit-demo/internal/orm"
-	"gobit-demo/internal/pagination"
+	"gobit-demo/infra/orm"
+	"gobit-demo/infra/pagination"
 	"gobit-demo/model"
 
 	"gorm.io/gorm"

@@ -3,17 +3,17 @@ package flow
 import (
 	"context"
 	"fmt"
-	"gobit-demo/auth"
-	"gobit-demo/internal/orm"
+	"gobit-demo/infra/orm"
 	"gobit-demo/model"
+	"gobit-demo/services/auth"
 
 	"gorm.io/gorm"
 )
 
 type ABAC interface {
-	CanViewFlow(ctx context.Context, fid model.UUID) error
-	CanUpdateFlow(ctx context.Context, fid model.UUID) error
-	CanDeleteFlow(ctx context.Context, fid model.UUID) error
+	CanViewFlow(ctx context.Context, fid model.ID) error
+	CanUpdateFlow(ctx context.Context, fid model.ID) error
+	CanDeleteFlow(ctx context.Context, fid model.ID) error
 }
 
 type abac struct {
@@ -22,15 +22,15 @@ type abac struct {
 }
 
 // CanDeleteFlow implements PermissionService.
-func (p *abac) CanDeleteFlow(ctx context.Context, fid model.UUID) error {
+func (p *abac) CanDeleteFlow(ctx context.Context, fid model.ID) error {
 	return p.CanViewFlow(ctx, fid)
 }
 
-func (p *abac) CanUpdateFlow(ctx context.Context, fid model.UUID) error {
+func (p *abac) CanUpdateFlow(ctx context.Context, fid model.ID) error {
 	return p.CanViewFlow(ctx, fid)
 }
 
-func (p *abac) CanViewFlow(ctx context.Context, fid model.UUID) error {
+func (p *abac) CanViewFlow(ctx context.Context, fid model.ID) error {
 	s := p.sm.GetSessionFromContext(ctx)
 	ok, err := orm.Exists(p.g.WithContext(ctx).Model(&model.Flow{}).Where("id = ? AND owner_id = ?", fid, s.UserID))
 	if err != nil {

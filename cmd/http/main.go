@@ -2,20 +2,21 @@ package main
 
 import (
 	"fmt"
-	"gobit-demo/audit"
-	"gobit-demo/auth"
+	"gobit-demo/app/flow"
+	"gobit-demo/app/user"
 	"gobit-demo/config"
-	"gobit-demo/features/flow"
-	"gobit-demo/features/user"
-	"gobit-demo/internal/api"
-	"gobit-demo/internal/cache"
-	"gobit-demo/internal/db"
-	"gobit-demo/internal/event"
-	"gobit-demo/internal/logging"
-	"gobit-demo/internal/mq"
-	"gobit-demo/internal/orm"
-	"gobit-demo/internal/uuid"
-	"gobit-demo/internal/validate"
+	"gobit-demo/infra/api"
+	"gobit-demo/infra/cache"
+	"gobit-demo/infra/db"
+	"gobit-demo/infra/event"
+	"gobit-demo/infra/logging"
+	"gobit-demo/infra/mq"
+	"gobit-demo/infra/orm"
+	"gobit-demo/infra/uuid"
+	"gobit-demo/infra/validate"
+	"gobit-demo/middlewares"
+	"gobit-demo/services/audit"
+	"gobit-demo/services/auth"
 	"net/http"
 
 	"github.com/labstack/echo/v4"
@@ -63,15 +64,15 @@ func main() {
 			api.JsonServerError(c, e.Error())
 		}
 	}
-	e.Use(api.LoggingMiddleware)
+	e.Use(middlewares.LoggingMiddleware)
 
 	api.NewRouteGroup(e, "/auth", auth.NewRoute(auth.NewService(gd, eb), ts, sm, va))
 	api.NewRouteGroup(e, "/flow", api.RouteFn(func(g *echo.Group) {
-		g.Use(auth.AuthMiddleware(ts, sm, cfg.Session.RefreshExp))
+		g.Use(middlewares.AuthMiddleware(ts, sm, cfg.Session.RefreshExp))
 		flow.NewRoute(flow.NewService(gd, sm, eb, as), rb, va).Append(g)
 	}))
 	api.NewRouteGroup(e, "/user", api.RouteFn(func(g *echo.Group) {
-		g.Use(auth.AuthMiddleware(ts, sm, cfg.Session.RefreshExp))
+		g.Use(middlewares.AuthMiddleware(ts, sm, cfg.Session.RefreshExp))
 		user.NewRoute(user.NewService(gd), rb).Append(g)
 	}))
 

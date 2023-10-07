@@ -10,8 +10,8 @@ import (
 )
 
 type UnAuthorizedError struct {
-	UserID model.UUID `json:"user_id,omitempty"`
-	Action string     `json:"action,omitempty"`
+	UserID model.ID `json:"user_id,omitempty"`
+	Action string   `json:"action,omitempty"`
 }
 
 func (e UnAuthorizedError) Error() string {

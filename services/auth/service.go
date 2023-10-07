@@ -4,8 +4,8 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"gobit-demo/internal/event"
-	"gobit-demo/internal/orm"
+	"gobit-demo/infra/event"
+	"gobit-demo/infra/orm"
 	"gobit-demo/model"
 	"time"
 
@@ -24,8 +24,8 @@ type Service interface {
 	FindUserByUserName(ctx context.Context, name string) (*model.User, error)
 	FindUserByMobile(ctx context.Context, mobile string) (*model.User, error)
 	Login(ctx context.Context, data *LoginRequest) (*LoginUser, error)
-	GetUserPermissions(ctx context.Context, uid model.UUID) ([]string, error)
-	GetUserRoles(ctx context.Context, uid model.UUID) ([]string, error)
+	GetUserPermissions(ctx context.Context, uid model.ID) ([]string, error)
+	GetUserRoles(ctx context.Context, uid model.ID) ([]string, error)
 }
 
 type service struct {
@@ -35,7 +35,7 @@ type service struct {
 }
 
 // GetUserPermissions implements Service.
-func (s *service) GetUserPermissions(ctx context.Context, uid model.UUID) ([]string, error) {
+func (s *service) GetUserPermissions(ctx context.Context, uid model.ID) ([]string, error) {
 	var permissions []string
 	if err := s.g.WithContext(ctx).Model(&model.Permission{}).
 		Distinct("permissions.name").
@@ -49,7 +49,7 @@ func (s *service) GetUserPermissions(ctx context.Context, uid model.UUID) ([]str
 }
 
 // GetUserRoles implements Service.
-func (s *service) GetUserRoles(ctx context.Context, uid model.UUID) ([]string, error) {
+func (s *service) GetUserRoles(ctx context.Context, uid model.ID) ([]string, error) {
 	var roles []string
 	if err := s.g.WithContext(ctx).Model(&model.Role{}).
 		Joins("INNER JOIN user_roles ON user_roles.role_id = roles.id").

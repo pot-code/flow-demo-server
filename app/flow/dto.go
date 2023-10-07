@@ -12,9 +12,9 @@ type CreateFlowRequest struct {
 }
 
 type UpdateFlowRequest struct {
-	ID          model.UUID `json:"id,omitempty" validate:"required"`
-	Name        string     `json:"name,omitempty" validate:"required,min=1,max=32"`
-	Nodes       string     `json:"nodes,omitempty"`
-	Edges       string     `json:"edges,omitempty"`
-	Description string     `json:"description,omitempty"`
+	ID          model.ID `json:"id,omitempty" validate:"required"`
+	Name        string   `json:"name,omitempty" validate:"required,min=1,max=32"`
+	Nodes       string   `json:"nodes,omitempty"`
+	Edges       string   `json:"edges,omitempty"`
+	Description string   `json:"description,omitempty"`
 }

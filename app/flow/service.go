@@ -4,12 +4,12 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"gobit-demo/audit"
-	"gobit-demo/auth"
-	"gobit-demo/internal/event"
-	"gobit-demo/internal/orm"
-	"gobit-demo/internal/pagination"
+	"gobit-demo/infra/event"
+	"gobit-demo/infra/orm"
+	"gobit-demo/infra/pagination"
 	"gobit-demo/model"
+	"gobit-demo/services/audit"
+	"gobit-demo/services/auth"
 	"time"
 
 	"gorm.io/gorm"
@@ -20,11 +20,11 @@ var (
 )
 
 type Service interface {
-	GetFlowByID(ctx context.Context, fid model.UUID) (*model.Flow, error)
+	GetFlowByID(ctx context.Context, fid model.ID) (*model.Flow, error)
 	ListFlowByOwner(ctx context.Context, p *pagination.Pagination) ([]*model.Flow, int, error)
 	CreateFlow(ctx context.Context, req *CreateFlowRequest) (*model.Flow, error)
 	UpdateFlow(ctx context.Context, req *UpdateFlowRequest) error
-	DeleteFlow(ctx context.Context, fid model.UUID) error
+	DeleteFlow(ctx context.Context, fid model.ID) error
 }
 
 type service struct {
@@ -36,7 +36,7 @@ type service struct {
 }
 
 // DeleteFlow implements Service.
-func (s *service) DeleteFlow(ctx context.Context, fid model.UUID) error {
+func (s *service) DeleteFlow(ctx context.Context, fid model.ID) error {
 	if err := s.abac.CanDeleteFlow(ctx, fid); err != nil {
 		return err
 	}
@@ -52,7 +52,7 @@ func (s *service) DeleteFlow(ctx context.Context, fid model.UUID) error {
 	).Commit(ctx)
 }
 
-func (s *service) GetFlowByID(ctx context.Context, fid model.UUID) (*model.Flow, error) {
+func (s *service) GetFlowByID(ctx context.Context, fid model.ID) (*model.Flow, error) {
 	if err := s.abac.CanViewFlow(ctx, fid); err != nil {
 		return nil, err
 	}

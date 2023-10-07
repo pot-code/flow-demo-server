@@ -29,9 +29,7 @@ tasks:
     cmds:
       - go build -o ./tmp/main$EXT ./cmd/http
     sources:
-      - ./features/**/*.go
-      - ./internal/**/*.go
-      - ./cmd/**/*.go
+      - ./**/*.go
       - ./.env
     generates:
       - ./tmp/main$EXT

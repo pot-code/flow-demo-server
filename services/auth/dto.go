@@ -16,7 +16,7 @@ type LoginRequest struct {
 }
 
 type LoginUser struct {
-	ID          model.UUID
+	ID          model.ID
 	Username    string
 	Permissions []string
 	Roles       []string

@@ -9,7 +9,7 @@ import (
 )
 
 type Service interface {
-	SendNotification(ctx context.Context, to model.UUID, content string) error
+	SendNotification(ctx context.Context, to model.ID, content string) error
 }
 
 type service struct {
@@ -17,7 +17,7 @@ type service struct {
 }
 
 // SendNotification implements Service.
-func (s *service) SendNotification(ctx context.Context, to model.UUID, content string) error {
+func (s *service) SendNotification(ctx context.Context, to model.ID, content string) error {
 	if err := s.g.WithContext(ctx).Create(&model.Notification{
 		OwnerID: &to,
 		Content: content,

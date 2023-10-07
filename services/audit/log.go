@@ -4,8 +4,8 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"gobit-demo/auth"
 	"gobit-demo/model"
+	"gobit-demo/services/auth"
 
 	"gorm.io/gorm"
 )

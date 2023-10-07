@@ -2,10 +2,10 @@ package flow
 
 import (
 	"errors"
-	"gobit-demo/auth"
-	"gobit-demo/internal/api"
-	"gobit-demo/internal/validate"
+	"gobit-demo/infra/api"
+	"gobit-demo/infra/validate"
 	"gobit-demo/model"
+	"gobit-demo/services/auth"
 
 	"github.com/labstack/echo/v4"
 )
@@ -29,7 +29,7 @@ func (c *route) getByID(e echo.Context) error {
 		return err
 	}
 
-	var fid model.UUID
+	var fid model.ID
 	if err := echo.PathParamsBinder(e).JSONUnmarshaler("id", &fid).BindError(); err != nil {
 		return api.NewBindError(err)
 	}
@@ -87,7 +87,7 @@ func (c *route) delete(e echo.Context) error {
 		return err
 	}
 
-	var fid model.UUID
+	var fid model.ID
 	if err := echo.PathParamsBinder(e).JSONUnmarshaler("id", &fid).BindError(); err != nil {
 		return api.NewBindError(err)
 	}
@@ -112,6 +112,6 @@ func (c *route) list(e echo.Context) error {
 	return api.JsonPaginationData(e, p, count, data)
 }
 
-func NewRoute(s Service, r auth.RBAC, v validate.Validator) api.Route {
+func NewRoute(s Service, r auth.RBAC, v validate.Validator) *route {
 	return &route{s: s, r: r, v: v}
 }

@@ -1,17 +1,17 @@
 package model
 
 import (
-	"gobit-demo/internal/uuid"
+	"gobit-demo/infra/uuid"
 	"time"
 
 	"gorm.io/gorm"
 )
 
 type Notification struct {
-	ID        UUID      `json:"id,omitempty"`
+	ID        ID        `json:"id,omitempty"`
 	Content   string    `json:"content,omitempty"`
 	CreatedAt time.Time `gorm:"autoCreateTime" json:"created_at,omitempty"`
-	OwnerID   *UUID     `json:"owner_id,omitempty"`
+	OwnerID   *ID       `json:"owner_id,omitempty"`
 	Owner     *User     `gorm:"foreignKey:OwnerID" json:"owner,omitempty"`
 }
 
@@ -20,6 +20,6 @@ func (n *Notification) BeforeCreate(tx *gorm.DB) error {
 	if err != nil {
 		return err
 	}
-	n.ID = UUID(uid)
+	n.ID = ID(uid)
 	return nil
 }

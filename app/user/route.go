@@ -1,8 +1,8 @@
 package user
 
 import (
-	"gobit-demo/auth"
-	"gobit-demo/internal/api"
+	"gobit-demo/infra/api"
+	"gobit-demo/services/auth"
 
 	"github.com/labstack/echo/v4"
 )
@@ -33,6 +33,6 @@ func (c *route) list(e echo.Context) error {
 	return api.JsonPaginationData(e, p, count, users)
 }
 
-func NewRoute(s Service, r auth.RBAC) api.Route {
+func NewRoute(s Service, r auth.RBAC) *route {
 	return &route{s: s, r: r}
 }

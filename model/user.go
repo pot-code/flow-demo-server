@@ -1,14 +1,14 @@
 package model
 
 import (
-	"gobit-demo/internal/uuid"
+	"gobit-demo/infra/uuid"
 	"time"
 
 	"gorm.io/gorm"
 )
 
 type User struct {
-	ID        UUID           `gorm:"primaryKey;type:BIGINT UNSIGNED" json:"id,omitempty"`
+	ID        ID             `gorm:"primaryKey;type:BIGINT UNSIGNED" json:"id,omitempty"`
 	Name      string         `json:"name,omitempty"`
 	Username  string         `gorm:"uniqueIndex,not null,size:12" json:"username,omitempty"`
 	Password  string         `gorm:"not null" json:"password,omitempty"`
@@ -25,6 +25,6 @@ func (u *User) BeforeCreate(tx *gorm.DB) error {
 	if err != nil {
 		return err
 	}
-	u.ID = UUID(uid)
+	u.ID = ID(uid)
 	return nil
 }

@@ -1,7 +1,7 @@
 package api
 
 import (
-	"gobit-demo/internal/pagination"
+	"gobit-demo/infra/pagination"
 	"net/http"
 	"strconv"
 

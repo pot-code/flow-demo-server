@@ -3,8 +3,8 @@ package auth
 import (
 	"errors"
 	"fmt"
-	"gobit-demo/internal/api"
-	"gobit-demo/internal/validate"
+	"gobit-demo/infra/api"
+	"gobit-demo/infra/validate"
 
 	"github.com/labstack/echo/v4"
 )
@@ -107,6 +107,6 @@ func (c *route) isAuthenticated(e echo.Context) error {
 	return err
 }
 
-func NewRoute(us Service, ts TokenService, sm SessionManager, v validate.Validator) api.Route {
+func NewRoute(us Service, ts TokenService, sm SessionManager, v validate.Validator) *route {
 	return &route{us: us, ts: ts, sm: sm, v: v}
 }

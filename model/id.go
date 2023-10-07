@@ -7,19 +7,19 @@ import (
 	"strings"
 )
 
-type UUID uint64
+type ID uint64
 
-func (id *UUID) MarshalJSON() ([]byte, error) {
+func (id *ID) MarshalJSON() ([]byte, error) {
 	return []byte(strconv.FormatUint(uint64(*id), 10)), nil
 }
 
-func (id *UUID) UnmarshalJSON(b []byte) error {
+func (id *ID) UnmarshalJSON(b []byte) error {
 	s := strings.Replace(string(b), "\"", "", -1)
 	u, err := strconv.ParseUint(s, 10, 64)
 	if err != nil {
 		return err
 	}
-	*id = UUID(u)
+	*id = ID(u)
 	return nil
 }
 
@@ -40,22 +40,22 @@ func (id *UUID) UnmarshalJSON(b []byte) error {
 // Reference types such as []byte are only valid until the next call to Scan
 // and should not be retained. Their underlying memory is owned by the driver.
 // If retention is necessary, copy their values before the next call to Scan.
-func (id *UUID) Scan(src any) error {
+func (id *ID) Scan(src any) error {
 	switch t := src.(type) {
 	case int64:
-		*id = UUID(t)
+		*id = ID(t)
 	case []byte:
 		v, err := strconv.ParseUint(string(t), 10, 64)
 		if err != nil {
 			return fmt.Errorf("parse uuid: %w", err)
 		}
-		*id = UUID(v)
+		*id = ID(v)
 	}
 	return nil
 }
 
 // Value returns a driver Value.
 // Value must not panic.
-func (id *UUID) Value() (driver.Value, error) {
+func (id *ID) Value() (driver.Value, error) {
 	return int64(*id), nil
 }

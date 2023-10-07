@@ -2,14 +2,14 @@ package main
 
 import (
 	"context"
-	"gobit-demo/auth"
 	"gobit-demo/config"
-	"gobit-demo/internal/db"
-	"gobit-demo/internal/event"
-	"gobit-demo/internal/logging"
-	"gobit-demo/internal/orm"
-	"gobit-demo/internal/uuid"
+	"gobit-demo/infra/db"
+	"gobit-demo/infra/event"
+	"gobit-demo/infra/logging"
+	"gobit-demo/infra/orm"
+	"gobit-demo/infra/uuid"
 	"gobit-demo/model"
+	"gobit-demo/services/auth"
 
 	"github.com/rs/zerolog/log"
 )
