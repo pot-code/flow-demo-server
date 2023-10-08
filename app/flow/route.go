@@ -29,12 +29,12 @@ func (c *route) findById(e echo.Context) error {
 		return err
 	}
 
-	var fid model.ID
-	if err := echo.PathParamsBinder(e).JSONUnmarshaler("id", &fid).BindError(); err != nil {
+	var id model.ID
+	if err := echo.PathParamsBinder(e).JSONUnmarshaler("id", &id).BindError(); err != nil {
 		return api.NewBindError(err)
 	}
 
-	o, err := c.s.GetFlowByID(e.Request().Context(), fid)
+	o, err := c.s.GetFlowByID(e.Request().Context(), id)
 	if err != nil {
 		return err
 	}
@@ -46,7 +46,7 @@ func (c *route) createOne(e echo.Context) error {
 		return err
 	}
 
-	req := new(CreateFlowRequest)
+	req := new(CreateFlowDto)
 	if err := api.Bind(e, req); err != nil {
 		return err
 	}
@@ -70,7 +70,7 @@ func (c *route) updateOne(e echo.Context) error {
 		return err
 	}
 
-	req := new(UpdateFlowRequest)
+	req := new(UpdateFlowDto)
 	if err := api.Bind(e, req); err != nil {
 		return err
 	}
@@ -87,12 +87,12 @@ func (c *route) deleteOne(e echo.Context) error {
 		return err
 	}
 
-	var fid model.ID
-	if err := echo.PathParamsBinder(e).JSONUnmarshaler("id", &fid).BindError(); err != nil {
+	var id model.ID
+	if err := echo.PathParamsBinder(e).JSONUnmarshaler("id", &id).BindError(); err != nil {
 		return api.NewBindError(err)
 	}
 
-	return c.s.DeleteFlow(e.Request().Context(), fid)
+	return c.s.DeleteFlow(e.Request().Context(), id)
 }
 
 func (c *route) findByUser(e echo.Context) error {

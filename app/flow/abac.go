@@ -11,9 +11,9 @@ import (
 )
 
 type ABAC interface {
-	CanViewFlow(ctx context.Context, fid model.ID) error
-	CanUpdateFlow(ctx context.Context, fid model.ID) error
-	CanDeleteFlow(ctx context.Context, fid model.ID) error
+	CanView(ctx context.Context, id model.ID) error
+	CanUpdate(ctx context.Context, id model.ID) error
+	CanDelete(ctx context.Context, id model.ID) error
 }
 
 type abac struct {
@@ -21,30 +21,50 @@ type abac struct {
 	sm auth.SessionManager
 }
 
-// CanDeleteFlow implements PermissionService.
-func (p *abac) CanDeleteFlow(ctx context.Context, fid model.ID) error {
-	return p.CanViewFlow(ctx, fid)
-}
-
-func (p *abac) CanUpdateFlow(ctx context.Context, fid model.ID) error {
-	return p.CanViewFlow(ctx, fid)
-}
-
-func (p *abac) CanViewFlow(ctx context.Context, fid model.ID) error {
-	s := p.sm.GetSessionFromContext(ctx)
-	ok, err := orm.Exists(p.g.WithContext(ctx).Model(&model.Flow{}).Where("id = ? AND owner_id = ?", fid, s.UserID))
+func (p *abac) CanDelete(ctx context.Context, id model.ID) error {
+	ok, err := p.isOwner(ctx, id)
 	if err != nil {
-		return fmt.Errorf("check flow exists by id: %w", err)
+		return err
 	}
 	if !ok {
-		return &auth.UnAuthorizedError{
-			UserID: s.UserID,
-			Action: fmt.Sprintf("view flow %v", fid),
-		}
+		return new(auth.UnAuthorizedError)
+	}
+	return nil
+
+}
+
+func (p *abac) CanUpdate(ctx context.Context, id model.ID) error {
+	ok, err := p.isOwner(ctx, id)
+	if err != nil {
+		return err
+	}
+	if !ok {
+		return new(auth.UnAuthorizedError)
+	}
+	return nil
+
+}
+
+func (p *abac) CanView(ctx context.Context, id model.ID) error {
+	ok, err := p.isOwner(ctx, id)
+	if err != nil {
+		return err
+	}
+	if !ok {
+		return new(auth.UnAuthorizedError)
 	}
 	return nil
 }
 
-func NewABAC(g *gorm.DB, sm auth.SessionManager) ABAC {
+func (p *abac) isOwner(ctx context.Context, id model.ID) (bool, error) {
+	s := p.sm.GetSessionFromContext(ctx)
+	ok, err := orm.Exists(p.g.WithContext(ctx).Model(&model.Flow{}).Where("id = ? AND owner_id = ?", id, s.UserID))
+	if err != nil {
+		return false, fmt.Errorf("check flow exists by id: %w", err)
+	}
+	return ok, err
+}
+
+func NewPermission(g *gorm.DB, sm auth.SessionManager) *abac {
 	return &abac{g: g, sm: sm}
 }

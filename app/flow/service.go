@@ -20,51 +20,51 @@ var (
 )
 
 type Service interface {
-	GetFlowByID(ctx context.Context, fid model.ID) (*model.Flow, error)
+	GetFlowByID(ctx context.Context, id model.ID) (*model.Flow, error)
 	ListFlowByOwner(ctx context.Context, p *pagination.Pagination) ([]*model.Flow, int, error)
-	CreateFlow(ctx context.Context, req *CreateFlowRequest) (*model.Flow, error)
-	UpdateFlow(ctx context.Context, req *UpdateFlowRequest) error
-	DeleteFlow(ctx context.Context, fid model.ID) error
+	CreateFlow(ctx context.Context, req *CreateFlowDto) (*model.Flow, error)
+	UpdateFlow(ctx context.Context, req *UpdateFlowDto) error
+	DeleteFlow(ctx context.Context, id model.ID) error
 }
 
 type service struct {
-	g    *gorm.DB
-	abac ABAC
-	as   audit.Service
-	eb   event.EventBus
-	sm   auth.SessionManager
+	g  *gorm.DB
+	a  ABAC
+	as audit.Service
+	eb event.EventBus
+	sm auth.SessionManager
 }
 
 // DeleteFlow implements Service.
-func (s *service) DeleteFlow(ctx context.Context, fid model.ID) error {
-	if err := s.abac.CanDeleteFlow(ctx, fid); err != nil {
+func (s *service) DeleteFlow(ctx context.Context, id model.ID) error {
+	if err := s.a.CanDelete(ctx, id); err != nil {
 		return err
 	}
 
-	if err := s.g.WithContext(ctx).Delete(&model.Flow{}, fid).Error; err != nil {
+	if err := s.g.WithContext(ctx).Delete(&model.Flow{}, id).Error; err != nil {
 		return fmt.Errorf("delete flow by id: %w", err)
 	}
 
 	return s.as.NewAuditLog().UseContext(ctx).Action("删除流程").Payload(
 		map[string]interface{}{
-			"flow_id": fid,
+			"flow_id": id,
 		},
 	).Commit(ctx)
 }
 
-func (s *service) GetFlowByID(ctx context.Context, fid model.ID) (*model.Flow, error) {
-	if err := s.abac.CanViewFlow(ctx, fid); err != nil {
+func (s *service) GetFlowByID(ctx context.Context, id model.ID) (*model.Flow, error) {
+	if err := s.a.CanView(ctx, id); err != nil {
 		return nil, err
 	}
 
 	m := new(model.Flow)
-	if err := s.g.WithContext(ctx).Model(&model.Flow{}).Where("id = ?", fid).Take(m).Error; err != nil {
+	if err := s.g.WithContext(ctx).Model(&model.Flow{}).Where("id = ?", id).Take(m).Error; err != nil {
 		return nil, fmt.Errorf("get flow by id: %w", err)
 	}
 	return m, nil
 }
 
-func (s *service) CreateFlow(ctx context.Context, req *CreateFlowRequest) (*model.Flow, error) {
+func (s *service) CreateFlow(ctx context.Context, req *CreateFlowDto) (*model.Flow, error) {
 	session := s.sm.GetSessionFromContext(ctx)
 	m := &model.Flow{
 		Name:        req.Name,
@@ -91,8 +91,8 @@ func (s *service) CreateFlow(ctx context.Context, req *CreateFlowRequest) (*mode
 	return m, nil
 }
 
-func (s *service) UpdateFlow(ctx context.Context, req *UpdateFlowRequest) error {
-	if err := s.abac.CanUpdateFlow(ctx, req.ID); err != nil {
+func (s *service) UpdateFlow(ctx context.Context, req *UpdateFlowDto) error {
+	if err := s.a.CanUpdate(ctx, req.ID); err != nil {
 		return err
 	}
 
@@ -133,6 +133,6 @@ func NewService(
 	sm auth.SessionManager,
 	eb event.EventBus,
 	as audit.Service,
-) Service {
-	return &service{g: g, sm: sm, abac: NewABAC(g, sm), as: as, eb: eb}
+) *service {
+	return &service{g: g, sm: sm, a: NewPermission(g, sm), as: as, eb: eb}
 }
