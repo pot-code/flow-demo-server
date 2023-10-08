@@ -24,7 +24,7 @@ func (c *route) AppendRoutes(g *echo.Group) {
 }
 
 func (c *route) login(e echo.Context) error {
-	data := new(LoginRequest)
+	data := new(LoginRequestDto)
 	if err := api.Bind(e, data); err != nil {
 		return err
 	}
@@ -61,7 +61,7 @@ func (c *route) login(e echo.Context) error {
 }
 
 func (c *route) register(e echo.Context) error {
-	data := new(CreateUserRequest)
+	data := new(CreateUserDto)
 	if err := api.Bind(e, data); err != nil {
 		return err
 	}

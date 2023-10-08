@@ -20,10 +20,10 @@ var (
 )
 
 type Service interface {
-	CreateUser(ctx context.Context, data *CreateUserRequest) (*model.User, error)
+	CreateUser(ctx context.Context, data *CreateUserDto) (*model.User, error)
 	FindUserByUserName(ctx context.Context, name string) (*model.User, error)
 	FindUserByMobile(ctx context.Context, mobile string) (*model.User, error)
-	Login(ctx context.Context, data *LoginRequest) (*LoginUser, error)
+	Login(ctx context.Context, data *LoginRequestDto) (*LoginUser, error)
 	GetUserPermissions(ctx context.Context, id model.ID) ([]string, error)
 	GetUserRoles(ctx context.Context, id model.ID) ([]string, error)
 }
@@ -84,7 +84,7 @@ func (s *service) FindUserByMobile(ctx context.Context, mobile string) (*model.U
 	return user, err
 }
 
-func (s *service) CreateUser(ctx context.Context, data *CreateUserRequest) (*model.User, error) {
+func (s *service) CreateUser(ctx context.Context, data *CreateUserDto) (*model.User, error) {
 	user := &model.User{
 		Name:     data.Name,
 		Username: data.Username,
@@ -127,7 +127,7 @@ func (s *service) CreateUser(ctx context.Context, data *CreateUserRequest) (*mod
 	return user, nil
 }
 
-func (s *service) Login(ctx context.Context, data *LoginRequest) (*LoginUser, error) {
+func (s *service) Login(ctx context.Context, data *LoginRequestDto) (*LoginUser, error) {
 	u := new(LoginUser)
 	if err := s.g.Transaction(func(tx *gorm.DB) error {
 		m := new(model.User)

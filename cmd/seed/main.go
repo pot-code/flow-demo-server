@@ -61,7 +61,7 @@ func main() {
 	}
 
 	us := auth.NewService(g, (*eventBus)(nil))
-	user := &auth.CreateUserRequest{
+	user := &auth.CreateUserDto{
 		Name:     cfg.Admin.Name,
 		Username: cfg.Admin.Username,
 		Password: cfg.Admin.Password,
