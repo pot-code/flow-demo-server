@@ -66,10 +66,8 @@ func main() {
 	e.Use(middlewares.LoggingMiddleware)
 
 	e.AddRouteGroup("/auth", auth.NewRoute(auth.NewService(gd, eb), ts, sm, va))
-	e.AddRouteGroup("/flow", api.RouteGroupFn(func(g *echo.Group) {
-		g.Use(middlewares.AuthMiddleware(ts, sm, cfg.Session.RefreshExp))
-		flow.NewRoute(flow.NewService(gd, sm, eb, as), rb, va).AppendRoutes(g)
-	}))
+	e.AddRouteGroup("/flow", flow.NewRoute(flow.NewService(gd, sm, eb, as), rb, va),
+		middlewares.AuthMiddleware(ts, sm, cfg.Session.RefreshExp))
 
 	if err := e.Run(fmt.Sprintf("%s:%d", cfg.Host, cfg.HttpPort)); err != http.ErrServerClosed {
 		log.Err(err).Msg("error starting server")

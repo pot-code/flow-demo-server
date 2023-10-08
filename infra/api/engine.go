@@ -32,8 +32,8 @@ func (e *AppEngine) Use(middlewares ...echo.MiddlewareFunc) {
 	e.engine.Use(middlewares...)
 }
 
-func (e *AppEngine) AddRouteGroup(prefix string, r RouteGroup) {
-	g := e.engine.Group(prefix)
+func (e *AppEngine) AddRouteGroup(prefix string, r RouteGroup, m ...echo.MiddlewareFunc) {
+	g := e.engine.Group(prefix, m...)
 	r.AppendRoutes(g)
 }
 
