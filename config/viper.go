@@ -99,7 +99,7 @@ func LoadConfig() *AppConfig {
 		},
 		Token: Token{
 			Secret: viper.GetString("JWT_SECRET"),
-			Key:    viper.GetString("JWT_KEY"),
+			Key:    viper.GetString("JWT_COOKIE_KEY"),
 		},
 		Session: Session{
 			Exp:        viper.GetDuration("SESSION_EXP"),
