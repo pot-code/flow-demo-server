@@ -65,6 +65,6 @@ func (p *abac) isOwner(ctx context.Context, id model.ID) (bool, error) {
 	return ok, err
 }
 
-func NewPermission(g *gorm.DB, sm auth.SessionManager) *abac {
+func NewABAC(g *gorm.DB, sm auth.SessionManager) *abac {
 	return &abac{g: g, sm: sm}
 }

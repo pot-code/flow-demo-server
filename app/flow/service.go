@@ -134,5 +134,5 @@ func NewService(
 	eb event.EventBus,
 	as audit.Service,
 ) *service {
-	return &service{g: g, sm: sm, a: NewPermission(g, sm), as: as, eb: eb}
+	return &service{g: g, sm: sm, a: NewABAC(g, sm), as: as, eb: eb}
 }
