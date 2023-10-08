@@ -2,19 +2,11 @@ package api
 
 import (
 	"gobit-demo/infra/pagination"
-	"net/http"
 	"strconv"
 
 	"github.com/labstack/echo/v4"
 	"github.com/pot-code/gobit/pkg/validate"
 )
-
-type paginationResponse struct {
-	Page     int `json:"page"`
-	PageSize int `json:"page_size"`
-	Total    int `json:"total"`
-	response
-}
 
 const (
 	defaultPage     = 1
@@ -52,18 +44,4 @@ func GetPaginationFromRequest(e echo.Context) (*pagination.Pagination, error) {
 	}
 
 	return pagination, nil
-}
-
-func JsonPaginationData(c echo.Context, p *pagination.Pagination, total int, data any) error {
-	return Json(c, http.StatusOK,
-		paginationResponse{
-			Page:     p.Page,
-			PageSize: p.PageSize,
-			Total:    total,
-			response: response{
-				Code: http.StatusOK,
-				Data: data,
-			},
-		},
-	)
 }

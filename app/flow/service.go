@@ -21,7 +21,7 @@ var (
 
 type Service interface {
 	GetFlowByID(ctx context.Context, id model.ID) (*model.Flow, error)
-	ListFlowByOwner(ctx context.Context, p *pagination.Pagination) ([]*model.Flow, int, error)
+	ListFlowByOwner(ctx context.Context, p *pagination.Pagination) ([]*model.Flow, int64, error)
 	CreateFlow(ctx context.Context, req *CreateFlowDto) (*model.Flow, error)
 	UpdateFlow(ctx context.Context, req *UpdateFlowDto) error
 	DeleteFlow(ctx context.Context, id model.ID) error
@@ -109,7 +109,7 @@ func (s *service) UpdateFlow(ctx context.Context, req *UpdateFlowDto) error {
 	return nil
 }
 
-func (s *service) ListFlowByOwner(ctx context.Context, p *pagination.Pagination) ([]*model.Flow, int, error) {
+func (s *service) ListFlowByOwner(ctx context.Context, p *pagination.Pagination) ([]*model.Flow, int64, error) {
 	var (
 		flows []*model.Flow
 		count int64
@@ -125,7 +125,7 @@ func (s *service) ListFlowByOwner(ctx context.Context, p *pagination.Pagination)
 		Error; err != nil {
 		return nil, 0, fmt.Errorf("query flow list: %w", err)
 	}
-	return flows, int(count), nil
+	return flows, count, nil
 }
 
 func NewService(
