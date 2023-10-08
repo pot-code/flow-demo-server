@@ -16,15 +16,15 @@ type route struct {
 	v validate.Validator
 }
 
-func (c *route) Append(g *echo.Group) {
-	g.GET("/:id", c.getByID)
-	g.GET("", c.list)
-	g.POST("", c.create)
-	g.PUT("/:id", c.update)
-	g.DELETE("/:id", c.delete)
+func (c *route) AppendRoutes(g *echo.Group) {
+	g.GET("/:id", c.findById)
+	g.GET("", c.findByUser)
+	g.POST("", c.createOne)
+	g.PUT("/:id", c.updateOne)
+	g.DELETE("/:id", c.deleteOne)
 }
 
-func (c *route) getByID(e echo.Context) error {
+func (c *route) findById(e echo.Context) error {
 	if err := c.r.CheckPermission(e.Request().Context(), "flow:view"); err != nil {
 		return err
 	}
@@ -41,7 +41,7 @@ func (c *route) getByID(e echo.Context) error {
 	return api.JsonData(e, o)
 }
 
-func (c *route) create(e echo.Context) error {
+func (c *route) createOne(e echo.Context) error {
 	if err := c.r.CheckPermission(e.Request().Context(), "flow:create"); err != nil {
 		return err
 	}
@@ -65,7 +65,7 @@ func (c *route) create(e echo.Context) error {
 	return api.JsonData(e, m)
 }
 
-func (c *route) update(e echo.Context) error {
+func (c *route) updateOne(e echo.Context) error {
 	if err := c.r.CheckPermission(e.Request().Context(), "flow:update"); err != nil {
 		return err
 	}
@@ -82,7 +82,7 @@ func (c *route) update(e echo.Context) error {
 
 }
 
-func (c *route) delete(e echo.Context) error {
+func (c *route) deleteOne(e echo.Context) error {
 	if err := c.r.CheckPermission(e.Request().Context(), "flow:delete"); err != nil {
 		return err
 	}
@@ -95,7 +95,7 @@ func (c *route) delete(e echo.Context) error {
 	return c.s.DeleteFlow(e.Request().Context(), fid)
 }
 
-func (c *route) list(e echo.Context) error {
+func (c *route) findByUser(e echo.Context) error {
 	if err := c.r.CheckPermission(e.Request().Context(), "flow:list"); err != nil {
 		return err
 	}

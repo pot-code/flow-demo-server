@@ -3,7 +3,6 @@ package main
 import (
 	"fmt"
 	"gobit-demo/app/flow"
-	"gobit-demo/app/user"
 	"gobit-demo/config"
 	"gobit-demo/infra/api"
 	"gobit-demo/infra/cache"
@@ -42,8 +41,8 @@ func main() {
 	as := audit.NewService(gd, sm)
 	rb := auth.NewRBAC(gd, sm)
 
-	e := echo.New()
-	e.HTTPErrorHandler = func(err error, c echo.Context) {
+	e := api.NewAppEngine()
+	e.SetErrorHandler(func(err error, c echo.Context) {
 		switch e := err.(type) {
 		case v.ValidationError:
 			api.JsonBusinessError(c, e[0].Error())
@@ -63,20 +62,16 @@ func main() {
 			log.Err(err).Msg("")
 			api.JsonServerError(c, e.Error())
 		}
-	}
+	})
 	e.Use(middlewares.LoggingMiddleware)
 
-	api.NewRouteGroup(e, "/auth", auth.NewRoute(auth.NewService(gd, eb), ts, sm, va))
-	api.NewRouteGroup(e, "/flow", api.RouteFn(func(g *echo.Group) {
+	e.AddRouteGroup("/auth", auth.NewRoute(auth.NewService(gd, eb), ts, sm, va))
+	e.AddRouteGroup("/flow", api.RouteGroupFn(func(g *echo.Group) {
 		g.Use(middlewares.AuthMiddleware(ts, sm, cfg.Session.RefreshExp))
-		flow.NewRoute(flow.NewService(gd, sm, eb, as), rb, va).Append(g)
-	}))
-	api.NewRouteGroup(e, "/user", api.RouteFn(func(g *echo.Group) {
-		g.Use(middlewares.AuthMiddleware(ts, sm, cfg.Session.RefreshExp))
-		user.NewRoute(user.NewService(gd), rb).Append(g)
+		flow.NewRoute(flow.NewService(gd, sm, eb, as), rb, va).AppendRoutes(g)
 	}))
 
-	if err := e.Start(fmt.Sprintf("%s:%d", cfg.Host, cfg.HttpPort)); err != http.ErrServerClosed {
+	if err := e.Run(fmt.Sprintf("%s:%d", cfg.Host, cfg.HttpPort)); err != http.ErrServerClosed {
 		log.Err(err).Msg("error starting server")
 	}
 }

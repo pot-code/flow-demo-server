@@ -16,7 +16,7 @@ type route struct {
 	v  validate.Validator
 }
 
-func (c *route) Append(g *echo.Group) {
+func (c *route) AppendRoutes(g *echo.Group) {
 	g.POST("/login", c.login)
 	g.PUT("/logout", c.logout)
 	g.POST("/register", c.register)
