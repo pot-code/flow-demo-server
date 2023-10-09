@@ -11,17 +11,11 @@ import (
 	"gorm.io/gorm"
 )
 
-type ABAC interface {
-	CanView(ctx context.Context, id model.ID) error
-	CanUpdate(ctx context.Context, id model.ID) error
-	CanDelete(ctx context.Context, id model.ID) error
-}
-
-type abac struct {
+type ABAC struct {
 	g *gorm.DB
 }
 
-func (p *abac) CanDelete(ctx context.Context, id model.ID) error {
+func (p *ABAC) CanDelete(ctx context.Context, id model.ID) error {
 	ok, err := p.isOwner(ctx, id)
 	if err != nil {
 		return err
@@ -32,29 +26,7 @@ func (p *abac) CanDelete(ctx context.Context, id model.ID) error {
 	return nil
 }
 
-func (p *abac) CanUpdate(ctx context.Context, id model.ID) error {
-	ok, err := p.isOwner(ctx, id)
-	if err != nil {
-		return err
-	}
-	if !ok {
-		return rbac.ErrUnAuthorized
-	}
-	return nil
-}
-
-func (p *abac) CanView(ctx context.Context, id model.ID) error {
-	ok, err := p.isOwner(ctx, id)
-	if err != nil {
-		return err
-	}
-	if !ok {
-		return rbac.ErrUnAuthorized
-	}
-	return nil
-}
-
-func (p *abac) isOwner(ctx context.Context, id model.ID) (bool, error) {
+func (p *ABAC) isOwner(ctx context.Context, id model.ID) (bool, error) {
 	s := session.GetSessionFromContext(ctx)
 	ok, err := orm.Exists(p.g.WithContext(ctx).Model(&model.Flow{}).Where("id = ? AND owner_id = ?", id, s.UserID))
 	if err != nil {
@@ -63,6 +35,6 @@ func (p *abac) isOwner(ctx context.Context, id model.ID) (bool, error) {
 	return ok, err
 }
 
-func NewABAC(g *gorm.DB) *abac {
-	return &abac{g: g}
+func NewABAC(g *gorm.DB) *ABAC {
+	return &ABAC{g: g}
 }

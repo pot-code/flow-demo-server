@@ -30,7 +30,7 @@ type Service interface {
 
 type service struct {
 	g  *gorm.DB
-	a  ABAC
+	a  *ABAC
 	r  rbac.RBAC
 	as audit.Service
 	eb event.EventBus
