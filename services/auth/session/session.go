@@ -138,6 +138,6 @@ func (sm *sessionManager) exists(ctx context.Context, sid string) (bool, error) 
 	return true, nil
 }
 
-func NewSessionManager(r *redis.Client, se SessionSerializer, expiration time.Duration) *sessionManager {
-	return &sessionManager{r: r, exp: expiration, se: se}
+func NewSessionManager(r *redis.Client, expiration time.Duration) *sessionManager {
+	return &sessionManager{r: r, exp: expiration, se: NewSerializer()}
 }

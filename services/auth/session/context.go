@@ -14,6 +14,6 @@ func GetSessionFromContext(ctx context.Context) *Session {
 	return v
 }
 
-func WithSession(ctx context.Context, s *Session) context.Context {
+func WithSessionContext(ctx context.Context, s *Session) context.Context {
 	return context.WithValue(ctx, sessionKey, s)
 }

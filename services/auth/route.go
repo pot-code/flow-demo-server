@@ -2,7 +2,6 @@ package auth
 
 import (
 	"errors"
-	"fmt"
 	"gobit-demo/infra/api"
 	"gobit-demo/infra/validate"
 	"gobit-demo/services/auth/session"
@@ -33,7 +32,7 @@ func (c *route) login(e echo.Context) error {
 		return err
 	}
 
-	user, err := c.us.Login(e.Request().Context(), data)
+	token, err := c.us.Login(e.Request().Context(), data)
 	if errors.Is(err, ErrUserNotFound) {
 		return api.JsonUnauthorized(e, err.Error())
 	}
@@ -47,15 +46,7 @@ func (c *route) login(e echo.Context) error {
 		return err
 	}
 
-	s, err := c.sm.NewSession(e.Request().Context(), user.ID, user.Username, user.Permissions, user.Roles)
-	if err != nil {
-		return fmt.Errorf("create session: %w", err)
-	}
-	token, err := c.ts.GenerateToken(&TokenData{s.SessionID})
-	if err != nil {
-		return fmt.Errorf("generate token: %w", err)
-	}
-	c.ts.WithHttpResponse(e.Response(), token)
+	c.ts.SetTokenInResponse(e.Response(), token)
 	return api.JsonData(e, map[string]any{
 		"token": token,
 	})
@@ -78,7 +69,7 @@ func (c *route) register(e echo.Context) error {
 }
 
 func (c *route) logout(e echo.Context) error {
-	token, _ := c.ts.FromHttpRequest(e.Request())
+	token, _ := c.ts.GetTokenFromRequest(e.Request())
 	if token == "" {
 		return nil
 	}
@@ -91,7 +82,7 @@ func (c *route) logout(e echo.Context) error {
 }
 
 func (c *route) isAuthenticated(e echo.Context) error {
-	token, _ := c.ts.FromHttpRequest(e.Request())
+	token, _ := c.ts.GetTokenFromRequest(e.Request())
 	if token == "" {
 		return api.JsonUnauthorized(e, "未登录")
 	}

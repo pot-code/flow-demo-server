@@ -13,7 +13,7 @@ import (
 func AuthMiddleware(ts auth.TokenService, sm session.SessionManager, threshold time.Duration) func(next echo.HandlerFunc) echo.HandlerFunc {
 	return func(next echo.HandlerFunc) echo.HandlerFunc {
 		return func(c echo.Context) error {
-			token, _ := ts.FromHttpRequest(c.Request())
+			token, _ := ts.GetTokenFromRequest(c.Request())
 			if token == "" {
 				return api.JsonUnauthorized(c, "未登录")
 			}
@@ -34,7 +34,7 @@ func AuthMiddleware(ts auth.TokenService, sm session.SessionManager, threshold t
 				return api.JsonServerError(c, err.Error())
 			}
 
-			c.SetRequest(c.Request().WithContext(session.WithSession(c.Request().Context(), s)))
+			c.SetRequest(c.Request().WithContext(session.WithSessionContext(c.Request().Context(), s)))
 			return next(c)
 		}
 	}

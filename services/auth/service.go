@@ -7,6 +7,7 @@ import (
 	"gobit-demo/infra/event"
 	"gobit-demo/infra/orm"
 	"gobit-demo/model"
+	"gobit-demo/services/auth/session"
 	"time"
 
 	"gorm.io/gorm"
@@ -23,7 +24,7 @@ type Service interface {
 	CreateUser(ctx context.Context, data *CreateUserDto) (*model.User, error)
 	FindUserByUserName(ctx context.Context, name string) (*model.User, error)
 	FindUserByMobile(ctx context.Context, mobile string) (*model.User, error)
-	Login(ctx context.Context, data *LoginRequestDto) (*LoginUser, error)
+	Login(ctx context.Context, data *LoginRequestDto) (string, error)
 	GetUserPermissions(ctx context.Context, id model.ID) ([]string, error)
 	GetUserRoles(ctx context.Context, id model.ID) ([]string, error)
 }
@@ -31,6 +32,8 @@ type Service interface {
 type service struct {
 	g  *gorm.DB
 	h  PasswordHash
+	sm session.SessionManager
+	ts TokenService
 	eb event.EventBus
 }
 
@@ -127,49 +130,47 @@ func (s *service) CreateUser(ctx context.Context, data *CreateUserDto) (*model.U
 	return user, nil
 }
 
-func (s *service) Login(ctx context.Context, data *LoginRequestDto) (*LoginUser, error) {
-	u := new(LoginUser)
-	if err := s.g.Transaction(func(tx *gorm.DB) error {
-		m := new(model.User)
-		err := tx.WithContext(ctx).Where(&model.User{Mobile: data.Mobile}).
-			Or(&model.User{Username: data.Username}).Take(m).Error
-		if errors.Is(err, gorm.ErrRecordNotFound) {
-			return ErrIncorrectCredentials
-		}
-		if err != nil {
-			return fmt.Errorf("find user: %w", err)
-		}
-
-		if m.Disabled {
-			return ErrUserDisabled
-		}
-
-		if err := s.h.VerifyPassword(data.Password, m.Password); err != nil {
-			return ErrIncorrectCredentials
-		}
-
-		p, err := s.GetUserPermissions(ctx, m.ID)
-		if err != nil {
-			return fmt.Errorf("get user permissions: %w", err)
-		}
-
-		r, err := s.GetUserRoles(ctx, m.ID)
-		if err != nil {
-			return fmt.Errorf("get user roles: %w", err)
-		}
-
-		u.Permissions = p
-		u.Roles = r
-		u.ID = m.ID
-		u.Username = m.Username
-
-		return nil
-	}); err != nil {
-		return nil, err
+func (s *service) Login(ctx context.Context, data *LoginRequestDto) (string, error) {
+	m := new(model.User)
+	err := s.g.WithContext(ctx).Where(&model.User{Mobile: data.Mobile}).
+		Or(&model.User{Username: data.Username}).Take(m).Error
+	if errors.Is(err, gorm.ErrRecordNotFound) {
+		return "", ErrIncorrectCredentials
 	}
-	return u, nil
+	if err != nil {
+		return "", fmt.Errorf("find user: %w", err)
+	}
+
+	if m.Disabled {
+		return "", ErrUserDisabled
+	}
+
+	if err := s.h.VerifyPassword(data.Password, m.Password); err != nil {
+		return "", ErrIncorrectCredentials
+	}
+
+	p, err := s.GetUserPermissions(ctx, m.ID)
+	if err != nil {
+		return "", fmt.Errorf("get user permissions: %w", err)
+	}
+
+	r, err := s.GetUserRoles(ctx, m.ID)
+	if err != nil {
+		return "", fmt.Errorf("get user roles: %w", err)
+	}
+
+	session, err := s.sm.NewSession(ctx, m.ID, m.Username, p, r)
+	if err != nil {
+		return "", fmt.Errorf("create session: %w", err)
+	}
+
+	token, err := s.ts.GenerateToken(&TokenData{session.SessionID})
+	if err != nil {
+		return "", fmt.Errorf("generate token: %w", err)
+	}
+	return token, nil
 }
 
-func NewService(g *gorm.DB, eb event.EventBus) Service {
-	return &service{g: g, h: NewPasswordHash(), eb: eb}
+func NewService(g *gorm.DB, eb event.EventBus, sm session.SessionManager, ts TokenService) Service {
+	return &service{g: g, h: NewPasswordHash(), eb: eb, sm: sm, ts: ts}
 }
