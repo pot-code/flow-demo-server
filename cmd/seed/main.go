@@ -32,7 +32,7 @@ func main() {
 			Name: "flow:update",
 		},
 		{
-			Name: "flow:list",
+			Name: "flow:delete",
 		},
 	}
 	if err := g.WithContext(context.Background()).CreateInBatches(permissions, len(permissions)).Error; err != nil {
