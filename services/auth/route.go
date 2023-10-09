@@ -5,13 +5,15 @@ import (
 	"gobit-demo/infra/api"
 	"gobit-demo/infra/validate"
 	"gobit-demo/services/auth/session"
+	"gobit-demo/services/auth/token"
 
 	"github.com/labstack/echo/v4"
 )
 
 type route struct {
 	us Service
-	ts TokenService
+	ts token.Service
+	ht token.HttpTokenHelper
 	sm session.SessionManager
 	v  validate.Validator
 }
@@ -46,7 +48,7 @@ func (c *route) login(e echo.Context) error {
 		return err
 	}
 
-	c.ts.SetTokenInResponse(e.Response(), token)
+	c.ht.SetTokenInResponse(e.Response(), token)
 	return api.JsonData(e, map[string]any{
 		"token": token,
 	})
@@ -69,7 +71,7 @@ func (c *route) register(e echo.Context) error {
 }
 
 func (c *route) logout(e echo.Context) error {
-	token, _ := c.ts.GetTokenFromRequest(e.Request())
+	token, _ := c.ht.GetTokenFromRequest(e.Request())
 	if token == "" {
 		return nil
 	}
@@ -82,7 +84,7 @@ func (c *route) logout(e echo.Context) error {
 }
 
 func (c *route) isAuthenticated(e echo.Context) error {
-	token, _ := c.ts.GetTokenFromRequest(e.Request())
+	token, _ := c.ht.GetTokenFromRequest(e.Request())
 	if token == "" {
 		return api.JsonUnauthorized(e, "未登录")
 	}
@@ -99,6 +101,12 @@ func (c *route) isAuthenticated(e echo.Context) error {
 	return err
 }
 
-func NewRoute(us Service, ts TokenService, sm session.SessionManager, v validate.Validator) *route {
-	return &route{us: us, ts: ts, sm: sm, v: v}
+func NewRoute(
+	us Service,
+	ts token.Service,
+	ht token.HttpTokenHelper,
+	sm session.SessionManager,
+	v validate.Validator,
+) *route {
+	return &route{us: us, ts: ts, ht: ht, sm: sm, v: v}
 }

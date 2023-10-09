@@ -18,6 +18,7 @@ import (
 	"gobit-demo/services/auth"
 	"gobit-demo/services/auth/rbac"
 	"gobit-demo/services/auth/session"
+	"gobit-demo/services/auth/token"
 	"net/http"
 
 	"github.com/labstack/echo/v4"
@@ -38,7 +39,8 @@ func main() {
 	gd := orm.NewGormDB(dc, log.Logger)
 	kb := mq.NewKafkaPublisher(cfg.MessageQueue.GetBrokerList(), log.Logger)
 	eb := event.NewKafkaEventBus(kb)
-	ts := auth.NewTokenService(cfg.Token.Secret, cfg.Token.Key)
+	ts := token.NewService(cfg.Token.Secret)
+	ht := token.NewHttpTokenHelper(cfg.Token.Key)
 	sm := session.NewSessionManager(rc, cfg.Session.Exp)
 	as := audit.NewService(gd)
 	r := rbac.NewRBAC(gd)
@@ -74,9 +76,9 @@ func main() {
 	})
 	e.Use(middlewares.LoggingMiddleware)
 
-	e.AddRouteGroup("/auth", auth.NewRoute(auth.NewService(gd, eb, sm, r, ts), ts, sm, va))
+	e.AddRouteGroup("/auth", auth.NewRoute(auth.NewService(gd, eb, sm, r, ts), ts, ht, sm, va))
 	e.AddRouteGroup("/flow", flow.NewRoute(flow.NewService(gd, r, eb, as), va),
-		middlewares.AuthMiddleware(ts, sm, cfg.Session.RefreshExp))
+		middlewares.AuthMiddleware(ts, ht, sm, cfg.Session.RefreshExp))
 
 	if err := e.Run(fmt.Sprintf("%s:%d", cfg.Host, cfg.HttpPort)); err != http.ErrServerClosed {
 		log.Err(err).Msg("error starting server")

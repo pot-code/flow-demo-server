@@ -9,6 +9,7 @@ import (
 	"gobit-demo/model"
 	"gobit-demo/services/auth/rbac"
 	"gobit-demo/services/auth/session"
+	"gobit-demo/services/auth/token"
 	"time"
 
 	"gorm.io/gorm"
@@ -33,7 +34,7 @@ type service struct {
 	h  PasswordHash
 	sm session.SessionManager
 	r  rbac.RoleService
-	ts TokenService
+	ts token.Service
 	eb event.EventBus
 }
 
@@ -122,7 +123,7 @@ func (s *service) Login(ctx context.Context, data *LoginRequestDto) (string, err
 		return "", fmt.Errorf("create session: %w", err)
 	}
 
-	token, err := s.ts.GenerateToken(&TokenData{session.SessionID})
+	token, err := s.ts.GenerateToken(&token.TokenData{SessionID: session.SessionID})
 	if err != nil {
 		return "", fmt.Errorf("generate token: %w", err)
 	}
@@ -153,6 +154,12 @@ func (s *service) GetUserRoles(ctx context.Context, id model.ID) ([]string, erro
 	return roles, nil
 }
 
-func NewService(g *gorm.DB, eb event.EventBus, sm session.SessionManager, r rbac.RoleService, ts TokenService) Service {
+func NewService(
+	g *gorm.DB,
+	eb event.EventBus,
+	sm session.SessionManager,
+	r rbac.RoleService,
+	ts token.Service,
+) Service {
 	return &service{g: g, h: NewPasswordHash(), eb: eb, sm: sm, r: r, ts: ts}
 }
