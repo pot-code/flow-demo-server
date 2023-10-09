@@ -1,8 +1,6 @@
 package audit
 
 import (
-	"gobit-demo/services/auth"
-
 	"gorm.io/gorm"
 )
 
@@ -11,14 +9,13 @@ type Service interface {
 }
 
 type service struct {
-	g  *gorm.DB
-	sm auth.SessionManager
+	g *gorm.DB
 }
 
 func (s *service) NewAuditLog() *AuditLog {
-	return NewAuditLog(s.g, s.sm)
+	return NewAuditLog(s.g)
 }
 
-func NewService(g *gorm.DB, sm auth.SessionManager) *service {
-	return &service{g: g, sm: sm}
+func NewService(g *gorm.DB) *service {
+	return &service{g: g}
 }

@@ -5,7 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"gobit-demo/model"
-	"gobit-demo/services/auth"
+	"gobit-demo/services/auth/session"
 
 	"gorm.io/gorm"
 )
@@ -13,12 +13,11 @@ import (
 type AuditLog struct {
 	a       *model.AuditLog
 	g       *gorm.DB
-	sm      auth.SessionManager
 	payload any
 }
 
-func NewAuditLog(g *gorm.DB, sm auth.SessionManager) *AuditLog {
-	return &AuditLog{a: new(model.AuditLog), g: g, sm: sm}
+func NewAuditLog(g *gorm.DB) *AuditLog {
+	return &AuditLog{a: new(model.AuditLog), g: g}
 }
 
 func (a *AuditLog) Subject(subject string) *AuditLog {
@@ -37,7 +36,7 @@ func (a *AuditLog) Payload(data any) *AuditLog {
 }
 
 func (a *AuditLog) UseContext(ctx context.Context) *AuditLog {
-	s := a.sm.GetSessionFromContext(ctx)
+	s := session.GetSessionFromContext(ctx)
 	a.a.Subject = s.Username
 	return a
 }

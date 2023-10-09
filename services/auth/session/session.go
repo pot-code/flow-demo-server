@@ -1,4 +1,4 @@
-package auth
+package session
 
 import (
 	"bytes"
@@ -12,10 +12,6 @@ import (
 	"github.com/redis/go-redis/v9"
 	"github.com/rs/zerolog/log"
 )
-
-type sessionKeyType struct{}
-
-var sessionKey = sessionKeyType{}
 
 var (
 	ErrSessionNotFound = fmt.Errorf("session not found")
@@ -32,20 +28,18 @@ type Session struct {
 
 type SessionManager interface {
 	GetSessionBySessionID(ctx context.Context, sid string) (*Session, error)
-	GetSessionFromContext(ctx context.Context) *Session
-	SetSession(ctx context.Context, s *Session) context.Context
 	NewSession(ctx context.Context, uid model.ID, username string, permissions []string, roles []string) (*Session, error)
 	DeleteSession(ctx context.Context, sid string) error
 	RefreshSession(ctx context.Context, s *Session, threshold time.Duration) error
 }
 
-type redisSessionManager struct {
+type sessionManager struct {
 	r   *redis.Client
 	exp time.Duration
 }
 
 // RefreshSession implements SessionManager.
-func (sm *redisSessionManager) RefreshSession(ctx context.Context, s *Session, threshold time.Duration) error {
+func (sm *sessionManager) RefreshSession(ctx context.Context, s *Session, threshold time.Duration) error {
 	ttl := time.Until(s.ExpiredAt)
 	if ttl > threshold {
 		return nil
@@ -58,22 +52,8 @@ func (sm *redisSessionManager) RefreshSession(ctx context.Context, s *Session, t
 	return nil
 }
 
-// GetSessionFromContext implements SessionManager.
-func (sm *redisSessionManager) GetSessionFromContext(ctx context.Context) *Session {
-	v, ok := ctx.Value(sessionKey).(*Session)
-	if !ok {
-		panic("session not found in context")
-	}
-	return v
-}
-
-// SetSession implements SessionManager.
-func (sm *redisSessionManager) SetSession(ctx context.Context, s *Session) context.Context {
-	return context.WithValue(ctx, sessionKey, s)
-}
-
 // DeleteSession implements SessionManager.
-func (sm *redisSessionManager) DeleteSession(ctx context.Context, sid string) error {
+func (sm *sessionManager) DeleteSession(ctx context.Context, sid string) error {
 	key := sm.getRedisKey(sid)
 	if err := sm.r.Del(ctx, key).Err(); err != nil {
 		return fmt.Errorf("delete session from redis: %w", err)
@@ -83,7 +63,7 @@ func (sm *redisSessionManager) DeleteSession(ctx context.Context, sid string) er
 }
 
 // GetSessionBySessionID implements SessionManager.
-func (sm *redisSessionManager) GetSessionBySessionID(ctx context.Context, sid string) (*Session, error) {
+func (sm *sessionManager) GetSessionBySessionID(ctx context.Context, sid string) (*Session, error) {
 	ok, err := sm.exists(ctx, sid)
 	if err != nil {
 		return nil, err
@@ -106,7 +86,7 @@ func (sm *redisSessionManager) GetSessionBySessionID(ctx context.Context, sid st
 }
 
 // NewSession implements SessionManager.
-func (sm *redisSessionManager) NewSession(
+func (sm *sessionManager) NewSession(
 	ctx context.Context,
 	uid model.ID,
 	username string,
@@ -143,11 +123,11 @@ func (sm *redisSessionManager) NewSession(
 	return session, nil
 }
 
-func (sm *redisSessionManager) getRedisKey(sid string) string {
+func (sm *sessionManager) getRedisKey(sid string) string {
 	return fmt.Sprintf("auth:session:%s", sid)
 }
 
-func (sm *redisSessionManager) exists(ctx context.Context, sid string) (bool, error) {
+func (sm *sessionManager) exists(ctx context.Context, sid string) (bool, error) {
 	key := sm.getRedisKey(sid)
 	code, err := sm.r.Exists(ctx, key).Result()
 	if err != nil {
@@ -159,6 +139,6 @@ func (sm *redisSessionManager) exists(ctx context.Context, sid string) (bool, er
 	return true, nil
 }
 
-func NewRedisSessionManager(r *redis.Client, expiration time.Duration) SessionManager {
-	return &redisSessionManager{r: r, exp: expiration}
+func NewSessionManager(r *redis.Client, expiration time.Duration) *sessionManager {
+	return &sessionManager{r: r, exp: expiration}
 }

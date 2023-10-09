@@ -34,13 +34,13 @@ type TokenService interface {
 	FromHttpRequest(r *http.Request) (string, error)
 }
 
-type jwtTokenService struct {
+type tokenService struct {
 	secret string
 	key    string
 }
 
 // FromHttpRequest implements TokenService.
-func (s *jwtTokenService) FromHttpRequest(r *http.Request) (string, error) {
+func (s *tokenService) FromHttpRequest(r *http.Request) (string, error) {
 	token, err := r.Cookie(s.key)
 	if err != nil {
 		return "", fmt.Errorf("get cookie: %w", err)
@@ -49,7 +49,7 @@ func (s *jwtTokenService) FromHttpRequest(r *http.Request) (string, error) {
 }
 
 // WithHttpResponse implements TokenService.
-func (s *jwtTokenService) WithHttpResponse(w http.ResponseWriter, token string) {
+func (s *tokenService) WithHttpResponse(w http.ResponseWriter, token string) {
 	http.SetCookie(w, &http.Cookie{
 		Name:     s.key,
 		Value:    token,
@@ -59,11 +59,11 @@ func (s *jwtTokenService) WithHttpResponse(w http.ResponseWriter, token string) 
 	})
 }
 
-func (s *jwtTokenService) GenerateToken(u *TokenData) (string, error) {
+func (s *tokenService) GenerateToken(u *TokenData) (string, error) {
 	return s.Sign(u.toClaim())
 }
 
-func (s *jwtTokenService) Verify(token string) (*TokenData, error) {
+func (s *tokenService) Verify(token string) (*TokenData, error) {
 	t, err := jwt.Parse(token, func(token *jwt.Token) (interface{}, error) {
 		return []byte(s.secret), nil
 	})
@@ -73,11 +73,11 @@ func (s *jwtTokenService) Verify(token string) (*TokenData, error) {
 	return new(TokenData).fromClaim(t.Claims), nil
 }
 
-func (s *jwtTokenService) Sign(claims jwt.Claims) (string, error) {
+func (s *tokenService) Sign(claims jwt.Claims) (string, error) {
 	t := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
 	return t.SignedString([]byte(s.secret))
 }
 
-func NewJwtTokenService(secret string, key string) TokenService {
-	return &jwtTokenService{secret: secret, key: key}
+func NewTokenService(secret string, key string) TokenService {
+	return &tokenService{secret: secret, key: key}
 }

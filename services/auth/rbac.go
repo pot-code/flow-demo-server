@@ -3,6 +3,7 @@ package auth
 import (
 	"context"
 	"fmt"
+	"gobit-demo/services/auth/session"
 
 	"github.com/samber/lo"
 	"gorm.io/gorm"
@@ -15,12 +16,11 @@ type RBAC interface {
 }
 
 type rbac struct {
-	g  *gorm.DB
-	sm SessionManager
+	g *gorm.DB
 }
 
 func (r *rbac) IsAdmin(ctx context.Context) (bool, error) {
-	s := r.sm.GetSessionFromContext(ctx)
+	s := session.GetSessionFromContext(ctx)
 	if lo.Contains(s.UserRoles, "admin") {
 		return true, nil
 	}
@@ -36,7 +36,7 @@ func (r *rbac) CheckRole(ctx context.Context, role string) error {
 		return nil
 	}
 
-	s := r.sm.GetSessionFromContext(ctx)
+	s := session.GetSessionFromContext(ctx)
 	if lo.Contains(s.UserRoles, role) {
 		return nil
 	}
@@ -52,13 +52,13 @@ func (r *rbac) CheckPermission(ctx context.Context, permission string) error {
 		return nil
 	}
 
-	s := r.sm.GetSessionFromContext(ctx)
+	s := session.GetSessionFromContext(ctx)
 	if lo.Contains(s.UserPermissions, permission) {
 		return nil
 	}
 	return new(UnAuthorizedError)
 }
 
-func NewRBAC(g *gorm.DB, sm SessionManager) RBAC {
-	return &rbac{g: g, sm: sm}
+func NewRBAC(g *gorm.DB) RBAC {
+	return &rbac{g: g}
 }

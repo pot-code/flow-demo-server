@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"gobit-demo/infra/api"
 	"gobit-demo/infra/validate"
+	"gobit-demo/services/auth/session"
 
 	"github.com/labstack/echo/v4"
 )
@@ -12,7 +13,7 @@ import (
 type route struct {
 	us Service
 	ts TokenService
-	sm SessionManager
+	sm session.SessionManager
 	v  validate.Validator
 }
 
@@ -101,12 +102,12 @@ func (c *route) isAuthenticated(e echo.Context) error {
 	}
 
 	_, err = c.sm.GetSessionBySessionID(e.Request().Context(), td.SessionID)
-	if errors.Is(err, ErrSessionNotFound) {
+	if errors.Is(err, session.ErrSessionNotFound) {
 		return api.JsonUnauthorized(e, "token 无效")
 	}
 	return err
 }
 
-func NewRoute(us Service, ts TokenService, sm SessionManager, v validate.Validator) *route {
+func NewRoute(us Service, ts TokenService, sm session.SessionManager, v validate.Validator) *route {
 	return &route{us: us, ts: ts, sm: sm, v: v}
 }

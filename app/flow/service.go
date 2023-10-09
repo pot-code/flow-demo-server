@@ -9,7 +9,7 @@ import (
 	"gobit-demo/infra/pagination"
 	"gobit-demo/model"
 	"gobit-demo/services/audit"
-	"gobit-demo/services/auth"
+	"gobit-demo/services/auth/session"
 	"time"
 
 	"gorm.io/gorm"
@@ -32,7 +32,6 @@ type service struct {
 	a  ABAC
 	as audit.Service
 	eb event.EventBus
-	sm auth.SessionManager
 }
 
 // DeleteFlow implements Service.
@@ -65,7 +64,7 @@ func (s *service) GetFlowByID(ctx context.Context, id model.ID) (*model.Flow, er
 }
 
 func (s *service) CreateFlow(ctx context.Context, req *CreateFlowDto) (*model.Flow, error) {
-	session := s.sm.GetSessionFromContext(ctx)
+	session := session.GetSessionFromContext(ctx)
 	m := &model.Flow{
 		Name:        req.Name,
 		Nodes:       req.Nodes,
@@ -115,7 +114,7 @@ func (s *service) ListFlowByOwner(ctx context.Context, p *pagination.Pagination)
 		count int64
 	)
 
-	u := s.sm.GetSessionFromContext(ctx)
+	u := session.GetSessionFromContext(ctx)
 	if err := s.g.WithContext(ctx).Model(&model.Flow{}).
 		Scopes(orm.Pagination(p)).
 		Select("id", "name", "owner_id", "created_at").
@@ -130,9 +129,8 @@ func (s *service) ListFlowByOwner(ctx context.Context, p *pagination.Pagination)
 
 func NewService(
 	g *gorm.DB,
-	sm auth.SessionManager,
 	eb event.EventBus,
 	as audit.Service,
 ) *service {
-	return &service{g: g, sm: sm, a: NewABAC(g, sm), as: as, eb: eb}
+	return &service{g: g, a: NewABAC(g), as: as, eb: eb}
 }
