@@ -7,6 +7,7 @@ import (
 	"gobit-demo/infra/event"
 	"gobit-demo/infra/orm"
 	"gobit-demo/model"
+	"gobit-demo/services/auth/rbac"
 	"gobit-demo/services/auth/session"
 	"time"
 
@@ -22,8 +23,6 @@ var (
 
 type Service interface {
 	CreateUser(ctx context.Context, data *CreateUserDto) (*model.User, error)
-	FindUserByUserName(ctx context.Context, name string) (*model.User, error)
-	FindUserByMobile(ctx context.Context, mobile string) (*model.User, error)
 	Login(ctx context.Context, data *LoginRequestDto) (string, error)
 	GetUserPermissions(ctx context.Context, id model.ID) ([]string, error)
 	GetUserRoles(ctx context.Context, id model.ID) ([]string, error)
@@ -33,67 +32,18 @@ type service struct {
 	g  *gorm.DB
 	h  PasswordHash
 	sm session.SessionManager
+	r  rbac.RoleService
 	ts TokenService
 	eb event.EventBus
 }
 
-// GetUserPermissions implements Service.
-func (s *service) GetUserPermissions(ctx context.Context, id model.ID) ([]string, error) {
-	var permissions []string
-	if err := s.g.WithContext(ctx).Model(&model.Permission{}).
-		Distinct("permissions.name").
-		Joins("INNER JOIN role_permissions ON role_permissions.permission_id = permissions.id").
-		Joins("INNER JOIN user_roles ON user_roles.role_id = role_permissions.role_id").
-		Where("user_roles.user_id = ?", id).
-		Pluck("permissions.name", &permissions).Error; err != nil {
-		return nil, fmt.Errorf("get user permissions: %w", err)
-	}
-	return permissions, nil
-}
-
-// GetUserRoles implements Service.
-func (s *service) GetUserRoles(ctx context.Context, id model.ID) ([]string, error) {
-	var roles []string
-	if err := s.g.WithContext(ctx).Model(&model.Role{}).
-		Joins("INNER JOIN user_roles ON user_roles.role_id = roles.id").
-		Where("user_roles.user_id = ?", id).
-		Pluck("roles.name", &roles).Error; err != nil {
-		return nil, fmt.Errorf("get user roles: %w", err)
-	}
-	return roles, nil
-}
-
-func (s *service) FindUserByUserName(ctx context.Context, username string) (*model.User, error) {
-	user := new(model.User)
-	err := s.g.WithContext(ctx).Model(&model.User{}).Where(&model.User{Username: username}).Take(user).Error
-	if errors.Is(err, gorm.ErrRecordNotFound) {
-		return nil, ErrUserNotFound
-	}
-	if err != nil {
-		return nil, fmt.Errorf("find user by name: %w", err)
-	}
-	return user, err
-}
-
-func (s *service) FindUserByMobile(ctx context.Context, mobile string) (*model.User, error) {
-	user := new(model.User)
-	err := s.g.WithContext(ctx).Model(&model.User{}).Where(&model.User{Mobile: mobile}).Take(user).Error
-	if errors.Is(err, gorm.ErrRecordNotFound) {
-		return nil, ErrUserNotFound
-	}
-	if err != nil {
-		return nil, fmt.Errorf("find user by mobile: %w", err)
-	}
-	return user, err
-}
-
 func (s *service) CreateUser(ctx context.Context, data *CreateUserDto) (*model.User, error) {
 	user := &model.User{
-		Name:     data.Name,
 		Username: data.Username,
 		Mobile:   data.Mobile,
+		Name:     data.Name,
 	}
-	if err := s.g.Transaction(func(tx *gorm.DB) error {
+	err := s.g.Transaction(func(tx *gorm.DB) error {
 		exists, err := orm.Exists(
 			tx.WithContext(ctx).Model(&model.User{}).
 				Where(&model.User{Mobile: data.Mobile}).
@@ -112,11 +62,19 @@ func (s *service) CreateUser(ctx context.Context, data *CreateUserDto) (*model.U
 		}
 		user.Password = h
 
+		role, err := s.r.GetRoleByName(ctx, "user")
+		if err != nil {
+			return fmt.Errorf("get role by name %s: %w", "user", err)
+		}
+		user.Roles = append(user.Roles, role)
+
 		if err = tx.WithContext(ctx).Create(user).Error; err != nil {
 			return fmt.Errorf("create user: %w", err)
 		}
+
 		return nil
-	}); err != nil {
+	})
+	if err != nil {
 		return nil, err
 	}
 
@@ -171,6 +129,30 @@ func (s *service) Login(ctx context.Context, data *LoginRequestDto) (string, err
 	return token, nil
 }
 
-func NewService(g *gorm.DB, eb event.EventBus, sm session.SessionManager, ts TokenService) Service {
-	return &service{g: g, h: NewPasswordHash(), eb: eb, sm: sm, ts: ts}
+func (s *service) GetUserPermissions(ctx context.Context, id model.ID) ([]string, error) {
+	var permissions []string
+	if err := s.g.WithContext(ctx).Model(&model.Permission{}).
+		Distinct("permissions.name").
+		Joins("INNER JOIN role_permissions ON role_permissions.permission_id = permissions.id").
+		Joins("INNER JOIN user_roles ON user_roles.role_id = role_permissions.role_id").
+		Where("user_roles.user_id = ?", id).
+		Pluck("permissions.name", &permissions).Error; err != nil {
+		return nil, fmt.Errorf("get user permissions: %w", err)
+	}
+	return permissions, nil
+}
+
+func (s *service) GetUserRoles(ctx context.Context, id model.ID) ([]string, error) {
+	var roles []string
+	if err := s.g.WithContext(ctx).Model(&model.Role{}).
+		Joins("INNER JOIN user_roles ON user_roles.role_id = roles.id").
+		Where("user_roles.user_id = ?", id).
+		Pluck("roles.name", &roles).Error; err != nil {
+		return nil, fmt.Errorf("get user roles: %w", err)
+	}
+	return roles, nil
+}
+
+func NewService(g *gorm.DB, eb event.EventBus, sm session.SessionManager, r rbac.RoleService, ts TokenService) Service {
+	return &service{g: g, h: NewPasswordHash(), eb: eb, sm: sm, r: r, ts: ts}
 }

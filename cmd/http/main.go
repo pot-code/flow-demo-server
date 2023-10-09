@@ -65,7 +65,7 @@ func main() {
 	})
 	e.Use(middlewares.LoggingMiddleware)
 
-	e.AddRouteGroup("/auth", auth.NewRoute(auth.NewService(gd, eb, sm, ts), ts, sm, va))
+	e.AddRouteGroup("/auth", auth.NewRoute(auth.NewService(gd, eb, sm, r, ts), ts, sm, va))
 	e.AddRouteGroup("/flow", flow.NewRoute(flow.NewService(gd, r, eb, as), va),
 		middlewares.AuthMiddleware(ts, sm, cfg.Session.RefreshExp))
 

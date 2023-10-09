@@ -66,6 +66,6 @@ func (r *rbac) CheckPermission(ctx context.Context, permission string) error {
 	return new(UnAuthorizedError)
 }
 
-func NewRBAC(g *gorm.DB) RBAC {
+func NewRBAC(g *gorm.DB) *rbac {
 	return &rbac{g: g}
 }
