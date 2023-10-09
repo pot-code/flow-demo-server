@@ -1,7 +1,7 @@
 package api
 
 import (
-	"gobit-demo/infra/pagination"
+	"gobit-demo/infra/api/pagination"
 	"net/http"
 
 	"github.com/labstack/echo/v4"

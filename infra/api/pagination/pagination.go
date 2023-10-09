@@ -1,27 +1,31 @@
-package api
+package pagination
 
 import (
-	"gobit-demo/infra/pagination"
 	"strconv"
 
 	"github.com/labstack/echo/v4"
 	"github.com/pot-code/gobit/pkg/validate"
 )
 
+type Pagination struct {
+	Page     int
+	PageSize int
+}
+
 const (
 	defaultPage     = 1
 	defaultPageSize = 10
 )
 
-func GetPaginationFromRequest(e echo.Context) (*pagination.Pagination, error) {
-	pagination := &pagination.Pagination{
+func FromRequest(e echo.Context) (*Pagination, error) {
+	pagination := &Pagination{
 		Page:     defaultPage,
 		PageSize: defaultPageSize,
 	}
 
-	p := e.QueryParam("page")
-	if p != "" {
-		v, err := strconv.Atoi(p)
+	page := e.QueryParam("page")
+	if page != "" {
+		v, err := strconv.Atoi(page)
 		if err != nil {
 			return nil, validate.NewValidationResult("page", "格式错误")
 		}

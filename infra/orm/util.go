@@ -1,7 +1,7 @@
 package orm
 
 import (
-	"gobit-demo/infra/pagination"
+	"gobit-demo/infra/api/pagination"
 
 	"gorm.io/gorm"
 )
