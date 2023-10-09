@@ -2,6 +2,7 @@ package rbac
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"gobit-demo/services/auth/session"
 
@@ -9,12 +10,7 @@ import (
 	"gorm.io/gorm"
 )
 
-type UnAuthorizedError struct {
-}
-
-func (e UnAuthorizedError) Error() string {
-	return "unauthorized"
-}
+var ErrUnAuthorized = errors.New("unauthorized")
 
 type RBAC interface {
 	CheckPermission(ctx context.Context, permission string) error
@@ -47,7 +43,7 @@ func (r *rbac) CheckRole(ctx context.Context, role string) error {
 	if lo.Contains(s.UserRoles, role) {
 		return nil
 	}
-	return new(UnAuthorizedError)
+	return ErrUnAuthorized
 }
 
 func (r *rbac) CheckPermission(ctx context.Context, permission string) error {
@@ -63,7 +59,7 @@ func (r *rbac) CheckPermission(ctx context.Context, permission string) error {
 	if lo.Contains(s.UserPermissions, permission) {
 		return nil
 	}
-	return new(UnAuthorizedError)
+	return ErrUnAuthorized
 }
 
 func NewRBAC(g *gorm.DB) *rbac {

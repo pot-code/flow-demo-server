@@ -60,9 +60,6 @@ func (s *service) GetFlowByID(ctx context.Context, id model.ID) (*model.Flow, er
 	if err := s.r.CheckPermission(ctx, "flow:view"); err != nil {
 		return nil, err
 	}
-	if err := s.a.CanView(ctx, id); err != nil {
-		return nil, err
-	}
 
 	m := new(model.Flow)
 	if err := s.g.WithContext(ctx).Model(&model.Flow{}).Where("id = ?", id).Take(m).Error; err != nil {
@@ -104,9 +101,6 @@ func (s *service) CreateFlow(ctx context.Context, req *CreateFlowDto) (*model.Fl
 
 func (s *service) UpdateFlow(ctx context.Context, req *UpdateFlowDto) error {
 	if err := s.r.CheckPermission(ctx, "flow:update"); err != nil {
-		return err
-	}
-	if err := s.a.CanUpdate(ctx, req.ID); err != nil {
 		return err
 	}
 

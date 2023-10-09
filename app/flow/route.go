@@ -18,7 +18,7 @@ func (c *route) AppendRoutes(g *echo.Group) {
 	g.GET("/:id", c.findById)
 	g.GET("", c.findByUser)
 	g.POST("", c.createOne)
-	g.PUT("/:id", c.updateOne)
+	g.PUT("", c.updateOne)
 	g.DELETE("/:id", c.deleteOne)
 }
 

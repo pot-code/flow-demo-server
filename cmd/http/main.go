@@ -1,6 +1,7 @@
 package main
 
 import (
+	"errors"
 	"fmt"
 	"gobit-demo/app/flow"
 	"gobit-demo/config"
@@ -22,6 +23,7 @@ import (
 	"github.com/labstack/echo/v4"
 	v "github.com/pot-code/gobit/pkg/validate"
 	"github.com/rs/zerolog/log"
+	"gorm.io/gorm"
 )
 
 func main() {
@@ -43,6 +45,15 @@ func main() {
 
 	e := api.NewAppEngine()
 	e.SetErrorHandler(func(err error, c echo.Context) {
+		if errors.Is(err, rbac.ErrUnAuthorized) {
+			api.JsonNoPermission(c, "无权限")
+			return
+		}
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			c.NoContent(http.StatusNotFound)
+			return
+		}
+
 		switch e := err.(type) {
 		case v.ValidationError:
 			api.JsonBusinessError(c, e[0].Error())
@@ -51,8 +62,6 @@ func main() {
 		case *api.BindError:
 			log.Debug().Err(err).Msg("bind error")
 			api.JsonBadRequest(c, "数据解析失败，请检查输入")
-		case *rbac.UnAuthorizedError:
-			api.JsonNoPermission(c, "无权限")
 		case *echo.HTTPError:
 			api.Json(c, e.Code, map[string]any{
 				"code": e.Code,

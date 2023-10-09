@@ -27,7 +27,7 @@ func (p *abac) CanDelete(ctx context.Context, id model.ID) error {
 		return err
 	}
 	if !ok {
-		return new(rbac.UnAuthorizedError)
+		return rbac.ErrUnAuthorized
 	}
 	return nil
 }
@@ -38,7 +38,7 @@ func (p *abac) CanUpdate(ctx context.Context, id model.ID) error {
 		return err
 	}
 	if !ok {
-		return new(rbac.UnAuthorizedError)
+		return rbac.ErrUnAuthorized
 	}
 	return nil
 }
@@ -49,7 +49,7 @@ func (p *abac) CanView(ctx context.Context, id model.ID) error {
 		return err
 	}
 	if !ok {
-		return new(rbac.UnAuthorizedError)
+		return rbac.ErrUnAuthorized
 	}
 	return nil
 }
