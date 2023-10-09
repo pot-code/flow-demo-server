@@ -171,5 +171,5 @@ func (s *service) Login(ctx context.Context, data *LoginRequestDto) (*LoginUser,
 }
 
 func NewService(g *gorm.DB, eb event.EventBus) Service {
-	return &service{g: g, h: NewBcryptPasswordHash(), eb: eb}
+	return &service{g: g, h: NewPasswordHash(), eb: eb}
 }

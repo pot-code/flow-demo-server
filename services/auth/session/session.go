@@ -1,9 +1,7 @@
 package session
 
 import (
-	"bytes"
 	"context"
-	"encoding/gob"
 	"fmt"
 	"gobit-demo/model"
 	"time"
@@ -35,6 +33,7 @@ type SessionManager interface {
 
 type sessionManager struct {
 	r   *redis.Client
+	se  SessionSerializer
 	exp time.Duration
 }
 
@@ -78,9 +77,9 @@ func (sm *sessionManager) GetSessionBySessionID(ctx context.Context, sid string)
 		return nil, fmt.Errorf("get session from redis: %w", err)
 	}
 
-	session := new(Session)
-	if err := gob.NewDecoder(bytes.NewBuffer(data)).Decode(session); err != nil {
-		return nil, fmt.Errorf("decode session: %w", err)
+	session, err := sm.se.Deserialize(data)
+	if err != nil {
+		return nil, fmt.Errorf("deserialize session: %w", err)
 	}
 	return session, nil
 }
@@ -107,11 +106,11 @@ func (sm *sessionManager) NewSession(
 		ExpiredAt:       time.Now().Add(sm.exp),
 	}
 	key := sm.getRedisKey(id.String())
-	bs := new(bytes.Buffer)
-	if err := gob.NewEncoder(bs).Encode(session); err != nil {
-		return nil, fmt.Errorf("encode session: %w", err)
+	b, err := sm.se.Serialize(session)
+	if err != nil {
+		return nil, fmt.Errorf("serialize session: %w", err)
 	}
-	if err := sm.r.Set(ctx, key, bs.Bytes(), sm.exp).Err(); err != nil {
+	if err := sm.r.Set(ctx, key, b, sm.exp).Err(); err != nil {
 		return nil, fmt.Errorf("set session to redis: %w", err)
 	}
 	log.Trace().
@@ -139,6 +138,6 @@ func (sm *sessionManager) exists(ctx context.Context, sid string) (bool, error) 
 	return true, nil
 }
 
-func NewSessionManager(r *redis.Client, expiration time.Duration) *sessionManager {
-	return &sessionManager{r: r, exp: expiration}
+func NewSessionManager(r *redis.Client, se SessionSerializer, expiration time.Duration) *sessionManager {
+	return &sessionManager{r: r, exp: expiration, se: se}
 }

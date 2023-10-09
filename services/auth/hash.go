@@ -7,13 +7,13 @@ type PasswordHash interface {
 	VerifyPassword(password, hash string) error
 }
 
-type bcryptHash struct{}
+type passwordHash struct{}
 
-func NewBcryptPasswordHash() PasswordHash {
-	return &bcryptHash{}
+func NewPasswordHash() PasswordHash {
+	return &passwordHash{}
 }
 
-func (*bcryptHash) Hash(password string) (string, error) {
+func (*passwordHash) Hash(password string) (string, error) {
 	b, err := bcrypt.GenerateFromPassword([]byte(password), bcrypt.DefaultCost)
 	if err != nil {
 		return "", err
@@ -21,6 +21,6 @@ func (*bcryptHash) Hash(password string) (string, error) {
 	return string(b), nil
 }
 
-func (*bcryptHash) VerifyPassword(password, hash string) error {
+func (*passwordHash) VerifyPassword(password, hash string) error {
 	return bcrypt.CompareHashAndPassword([]byte(hash), []byte(password))
 }
