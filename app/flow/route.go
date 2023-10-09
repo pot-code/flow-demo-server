@@ -5,14 +5,14 @@ import (
 	"gobit-demo/infra/api"
 	"gobit-demo/infra/validate"
 	"gobit-demo/model"
-	"gobit-demo/services/auth"
+	"gobit-demo/services/auth/rbac"
 
 	"github.com/labstack/echo/v4"
 )
 
 type route struct {
 	s Service
-	r auth.RBAC
+	r rbac.RBAC
 	v validate.Validator
 }
 
@@ -29,12 +29,12 @@ func (c *route) findById(e echo.Context) error {
 		return err
 	}
 
-	var id model.ID
-	if err := echo.PathParamsBinder(e).JSONUnmarshaler("id", &id).BindError(); err != nil {
+	var id string
+	if err := echo.PathParamsBinder(e).String("id", &id).BindError(); err != nil {
 		return api.NewBindError(err)
 	}
 
-	o, err := c.s.GetFlowByID(e.Request().Context(), id)
+	o, err := c.s.GetFlowByID(e.Request().Context(), model.ID(id))
 	if err != nil {
 		return err
 	}
@@ -87,12 +87,12 @@ func (c *route) deleteOne(e echo.Context) error {
 		return err
 	}
 
-	var id model.ID
-	if err := echo.PathParamsBinder(e).JSONUnmarshaler("id", &id).BindError(); err != nil {
+	var id string
+	if err := echo.PathParamsBinder(e).String("id", &id).BindError(); err != nil {
 		return api.NewBindError(err)
 	}
 
-	return c.s.DeleteFlow(e.Request().Context(), id)
+	return c.s.DeleteFlow(e.Request().Context(), model.ID(id))
 }
 
 func (c *route) findByUser(e echo.Context) error {
@@ -112,6 +112,6 @@ func (c *route) findByUser(e echo.Context) error {
 	return api.JsonPaginationData(e, p, count, data)
 }
 
-func NewRoute(s Service, r auth.RBAC, v validate.Validator) *route {
+func NewRoute(s Service, r rbac.RBAC, v validate.Validator) *route {
 	return &route{s: s, r: r, v: v}
 }

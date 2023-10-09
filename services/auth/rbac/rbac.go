@@ -1,4 +1,4 @@
-package auth
+package rbac
 
 import (
 	"context"
@@ -8,6 +8,13 @@ import (
 	"github.com/samber/lo"
 	"gorm.io/gorm"
 )
+
+type UnAuthorizedError struct {
+}
+
+func (e UnAuthorizedError) Error() string {
+	return "unauthorized"
+}
 
 type RBAC interface {
 	CheckPermission(ctx context.Context, permission string) error

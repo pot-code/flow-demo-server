@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"gobit-demo/infra/orm"
 	"gobit-demo/model"
-	"gobit-demo/services/auth"
+	"gobit-demo/services/auth/rbac"
 	"gobit-demo/services/auth/session"
 
 	"gorm.io/gorm"
@@ -27,7 +27,7 @@ func (p *abac) CanDelete(ctx context.Context, id model.ID) error {
 		return err
 	}
 	if !ok {
-		return new(auth.UnAuthorizedError)
+		return new(rbac.UnAuthorizedError)
 	}
 	return nil
 
@@ -39,7 +39,7 @@ func (p *abac) CanUpdate(ctx context.Context, id model.ID) error {
 		return err
 	}
 	if !ok {
-		return new(auth.UnAuthorizedError)
+		return new(rbac.UnAuthorizedError)
 	}
 	return nil
 
@@ -51,7 +51,7 @@ func (p *abac) CanView(ctx context.Context, id model.ID) error {
 		return err
 	}
 	if !ok {
-		return new(auth.UnAuthorizedError)
+		return new(rbac.UnAuthorizedError)
 	}
 	return nil
 }

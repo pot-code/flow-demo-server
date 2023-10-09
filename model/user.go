@@ -1,14 +1,14 @@
 package model
 
 import (
-	"gobit-demo/infra/uuid"
 	"time"
 
+	"github.com/segmentio/ksuid"
 	"gorm.io/gorm"
 )
 
 type User struct {
-	ID        ID             `gorm:"primaryKey;type:BIGINT UNSIGNED" json:"id,omitempty"`
+	ID        ID             `gorm:"primaryKey;type:varchar(27)" json:"id,omitempty"`
 	Name      string         `json:"name,omitempty"`
 	Username  string         `gorm:"uniqueIndex,not null,size:12" json:"username,omitempty"`
 	Password  string         `gorm:"not null" json:"password,omitempty"`
@@ -21,10 +21,6 @@ type User struct {
 }
 
 func (u *User) BeforeCreate(tx *gorm.DB) error {
-	uid, err := uuid.Sonyflake.NextID()
-	if err != nil {
-		return err
-	}
-	u.ID = ID(uid)
+	u.ID = ID(ksuid.New().String())
 	return nil
 }

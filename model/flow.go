@@ -1,14 +1,14 @@
 package model
 
 import (
-	"gobit-demo/infra/uuid"
 	"time"
 
+	"github.com/segmentio/ksuid"
 	"gorm.io/gorm"
 )
 
 type Flow struct {
-	ID          ID             `gorm:"primaryKey;type:BIGINT UNSIGNED" json:"id,omitempty"`
+	ID          ID             `gorm:"primaryKey;type:varchar(27)" json:"id,omitempty"`
 	Name        string         `gorm:"index,not null,size:32" json:"name,omitempty"`
 	Description string         `json:"description,omitempty"`
 	Nodes       string         `json:"nodes,omitempty"`
@@ -21,10 +21,6 @@ type Flow struct {
 }
 
 func (f *Flow) BeforeCreate(tx *gorm.DB) error {
-	uid, err := uuid.Sonyflake.NextID()
-	if err != nil {
-		return err
-	}
-	f.ID = ID(uid)
+	f.ID = ID(ksuid.New().String())
 	return nil
 }

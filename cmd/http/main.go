@@ -11,11 +11,11 @@ import (
 	"gobit-demo/infra/logging"
 	"gobit-demo/infra/mq"
 	"gobit-demo/infra/orm"
-	"gobit-demo/infra/uuid"
 	"gobit-demo/infra/validate"
 	"gobit-demo/middlewares"
 	"gobit-demo/services/audit"
 	"gobit-demo/services/auth"
+	"gobit-demo/services/auth/rbac"
 	"gobit-demo/services/auth/session"
 	"net/http"
 
@@ -28,7 +28,6 @@ func main() {
 	va := validate.New()
 	cfg := config.LoadConfig()
 	logging.Init(cfg.Logging.Level)
-	uuid.InitSonyflake(cfg.NodeID)
 
 	log.Debug().Any("config", cfg).Msg("config")
 
@@ -40,7 +39,7 @@ func main() {
 	ts := auth.NewTokenService(cfg.Token.Secret, cfg.Token.Key)
 	sm := session.NewSessionManager(rc, cfg.Session.Exp)
 	as := audit.NewService(gd)
-	rb := auth.NewRBAC(gd)
+	rb := rbac.NewRBAC(gd)
 
 	e := api.NewAppEngine()
 	e.SetErrorHandler(func(err error, c echo.Context) {
@@ -52,7 +51,7 @@ func main() {
 		case *api.BindError:
 			log.Debug().Err(err).Msg("bind error")
 			api.JsonBadRequest(c, "数据解析失败，请检查输入")
-		case *auth.UnAuthorizedError:
+		case *rbac.UnAuthorizedError:
 			api.JsonNoPermission(c, "无权限")
 		case *echo.HTTPError:
 			api.Json(c, e.Code, map[string]any{

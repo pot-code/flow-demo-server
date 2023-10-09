@@ -1,9 +1,9 @@
 package model
 
 import (
-	"gobit-demo/infra/uuid"
 	"time"
 
+	"github.com/segmentio/ksuid"
 	"gorm.io/gorm"
 )
 
@@ -16,10 +16,6 @@ type Notification struct {
 }
 
 func (n *Notification) BeforeCreate(tx *gorm.DB) error {
-	uid, err := uuid.Sonyflake.NextID()
-	if err != nil {
-		return err
-	}
-	n.ID = ID(uid)
+	n.ID = ID(ksuid.New().String())
 	return nil
 }
