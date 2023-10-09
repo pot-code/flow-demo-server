@@ -5,14 +5,12 @@ import (
 	"gobit-demo/infra/api"
 	"gobit-demo/infra/validate"
 	"gobit-demo/model"
-	"gobit-demo/services/auth/rbac"
 
 	"github.com/labstack/echo/v4"
 )
 
 type route struct {
 	s Service
-	r rbac.RBAC
 	v validate.Validator
 }
 
@@ -25,10 +23,6 @@ func (c *route) AppendRoutes(g *echo.Group) {
 }
 
 func (c *route) findById(e echo.Context) error {
-	if err := c.r.CheckPermission(e.Request().Context(), "flow:view"); err != nil {
-		return err
-	}
-
 	var id string
 	if err := echo.PathParamsBinder(e).String("id", &id).BindError(); err != nil {
 		return api.NewBindError(err)
@@ -42,10 +36,6 @@ func (c *route) findById(e echo.Context) error {
 }
 
 func (c *route) createOne(e echo.Context) error {
-	if err := c.r.CheckPermission(e.Request().Context(), "flow:create"); err != nil {
-		return err
-	}
-
 	req := new(CreateFlowDto)
 	if err := api.Bind(e, req); err != nil {
 		return err
@@ -61,15 +51,10 @@ func (c *route) createOne(e echo.Context) error {
 	if err != nil {
 		return err
 	}
-
 	return api.JsonData(e, m)
 }
 
 func (c *route) updateOne(e echo.Context) error {
-	if err := c.r.CheckPermission(e.Request().Context(), "flow:update"); err != nil {
-		return err
-	}
-
 	req := new(UpdateFlowDto)
 	if err := api.Bind(e, req); err != nil {
 		return err
@@ -77,34 +62,22 @@ func (c *route) updateOne(e echo.Context) error {
 	if err := c.v.Struct(req); err != nil {
 		return err
 	}
-
 	return c.s.UpdateFlow(e.Request().Context(), req)
-
 }
 
 func (c *route) deleteOne(e echo.Context) error {
-	if err := c.r.CheckPermission(e.Request().Context(), "flow:delete"); err != nil {
-		return err
-	}
-
 	var id string
 	if err := echo.PathParamsBinder(e).String("id", &id).BindError(); err != nil {
 		return api.NewBindError(err)
 	}
-
 	return c.s.DeleteFlow(e.Request().Context(), model.ID(id))
 }
 
 func (c *route) findByUser(e echo.Context) error {
-	if err := c.r.CheckPermission(e.Request().Context(), "flow:list"); err != nil {
-		return err
-	}
-
 	p, err := api.GetPaginationFromRequest(e)
 	if err != nil {
 		return err
 	}
-
 	data, count, err := c.s.ListFlowByOwner(e.Request().Context(), p)
 	if err != nil {
 		return err
@@ -112,6 +85,6 @@ func (c *route) findByUser(e echo.Context) error {
 	return api.JsonPaginationData(e, p, count, data)
 }
 
-func NewRoute(s Service, r rbac.RBAC, v validate.Validator) *route {
-	return &route{s: s, r: r, v: v}
+func NewRoute(s Service, v validate.Validator) *route {
+	return &route{s: s, v: v}
 }

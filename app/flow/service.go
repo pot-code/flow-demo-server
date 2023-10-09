@@ -9,6 +9,7 @@ import (
 	"gobit-demo/infra/pagination"
 	"gobit-demo/model"
 	"gobit-demo/services/audit"
+	"gobit-demo/services/auth/rbac"
 	"gobit-demo/services/auth/session"
 	"time"
 
@@ -30,12 +31,16 @@ type Service interface {
 type service struct {
 	g  *gorm.DB
 	a  ABAC
+	r  rbac.RBAC
 	as audit.Service
 	eb event.EventBus
 }
 
 // DeleteFlow implements Service.
 func (s *service) DeleteFlow(ctx context.Context, id model.ID) error {
+	if err := s.r.CheckPermission(ctx, "flow:delete"); err != nil {
+		return err
+	}
 	if err := s.a.CanDelete(ctx, id); err != nil {
 		return err
 	}
@@ -52,6 +57,9 @@ func (s *service) DeleteFlow(ctx context.Context, id model.ID) error {
 }
 
 func (s *service) GetFlowByID(ctx context.Context, id model.ID) (*model.Flow, error) {
+	if err := s.r.CheckPermission(ctx, "flow:view"); err != nil {
+		return nil, err
+	}
 	if err := s.a.CanView(ctx, id); err != nil {
 		return nil, err
 	}
@@ -64,6 +72,10 @@ func (s *service) GetFlowByID(ctx context.Context, id model.ID) (*model.Flow, er
 }
 
 func (s *service) CreateFlow(ctx context.Context, req *CreateFlowDto) (*model.Flow, error) {
+	if err := s.r.CheckPermission(ctx, "flow:create"); err != nil {
+		return nil, err
+	}
+
 	session := session.GetSessionFromContext(ctx)
 	m := &model.Flow{
 		Name:        req.Name,
@@ -91,6 +103,9 @@ func (s *service) CreateFlow(ctx context.Context, req *CreateFlowDto) (*model.Fl
 }
 
 func (s *service) UpdateFlow(ctx context.Context, req *UpdateFlowDto) error {
+	if err := s.r.CheckPermission(ctx, "flow:update"); err != nil {
+		return err
+	}
 	if err := s.a.CanUpdate(ctx, req.ID); err != nil {
 		return err
 	}
@@ -109,11 +124,14 @@ func (s *service) UpdateFlow(ctx context.Context, req *UpdateFlowDto) error {
 }
 
 func (s *service) ListFlowByOwner(ctx context.Context, p *pagination.Pagination) ([]*model.Flow, int64, error) {
+	if err := s.r.CheckPermission(ctx, "flow:list"); err != nil {
+		return nil, -1, err
+	}
+
 	var (
 		flows []*model.Flow
 		count int64
 	)
-
 	u := session.GetSessionFromContext(ctx)
 	if err := s.g.WithContext(ctx).Model(&model.Flow{}).
 		Scopes(orm.Pagination(p)).
@@ -129,8 +147,9 @@ func (s *service) ListFlowByOwner(ctx context.Context, p *pagination.Pagination)
 
 func NewService(
 	g *gorm.DB,
+	r rbac.RBAC,
 	eb event.EventBus,
 	as audit.Service,
 ) *service {
-	return &service{g: g, a: NewABAC(g), as: as, eb: eb}
+	return &service{g: g, r: r, a: NewABAC(g), as: as, eb: eb}
 }
