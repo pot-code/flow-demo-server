@@ -40,7 +40,7 @@ func main() {
 	kb := mq.NewKafkaPublisher(cfg.MessageQueue.GetBrokerList(), log.Logger)
 	eb := event.NewKafkaEventBus(kb)
 	ts := token.NewService(cfg.Token.Secret)
-	ht := token.NewHttpTokenHelper(cfg.Token.Key)
+	ht := token.NewHttpCookieTokenHelper(cfg.Token.Key)
 	sm := session.NewSessionManager(rc, cfg.Session.Exp)
 	as := audit.NewService(gd)
 	r := rbac.NewRBAC(gd)

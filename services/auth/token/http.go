@@ -14,7 +14,7 @@ type cookieHelper struct {
 	key string
 }
 
-func NewHttpTokenHelper(key string) HttpTokenHelper {
+func NewHttpCookieTokenHelper(key string) HttpTokenHelper {
 	return &cookieHelper{
 		key: key,
 	}
