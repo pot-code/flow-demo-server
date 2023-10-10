@@ -1,24 +1,20 @@
-package pagination
+package api
 
 import (
+	"gobit-demo/infra/pagination"
 	"strconv"
 
 	"github.com/labstack/echo/v4"
 	"github.com/pot-code/gobit/pkg/validate"
 )
 
-type Pagination struct {
-	Page     int
-	PageSize int
-}
-
 const (
 	defaultPage     = 1
 	defaultPageSize = 10
 )
 
-func FromRequest(e echo.Context) (*Pagination, error) {
-	pagination := &Pagination{
+func PaginationFromRequest(e echo.Context) (*pagination.Pagination, error) {
+	pagination := &pagination.Pagination{
 		Page:     defaultPage,
 		PageSize: defaultPageSize,
 	}

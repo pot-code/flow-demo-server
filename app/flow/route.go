@@ -3,7 +3,6 @@ package flow
 import (
 	"errors"
 	"gobit-demo/infra/api"
-	"gobit-demo/infra/api/pagination"
 	"gobit-demo/infra/validate"
 	"gobit-demo/model"
 
@@ -75,7 +74,7 @@ func (c *route) deleteOne(e echo.Context) error {
 }
 
 func (c *route) findByUser(e echo.Context) error {
-	p, err := pagination.FromRequest(e)
+	p, err := api.PaginationFromRequest(e)
 	if err != nil {
 		return err
 	}
