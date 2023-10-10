@@ -10,6 +10,7 @@ import (
 type Notification struct {
 	ID        ID        `json:"id,omitempty"`
 	Content   string    `json:"content,omitempty"`
+	IsRead    bool      `json:"is_read,omitempty"`
 	CreatedAt time.Time `gorm:"autoCreateTime" json:"created_at,omitempty"`
 	OwnerID   *ID       `json:"owner_id,omitempty"`
 	Owner     *User     `gorm:"foreignKey:OwnerID" json:"owner,omitempty"`
