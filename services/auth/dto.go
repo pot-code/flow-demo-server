@@ -1,6 +1,6 @@
 package auth
 
-import "gobit-demo/model"
+import "gobit-demo/model/pk"
 
 type CreateUserDto struct {
 	Name     string `json:"name" validate:"required"`
@@ -16,7 +16,7 @@ type LoginRequestDto struct {
 }
 
 type LoginUser struct {
-	ID          model.ID
+	ID          pk.ID
 	Username    string
 	Permissions []string
 	Roles       []string

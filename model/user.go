@@ -1,6 +1,7 @@
 package model
 
 import (
+	"gobit-demo/model/pk"
 	"time"
 
 	"github.com/segmentio/ksuid"
@@ -8,7 +9,7 @@ import (
 )
 
 type User struct {
-	ID        ID             `gorm:"primaryKey;type:varchar(27)" json:"id,omitempty"`
+	ID        pk.ID          `gorm:"primaryKey;type:varchar(27)" json:"id,omitempty"`
 	Name      string         `json:"name,omitempty"`
 	Username  string         `gorm:"uniqueIndex,not null,size:12" json:"username,omitempty"`
 	Password  string         `gorm:"not null" json:"password,omitempty"`
@@ -21,6 +22,6 @@ type User struct {
 }
 
 func (u *User) BeforeCreate(tx *gorm.DB) error {
-	u.ID = ID(ksuid.New().String())
+	u.ID = pk.ParseFromString(ksuid.New().String())
 	return nil
 }

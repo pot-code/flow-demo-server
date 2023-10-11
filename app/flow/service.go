@@ -8,6 +8,7 @@ import (
 	"gobit-demo/infra/orm"
 	"gobit-demo/infra/pagination"
 	"gobit-demo/model"
+	"gobit-demo/model/pk"
 	"gobit-demo/services/audit"
 	"gobit-demo/services/auth/rbac"
 	"gobit-demo/services/auth/session"
@@ -21,11 +22,11 @@ var (
 )
 
 type Service interface {
-	GetFlowByID(ctx context.Context, id model.ID) (*model.Flow, error)
+	GetFlowByID(ctx context.Context, id pk.ID) (*model.Flow, error)
 	ListFlowByOwner(ctx context.Context, p *pagination.Pagination) ([]*model.Flow, int64, error)
 	CreateFlow(ctx context.Context, req *CreateFlowDto) (*model.Flow, error)
 	UpdateFlow(ctx context.Context, req *UpdateFlowDto) error
-	DeleteFlow(ctx context.Context, id model.ID) error
+	DeleteFlow(ctx context.Context, id pk.ID) error
 }
 
 type service struct {
@@ -37,7 +38,7 @@ type service struct {
 }
 
 // DeleteFlow implements Service.
-func (s *service) DeleteFlow(ctx context.Context, id model.ID) error {
+func (s *service) DeleteFlow(ctx context.Context, id pk.ID) error {
 	if err := s.r.CheckPermission(ctx, "flow:delete"); err != nil {
 		return err
 	}
@@ -56,7 +57,7 @@ func (s *service) DeleteFlow(ctx context.Context, id model.ID) error {
 	).Commit(ctx)
 }
 
-func (s *service) GetFlowByID(ctx context.Context, id model.ID) (*model.Flow, error) {
+func (s *service) GetFlowByID(ctx context.Context, id pk.ID) (*model.Flow, error) {
 	if err := s.r.CheckPermission(ctx, "flow:view"); err != nil {
 		return nil, err
 	}

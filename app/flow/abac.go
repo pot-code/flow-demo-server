@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"gobit-demo/infra/orm"
 	"gobit-demo/model"
+	"gobit-demo/model/pk"
 	"gobit-demo/services/auth/rbac"
 	"gobit-demo/services/auth/session"
 
@@ -15,7 +16,7 @@ type ABAC struct {
 	g *gorm.DB
 }
 
-func (p *ABAC) CanDelete(ctx context.Context, id model.ID) error {
+func (p *ABAC) CanDelete(ctx context.Context, id pk.ID) error {
 	ok, err := p.isOwner(ctx, id)
 	if err != nil {
 		return err
@@ -26,7 +27,7 @@ func (p *ABAC) CanDelete(ctx context.Context, id model.ID) error {
 	return nil
 }
 
-func (p *ABAC) isOwner(ctx context.Context, id model.ID) (bool, error) {
+func (p *ABAC) isOwner(ctx context.Context, id pk.ID) (bool, error) {
 	s := session.GetSessionFromContext(ctx)
 	ok, err := orm.Exists(p.g.WithContext(ctx).Model(&model.Flow{}).Where("id = ? AND owner_id = ?", id, s.UserID))
 	if err != nil {

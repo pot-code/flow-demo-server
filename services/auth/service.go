@@ -7,6 +7,7 @@ import (
 	"gobit-demo/infra/event"
 	"gobit-demo/infra/orm"
 	"gobit-demo/model"
+	"gobit-demo/model/pk"
 	"gobit-demo/services/auth/rbac"
 	"gobit-demo/services/auth/session"
 	"gobit-demo/services/auth/token"
@@ -25,8 +26,8 @@ var (
 type Service interface {
 	CreateUser(ctx context.Context, data *CreateUserDto) (*model.User, error)
 	Login(ctx context.Context, data *LoginRequestDto) (string, error)
-	GetUserPermissions(ctx context.Context, id model.ID) ([]string, error)
-	GetUserRoles(ctx context.Context, id model.ID) ([]string, error)
+	GetUserPermissions(ctx context.Context, uid pk.ID) ([]string, error)
+	GetUserRoles(ctx context.Context, uid pk.ID) ([]string, error)
 }
 
 type service struct {
@@ -130,24 +131,24 @@ func (s *service) Login(ctx context.Context, data *LoginRequestDto) (string, err
 	return token, nil
 }
 
-func (s *service) GetUserPermissions(ctx context.Context, id model.ID) ([]string, error) {
+func (s *service) GetUserPermissions(ctx context.Context, uid pk.ID) ([]string, error) {
 	var permissions []string
 	if err := s.g.WithContext(ctx).Model(&model.Permission{}).
 		Distinct("permissions.name").
 		Joins("INNER JOIN role_permissions ON role_permissions.permission_id = permissions.id").
 		Joins("INNER JOIN user_roles ON user_roles.role_id = role_permissions.role_id").
-		Where("user_roles.user_id = ?", id).
+		Where("user_roles.user_id = ?", uid).
 		Pluck("permissions.name", &permissions).Error; err != nil {
 		return nil, fmt.Errorf("get user permissions: %w", err)
 	}
 	return permissions, nil
 }
 
-func (s *service) GetUserRoles(ctx context.Context, id model.ID) ([]string, error) {
+func (s *service) GetUserRoles(ctx context.Context, uid pk.ID) ([]string, error) {
 	var roles []string
 	if err := s.g.WithContext(ctx).Model(&model.Role{}).
 		Joins("INNER JOIN user_roles ON user_roles.role_id = roles.id").
-		Where("user_roles.user_id = ?", id).
+		Where("user_roles.user_id = ?", uid).
 		Pluck("roles.name", &roles).Error; err != nil {
 		return nil, fmt.Errorf("get user roles: %w", err)
 	}

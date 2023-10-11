@@ -4,7 +4,7 @@ import (
 	"errors"
 	"gobit-demo/infra/api"
 	"gobit-demo/infra/validate"
-	"gobit-demo/model"
+	"gobit-demo/model/pk"
 
 	"github.com/labstack/echo/v4"
 )
@@ -23,12 +23,12 @@ func (c *route) AppendRoutes(g *echo.Group) {
 }
 
 func (c *route) findById(e echo.Context) error {
-	var id string
-	if err := echo.PathParamsBinder(e).String("id", &id).BindError(); err != nil {
+	var arg string
+	if err := echo.PathParamsBinder(e).String("id", &arg).BindError(); err != nil {
 		return api.NewBindError(err)
 	}
 
-	o, err := c.s.GetFlowByID(e.Request().Context(), model.ID(id))
+	o, err := c.s.GetFlowByID(e.Request().Context(), pk.ParseFromString(arg))
 	if err != nil {
 		return err
 	}
@@ -66,11 +66,11 @@ func (c *route) updateOne(e echo.Context) error {
 }
 
 func (c *route) deleteOne(e echo.Context) error {
-	var id string
-	if err := echo.PathParamsBinder(e).String("id", &id).BindError(); err != nil {
+	var arg string
+	if err := echo.PathParamsBinder(e).String("id", &arg).BindError(); err != nil {
 		return api.NewBindError(err)
 	}
-	return c.s.DeleteFlow(e.Request().Context(), model.ID(id))
+	return c.s.DeleteFlow(e.Request().Context(), pk.ParseFromString(arg))
 }
 
 func (c *route) findByUser(e echo.Context) error {

@@ -6,14 +6,15 @@ import (
 	"gobit-demo/infra/orm"
 	"gobit-demo/infra/pagination"
 	"gobit-demo/model"
+	"gobit-demo/model/pk"
 	"gobit-demo/services/auth/session"
 
 	"gorm.io/gorm"
 )
 
 type Service interface {
-	SendNotification(ctx context.Context, to model.ID, content string) error
-	ListNotifications(ctx context.Context, uid model.ID, p *pagination.Pagination) ([]*model.Notification, int64, error)
+	SendNotification(ctx context.Context, to pk.ID, content string) error
+	ListNotifications(ctx context.Context, uid pk.ID, p *pagination.Pagination) ([]*model.Notification, int64, error)
 }
 
 type service struct {
@@ -21,7 +22,7 @@ type service struct {
 	sm session.SessionManager
 }
 
-func (s *service) ListNotifications(ctx context.Context, uid model.ID, p *pagination.Pagination) ([]*model.Notification, int64, error) {
+func (s *service) ListNotifications(ctx context.Context, uid pk.ID, p *pagination.Pagination) ([]*model.Notification, int64, error) {
 	var (
 		notifications []*model.Notification
 		count         int64
@@ -36,7 +37,7 @@ func (s *service) ListNotifications(ctx context.Context, uid model.ID, p *pagina
 	return notifications, count, nil
 }
 
-func (s *service) SendNotification(ctx context.Context, to model.ID, content string) error {
+func (s *service) SendNotification(ctx context.Context, to pk.ID, content string) error {
 	if err := s.g.WithContext(ctx).Create(&model.Notification{
 		OwnerID: &to,
 		Content: content,

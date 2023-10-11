@@ -3,7 +3,7 @@ package session
 import (
 	"context"
 	"fmt"
-	"gobit-demo/model"
+	"gobit-demo/model/pk"
 	"time"
 
 	"github.com/google/uuid"
@@ -17,7 +17,7 @@ var (
 
 type Session struct {
 	SessionID       string
-	UserID          model.ID
+	UserID          pk.ID
 	Username        string
 	UserPermissions []string
 	UserRoles       []string
@@ -26,7 +26,7 @@ type Session struct {
 
 type SessionManager interface {
 	GetSessionBySessionID(ctx context.Context, sid string) (*Session, error)
-	NewSession(ctx context.Context, uid model.ID, username string, permissions []string, roles []string) (*Session, error)
+	NewSession(ctx context.Context, uid pk.ID, username string, permissions []string, roles []string) (*Session, error)
 	DeleteSession(ctx context.Context, sid string) error
 	RefreshSession(ctx context.Context, s *Session, threshold time.Duration) error
 }
@@ -87,7 +87,7 @@ func (sm *sessionManager) GetSessionBySessionID(ctx context.Context, sid string)
 // NewSession implements SessionManager.
 func (sm *sessionManager) NewSession(
 	ctx context.Context,
-	uid model.ID,
+	uid pk.ID,
 	username string,
 	permissions []string,
 	roles []string,
