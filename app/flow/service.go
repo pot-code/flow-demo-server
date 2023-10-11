@@ -12,6 +12,7 @@ import (
 	"gobit-demo/services/audit"
 	"gobit-demo/services/auth/rbac"
 	"gobit-demo/services/auth/session"
+	"gobit-demo/services/notification"
 	"time"
 
 	"gorm.io/gorm"
@@ -34,6 +35,7 @@ type service struct {
 	a  *ABAC
 	r  rbac.RBAC
 	as audit.Service
+	ns notification.Service
 	eb event.EventBus
 }
 
@@ -93,6 +95,10 @@ func (s *service) CreateFlow(ctx context.Context, req *CreateFlowDto) (*model.Fl
 		Timestamp: time.Now().UnixMilli(),
 	})
 
+	if err := s.ns.SendNotification(ctx, *m.OwnerID, fmt.Sprintf("您创建了一个新的流程：%s", m.Name)); err != nil {
+		return nil, fmt.Errorf("send notification: %w", err)
+	}
+
 	if err := s.as.NewAuditLog().UseContext(ctx).Action("创建流程").Payload(req).Commit(ctx); err != nil {
 		return nil, err
 	}
@@ -145,6 +151,7 @@ func NewService(
 	r rbac.RBAC,
 	eb event.EventBus,
 	as audit.Service,
+	ns notification.Service,
 ) *service {
-	return &service{g: g, r: r, a: NewABAC(g), as: as, eb: eb}
+	return &service{g: g, r: r, a: NewABAC(g), as: as, eb: eb, ns: ns}
 }

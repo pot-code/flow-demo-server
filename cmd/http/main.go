@@ -19,6 +19,7 @@ import (
 	"gobit-demo/services/auth/rbac"
 	"gobit-demo/services/auth/session"
 	"gobit-demo/services/auth/token"
+	"gobit-demo/services/notification"
 	"net/http"
 
 	"github.com/labstack/echo/v4"
@@ -43,6 +44,7 @@ func main() {
 	ht := token.NewHttpCookieTokenHelper(cfg.Token.Key)
 	sm := session.NewSessionManager(rc, cfg.Session.Exp)
 	as := audit.NewService(gd)
+	ns := notification.NewService(gd, sm)
 	r := rbac.NewRBAC(gd)
 
 	e := api.NewAppEngine()
@@ -77,7 +79,9 @@ func main() {
 	e.Use(middlewares.LoggingMiddleware)
 
 	e.AddRouteGroup("/auth", auth.NewRoute(auth.NewService(gd, eb, sm, r, ts), ts, ht, sm, va))
-	e.AddRouteGroup("/flow", flow.NewRoute(flow.NewService(gd, r, eb, as), va),
+	e.AddRouteGroup("/notification", notification.NewRoute(notification.NewService(gd, sm)),
+		middlewares.AuthMiddleware(ts, ht, sm, cfg.Session.RefreshExp))
+	e.AddRouteGroup("/flow", flow.NewRoute(flow.NewService(gd, r, eb, as, ns), va),
 		middlewares.AuthMiddleware(ts, ht, sm, cfg.Session.RefreshExp))
 
 	if err := e.Run(fmt.Sprintf("%s:%d", cfg.Host, cfg.HttpPort)); err != http.ErrServerClosed {
